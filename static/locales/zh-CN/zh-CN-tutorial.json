@@ -1848,8 +1848,8 @@
                     ]
                 },
                 {
-                    "title": "One to one",
-                    "subtitle": "Mappings",
+                    "title": "一对一",
+                    "subtitle": "映射",
                     "concept": "Map",
                     "performance": [
                         "fit",
@@ -1862,68 +1862,68 @@
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "There's just one more collection I'd like to introduce you to. They're a bit like @Set in some ways, and even use the same braces, but they're different in one important way: they're a connector. They're name is @Map."
+                            "还有一个收藏品我想介绍给你。在某些方面，它们有点像 @Set，并且甚至使用相同的大括号，但在一个重要的方面它们是不同的：它们是连接器。它们的名字是 @Map。"
                         ],
                         [
                             "FunctionDefinition",
                             "curious",
-                            "@Map? Are you out there? The silence is breaking!"
+                            "@Map？你在那里吗？寂静结束啦！"
                         ],
                         null,
                         [
                             "Map",
                             "curious",
-                            "Breaking? Was it ever really silent? It's so good to see you @FunctionDefinition. Oh my, have you talked to @Evaluate? They were not in good shape last time we talked. You have to talk to them."
+                            "破裂？真的曾经是安静过的吗？见到你真是太好了，@FunctionDefinition。哦，我的天啊，你和 @Evaluate 聊过吗？上次我们聊天时，他们状态不太好。你得和他们谈谈。"
                         ],
                         [
                             "FunctionDefinition",
                             "sad",
-                            "Yes, I talked to them..."
+                            "是的，我和他们谈过"
                         ],
                         null,
                         [
                             "Map",
                             "curious",
-                            "Oh good. Okay, because there's some repair to do there my friend... How have you been?"
+                            "哦，好的。好吧，因为那里有一些需要修复的，我的朋友... 你过得怎么样？"
                         ],
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "I've been okay, just a bit lonely, and a lot bored."
+                            "我还好，只是有点孤独，而且很无聊。"
                         ],
                         null,
                         [
                             "Map",
                             "excited",
-                            "Oh, I'm so sorry to hear that. I've been staying connected with everyone during the silence and just figured you and @Evaluate had each other! I really would have been happy to talk any time. I've just been so busy keeping up with the gossip between @List and @Set, and that weird tension between @Conditional and @BooleanLiteral. Do you know what's going on between them?"
+                            "哦，我很抱歉听到这个。在寂静期间，我一直与每个人保持联系，而且我认为你和 @Evaluate 互相有对方！我真的很乐意随时聊天。我一直忙于跟踪 @List 和 @Set 之间的八卦，以及 @Conditional 和 @BooleanLiteral 之间的奇怪紧张关系。你知道他们之间发生了什么吗？"
                         ],
                         [
                             "FunctionDefinition",
                             "surprised",
-                            "No, I don't at all. There's tension? And what gossip?"
+                            "不，我一点都不知道。有紧张关系？还有什么八卦？"
                         ],
                         [
                             "Map",
                             "kind",
-                            "Kind of like the tension between you and @Evaluate?"
+                            "有点像你和 @Evaluate 之间的紧张关系？"
                         ],
                         ["FunctionDefinition", "sad", "…"],
                         null,
                         [
                             "Map",
                             "neutral",
-                            "Sorry. Maybe not in front of our guest here. You must be the new person everyone is talking about. I hear you're going to be our new director? What kind of fabulous ideas do you have in store for us? Singing? Dancing? As long as it's bright, playful, and strange, I'm here for it!"
+                            "抱歉。也许不要当着我们的客人的面。你一定是大家都在谈论的新人。我听说你将成为我们的新导演？你为我们有什么美妙的想法？唱歌？跳舞？只要明亮、活泼和奇怪，我都支持！"
                         ],
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "No need to pressure them! I'm sure they have lots of ideas. We're just trying to make some space for learning and connecting before we figure out the first show. Can you share what you do?"
+                            "不用给他们太大压力！我相信他们有很多想法。我们只是在弄清楚第一场演出之前为学习和交流腾出一些空间。你能分享一下你的工作吗？"
                         ],
                         null,
                         [
                             "Map",
                             "eager",
-                            "I connect! I'm kind of like a dictionary: give me a value and I'll give you the definition it corresponds to. @FunctionDefinition told you about values? I map them, one to one, from one value, to another. Give me a key, I'll give you the value it corresponds to. For example, here's a mapping from names to a point tally. Names are the key, points are the value."
+                            "我连接！我有点像字典：给我一个值，我会给你相应的定义。@FunctionDefinition 告诉过你关于值的事吗？我将它们一对一地从一个值映射到另一个值。给我一个键，我会给你对应的值。例如，这是一个从姓名到积分的映射。姓名是键，积分是值。"
                         ],
                         [
                             "edit",
@@ -1933,7 +1933,7 @@
                         [
                             "Map",
                             "serious",
-                            "But like @Set, I don't like duplicates. You can't have more than one of the same key, but you can have as many unique keys mapped to equivalent values as you like. For example, this gives me two \\'ben'\\ keys, but I just use the last one. But it's okay that \\'ben'\\ and \\'joe'\\ have the same number of points, because they're different keys."
+                            "但像 @Set 一样，我不喜欢重复。你不能有多个相同的键，但你可以将许多唯一的键映射到等值的值。例如，这给我两个 'ben' 键，但我只使用最后一个。但 'ben' 和 'joe' 拥有相同的积分是可以的，因为它们是不同的键。"
                         ],
                         [
                             "edit",
@@ -1942,13 +1942,13 @@
                         [
                             "Map",
                             "excited",
-                            "It's my partnership with @Bind that makes me special! It's how I connect values to other values. (Have you met @Bind yet? No? Ohhhh, you're going to adore them. They are FABULOUS.)"
+                            "与 @Bind 的合作使我变得特别！这是我将值连接到其他值的方式。 （你见过 @Bind 吗？没有吗？哦，你会喜欢上他们的。他们太棒了。）"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "curious",
-                            "@Map, what if you want an empty mapping? How is that different from an empty set, \\{}\\?"
+                            "@Map，如果你想要一个空映射怎么办？那与空集合\\{}\\有什么不同?"
                         ],
                         [
                             "Map",
@@ -1960,24 +1960,24 @@
                         [
                             "FunctionDefinition",
                             "curious",
-                            "And what if our director doesn't provide a value or a key? Like this? Like, \\3\\ has no value?"
+                            "如果我们的导演不提供值或键怎么办？比如就像这样\\3\\ 没有值?"
                         ],
                         ["conflict", "{1:1 2:2 3 }"],
                         [
                             "Map",
                             "serious",
-                            "Oh… DON'T do that. I only like pairs. Is 3 a key? A value? Totally confusing. Stop the show."
+                            "哦... 千万别这样做。我只喜欢成对的。3 是键吗？值是什么？完全令人困惑。停止演出。"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "curious",
-                            "And if our director wants to get a value from a key?"
+                            "如果我们的导演想从键中获取一个值呢？"
                         ],
                         [
                             "Map",
                             "neutral",
-                            "Just like @Set: just put a \\{}\\ after a map and give me the key you want."
+                            "就像 @Set 一样：在映射后面加上 \\{}\\  并给我你想要的键。"
                         ],
                         [
                             "edit",
@@ -1988,12 +1988,12 @@
                         [
                             "Map",
                             "neutral",
-                            "Otherwise, I'm a lot like @Set: I can do a lot of the same functions. Stop by any time and I'm happy to show you more!"
+                            "否则，我很像 @Set：我可以执行很多相同的功能。随时过来，我很乐意向你展示更多！"
                         ],
                         [
                             "FunctionDefinition",
                             "kind",
-                            "Thank you @Map! /You/ are fabulous."
+                            "谢谢 @Map！你/太/棒了。"
                         ]
                     ]
                 }
