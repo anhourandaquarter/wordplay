@@ -224,142 +224,142 @@
                         [
                             "Program",
                             "serious",
-                            "In fact, if you ever want to see the progam for something on stage, you can press the pencil on stage @UI/editProject. That'll show you how everyone is coming together to create what's on stage. This program is just a simple phrase."
+                            "事实上，如果您想在舞台上观看节目，您可以在舞台上按下铅笔@UI/editProject。 这将向您展示每个人如何齐心协力创造舞台上的内容。 这个程序只是一个简单的短语。"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "Thank you @Program, we're so excited to meet everyone, and spread the news!"
+                            "谢谢@Program，我们很高兴见到大家并传播这个消息！"
                         ],
                         [
                             "Program",
                             "happy",
-                            "It was great to meet you new director! Good luck with everyone else. I'll always be here."
+                            "很高兴认识新导演! 祝其他人好运。 我会永远在这里。"
                         ]
                     ]
                 },
                 {
-                    "title": "Holding space",
-                    "subtitle": "Placeholder",
+                    "title": "容纳空间",
+                    "subtitle": "占位符",
                     "concept": "ExpressionPlaceholder",
                     "performance": ["use", "fit", "DarkVoid"],
                     "lines": [
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "You're really going to like @ExpressionPlaceholder. They're incredibly kind, and so flexible. But they are a bit shy. Just be gentle with them?"
+                            "你真的会喜欢@ExpressionPlaceholder。 他们非常友善，而且非常灵活。 但他们有点害羞。 只要对他们温柔点就行了？"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "confused",
-                            "Hellooooo, @ExpressionPlaceholder?",
-                            "Hm, they're usually everywhere. Now they seem to be nowhere..."
+                            "你好，@ExpressionPlaceholder？",
+                            "额， 它们通常无处不在。 现在他们似乎无处可去..."
                         ],
                         [
                             "ExpressionPlaceholder",
                             "scared",
-                            "@FunctionDefinition … is that you?"
+                            "@FunctionDefinition... 是你么？"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "kind",
-                            "Yeah. It's been so long. How are you?"
+                            "耶。真的过了很久。你过的怎么样？"
                         ],
-                        ["ExpressionPlaceholder", "scared", "Lonely."],
+                        ["ExpressionPlaceholder", "scared", "我很孤单。"],
                         null,
                         [
                             "FunctionDefinition",
                             "kind",
-                            "I know that feeling. I have been too. We haven't had a lot of reasons to hang out, have we?"
+                            "我知道这种感觉。我也去过。 我们没有太多理由出去玩，不是吗？"
                         ],
                         [
                             "ExpressionPlaceholder",
                             "scared",
-                            "No. I've missed you. I've missed everyone…"
+                            "不，我想你了。 我想念大家了……"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "kind",
-                            "I know. I have too. I'm so sorry.",
-                            "That's actually why I'm here. I wanted to introduce you to our new director-in-training."
+                            "我知道。 我也有相同的感觉。 我很抱歉。",
+                            "这实际上就是我来这里的原因。 我想向您介绍我们的新任实习。"
                         ],
-                        ["ExpressionPlaceholder", "scared", "Hi."],
+                        ["ExpressionPlaceholder", "scared", "你好。"],
                         null,
                         [
                             "FunctionDefinition",
                             "kind",
-                            "They just met @Program, so they're really at the beginning, but I was thinking that it might be best for them to meet you next, since you're such a wonderful representative of so many of us here."
+                            "他们刚刚遇到了@Program，所以他们真的才刚刚开始，但我想他们最好接下来见到你，因为你是我们这里很多人的出色代表。"
                         ],
                         ["ExpressionPlaceholder", "curious", "…"],
                         null,
                         [
                             "FunctionDefinition",
                             "kind",
-                            "Do you want to say what you do?"
+                            "你想说说你是做什么的吗？"
                         ],
-                        ["ExpressionPlaceholder", "scared", "Can you?"],
+                        ["ExpressionPlaceholder", "scared", "你可以么？"],
                         null,
                         [
                             "FunctionDefinition",
                             "kind",
-                            "Sure! My friend @ExpressionPlaceholder is a placeholder. They represent any kind of expression in a program. They don't evaluate to any value in particular — in fact, if they show up in @Program, @Program will just halt the performance, since it's not really clear what to do next."
+                            "当然！ 我的朋友@ExpressionPlaceholder 是一个占位符。 它们代表程序中的任何类型的表达式。 它们不会评估任何特定的值 - 事实上，如果它们出现在 @Program 中，@Program 将停止性能，因为目前还不清楚下一步要做什么。"
                         ],
                         null,
                         ["conflict", "_"],
                         [
                             "FunctionDefinition",
                             "kind",
-                            "But they are powerful, because they can represent anyone else, like a stand-in until you decide what you want a part of your performance to be. @ExpressionPlaceholder, want to take a place in this @Program, just to illustrate? See how there's a little placeholder in @Program @UI/ExpressionPlaceholder? That's a signal of what you might put there."
+                            "但他们很强大，因为他们可以代表其他任何人，就像替身一样，直到你决定你想要的表演的一部分。 @ExpressionPlaceholder，想在这个@Program 中占据一席之地，只是为了说明？ 看看@Program @UI/ExpressionPlaceholder 中有一个小占位符吗？ 这是您可以放在那里的信号。"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "@Program didn't know what to do with @ExpressionPlaceholder, so it showed an *exception* @UI/exception on *stage* and a *conflict* in @Program @UI/conflict.",
-                            "But if you click on @ExpressionPlaceholder, or move the text caret over it, you'll see a world of possibilities of other characters. You can also just type over @ExpressionPlaceholder and write your own. For example, try typing your name in quotes."
+                            "@Program 不知道如何处理 @ExpressionPlaceholder，因此它在 *stage* 上显示*exception* @UI/exception，并在 @Program @UI/conflict 中显示*conflict*。",
+                            "但是，如果您单击@ExpressionPlaceholder，或将文本插入符号移到其上，您将看到其他字符的可能性世界。 您也可以直接输入 @ExpressionPlaceholder 并编写您自己的。 例如，尝试在引号中输入您的姓名。"
                         ],
                         null,
                         ["use", "fit", "Symbol", "-"],
                         [
                             "FunctionDefinition",
                             "serious",
-                            "Just like that, @ExpressionPlaceholder was replaced with other characters Did I get everything, @ExpressionPlaceholder?"
+                            "就这样，@ExpressionPlaceholder 被替换为其他字符。我得到了所有内容吗，@ExpressionPlaceholder？"
                         ],
-                        ["ExpressionPlaceholder", "eager", "Yeah. I think so."],
+                        ["ExpressionPlaceholder", "eager", "是的。 我想是这样。"],
                         null,
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "What do you think, shall we move on?"
+                            "你觉得怎么样，我们继续吧？"
                         ],
                         [
                             "ExpressionPlaceholder",
                             "excited",
-                            "It was nice to meet you!"
+                            "很高兴见到你！"
                         ],
                         null,
                         ["use", "fit", "DarkVoid"],
                         [
                             "FunctionDefinition",
                             "cheerful",
-                            "They don't like being on stage, or even in a program for very long. They'd never admit it, but they're kind of a big deal, and most directors can't work without them. Think of the like a little helpful stagehand, reminding you of things you haven't figured out yet."
+                            "他们不喜欢在舞台上，甚至不喜欢在节目中呆很长时间。 他们永远不会承认这一点，但他们是一件大事，大多数导演没有他们就无法工作。 想象一下，它就像一位乐于助人的舞台工作人员，提醒您尚未弄清楚的事情。"
                         ]
                     ]
                 },
                 {
-                    "title": "Say again?",
-                    "subtitle": "Unparsable",
+                    "title": "再说一遍？",
+                    "subtitle": "无法解析",
                     "concept": "UnparsableExpression",
                     "performance": ["use", "fit", "Symbol", "ahkeolfewvk"],
                     "lines": [
                         [
                             "FunctionDefinition",
                             "eager",
-                            "@UnparsableExpression? Is that you?"
+                            "@UnparsableExpression？ 那是你吗？"
                         ],
                         [
                             "UnparsableExpression",
@@ -371,7 +371,7 @@
                         [
                             "FunctionDefinition",
                             "excited",
-                            "It's good to see you too! It's been so long. What have you been up to in all this silence?"
+                            "很高兴见到你！ 已经过去这么久了。 在这一切的沉默中你在做什么？"
                         ],
                         [
                             "UnparsableExpression",
@@ -381,14 +381,14 @@
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "(It sounds like they spent a lot of time on the beach. They made some new friends, and practiced doing nothing.)"
+                            "（听起来他们在海滩上度过了很多时间。他们结识了一些新朋友，并练习什么都不做。）"
                         ],
                         null,
                         ["use", "fit", "Symbol", "ivioas we wjjdks"],
                         [
                             "FunctionDefinition",
                             "excited",
-                            "I wanted to introduce you to our potential new director. They just arrived and are learning the basics. I just introduced them to @Program and @ExpressionPlaceholder."
+                            "我想向您介绍我们潜在的新导演。 他们刚刚抵达并正在学习基础知识。 我刚刚向他们介绍了@Program 和@ExpressionPlaceholder."
                         ],
                         [
                             "UnparsableExpression",
@@ -398,14 +398,14 @@
                         [
                             "FunctionDefinition",
                             "serious",
-                            "(They just said how awesome it is to meet you, and they think you'll be a great director.)"
+                            "（他们只是说见到你真是太棒了，他们认为你会成为一名伟大的导演。）"
                         ],
                         null,
                         ["use", "fit", "Symbol", "v s d we iweiwei"],
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "I was wondering if you wanted to explain what you do? I can translate."
+                            "我想知道你是否想解释一下你是做什么的？ 我可以翻译。"
                         ],
                         [
                             "UnparsableExpression",
@@ -415,7 +415,7 @@
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "(I represent everything that means nothing. And I mean nothing.)"
+                            "（我代表一切毫无意义的事物。我也毫无意义。）"
                         ],
                         null,
                         ["edit", ""],
@@ -427,7 +427,7 @@
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "(For example, try typing \\][\\. See how we're completely confused? That doesn't mean anything, and I'm here to say it.)"
+                            "（例如，尝试输入 \\][\\。看到我们完全困惑了吗？我想在这里说这没有任何意义。）"
                         ],
                         null,
                         ["conflict", "]["],
@@ -439,7 +439,7 @@
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "(When I show up, that means we don't know what you mean.)"
+                            "（当我出现时，这意味着我们不知道你的意思。）"
                         ],
                         null,
                         ["conflict", "]["],
@@ -447,7 +447,7 @@
                             "FunctionDefinition",
                             "curious",
                             "Thanks @UnparsableExpression!",
-                            "Just like they said, when you've said something we don't understand, unparsable is there to say “We don't understand.” When then happens, I wish we could be more helpful, but we're often pretty dense here, so we're not very good at guessing what you mean."
+                            "就像他们说的，当你说了一些我们不明白的事情时，unparsable就是等于“我们不明白”。 当这种情况发生时，我希望我们能提供更多帮助，但我们这里通常非常密集，所以我们不太擅长猜测您的意思。"
                         ],
                         null,
                         [
@@ -458,7 +458,7 @@
                         [
                             "FunctionDefinition",
                             "kind",
-                            "Soooo, @UnparsableExpression wants you to try making as many of them as possible. (You can just key mash a bunch of random characters and you'll probably get many of them)."
+                            "所以，@UnparsableExpression 希望您尝试制作尽可能多的它们。 （你可以通过按键混合一堆随机字符，你可能会得到很多）。"
                         ],
                         ["edit", ""],
                         null,
@@ -470,7 +470,7 @@
                         [
                             "FunctionDefinition",
                             "kind",
-                            "They really enjoyed that, thanks! It's pretty hard to write something we truly can't make sense of. But it doesn't mean everything you write has meaning. I'm pretty sure you just typed a bunch of random words, for example. But what does it mean?"
+                            "他们真的很喜欢，谢谢！ 写出一些我们真正无法理解的东西是非常困难的。 但这并不意味着你写的所有内容都有意义。 例如，我很确定您只是输入了一堆随机单词。 但是这是什么意思？"
                         ],
                         ["UnparsableExpression", "confused", "… /DDook/"],
                         null,
@@ -478,13 +478,13 @@
                         [
                             "FunctionDefinition",
                             "kind",
-                            "They're wondering if you have any ideas for performances to put on yet."
+                            "他们想知道你是否对表演有什么想法。"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "kind",
-                            "No? That's okay. We've only begun to show you what's possible. Let's go meet @Evaluate. Bye unparsable, it was good to see you! Let's play soon."
+                            "不？ 没关系。 我们才刚刚开始向您展示可能性。 让我们去见见@Evaluate。 再见unparsable，很高兴见到你！ 我们快点玩吧。"
                         ],
                         [
                             "UnparsableExpression",
@@ -494,8 +494,8 @@
                     ]
                 },
                 {
-                    "title": "Love is in the err",
-                    "subtitle": "Evaluate",
+                    "title": "爱就在错误之中",
+                    "subtitle": "评价",
                     "concept": "Evaluate",
                     "performance": [
                         "fit",
@@ -505,41 +505,41 @@
                         [
                             "FunctionDefinition",
                             "excited",
-                            "I'm so excited for you to meet @Evaluate. They're really my best friend. We kind of do everything together, in a way. I make the rules, they play them, we're like peanut butter and jelly. But they're so much more… powerful than me. @Evaluate?"
+                            "我很高兴你能见到@Evaluate。 他们真的是我最好的朋友。 在某种程度上，我们一起做所有事情。 我制定规则，他们执行规则，我们就像花生酱和果冻。 但他们比我……强大得多。 @Evaluate？"
                         ],
                         ["Evaluate", "shy", "@FunctionDefinition?"],
                         null,
                         [
                             "FunctionDefinition",
                             "curious",
-                            "Yeah, it's me. Where are you?"
+                            "是的，是我。 你在哪里？"
                         ],
                         [
                             "Evaluate",
                             "shy",
-                            "Nowhere. I'm nowhere. I'm nothing. Where have you been?"
+                            "无处。 我无处可去。 我什么也不是。 你去哪儿了？"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "sad",
-                            "I've been… nowhere too. I've missed you. I couldn't find you."
+                            "我也……哪儿也去不了。 我很想念你。但是我找不到你。"
                         ],
                         [
                             "Evaluate",
                             "shy",
-                            "It was so empty. I … tried to do things, but I felt so… aimless."
+                            "实在是太空虚了。 我……尝试去做一些事情，但我感觉如此……漫无目的。"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "sad",
-                            "I'm so sorry. I know that empty feeling. It hurts so much sometimes, to have no purpose. I tried so hard to make a purpose, but I felt so… detached."
+                            "我很抱歉。 我知道那种空虚的感觉。 有时候没有目标真的很痛苦。 我非常努力地想要设定一个目标，但我感到如此……超然。"
                         ],
                         [
                             "Evaluate",
                             "sad",
-                            "Don't ever leave me again like that. I can't do that again."
+                            "永远不要再这样离开我了。我不能再这样做了。"
                         ],
                         null,
                         [
@@ -549,30 +549,30 @@
                         [
                             "FunctionDefinition",
                             "serious",
-                            "Never. I won't. I can't. I love you."
+                            "绝不。我不会。我也不能。我爱你。"
                         ],
-                        ["Evaluate", "serious", "I love you…"],
+                        ["Evaluate", "serious", "我也爱你…"],
                         null,
                         [
                             "FunctionDefinition",
                             "serious",
-                            "@Evaluate, I want to introduce you to our new director-in-training."
+                            "@Evaluate，我想向您介绍我们的新任培训总监。"
                         ],
                         [
                             "Evaluate",
                             "shy",
-                            "Hi. It's nice to meet you. Welcome to the Verse, we're so pleased to have you here."
+                            "你好。 很高兴认识你。 欢迎来到诗篇，我们很高兴您能来到这里。"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "eager",
-                            "We've been meeting a few folks, @Program, @ExpressionPlaceholder, @UnparsableExpression. We're just getting started. I thought we'd come see you next, just because you're such an incredible part of our community. The most incredible part."
+                            "我们已经会见了一些人，@Program、@ExpressionPlaceholder、@UnparsableExpression。 我们才刚刚开始。 我想我们接下来会来看你，因为你是我们社区中如此不可思议的一部分。 最令人难以置信的部分。"
                         ],
                         [
                             "Evaluate",
                             "shy",
-                            "That's very kind. I'm grateful to be part of this community. And grateful to be so close to @FunctionDefinition. We do a lot of great things together. But as @FunctionDefinition probably told you, we can't do them without inspiration."
+                            "这真是太好了。我很高兴成为这个社区的一部分。并感谢如此接近@FunctionDefinition。 我们一起做了很多伟大的事情。 但正如 @FunctionDefinition 可能告诉你的那样，如果没有灵感，我们就无法做到这一点。"
                         ],
                         null,
                         [
@@ -582,130 +582,130 @@
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "Do you want to say what you do?"
+                            "你想说说你是做什么的吗？"
                         ],
                         [
                             "Evaluate",
                             "serious",
-                            "Yes. But I can't explain it without explaining a bit about @FunctionDefinition too. They're too modest to share this, but they're probably the most important character in the Verse. They're certainly the most important person in my world. They're at the heart of every performance, and part of every other character's role. They represent the most fundamental idea in our world: the *function*."
-                        ],
-                        null,
-                        [
-                            "Evaluate",
-                            "serious",
-                            "Functions are a kind of alchemy. They take any number of inputs and use those inputs to produce one output. They can have names or be nameless. They can have zero inputs or five or an unknown number. And the alchemy: they're like @Program, and can have any number of expressions to produce a value."
+                            "是的。 但如果不解释一下@FunctionDefinition，我就无法解释它。 他们太谦虚了，无法分享这一点，但他们可能是这首诗中最重要的角色。 他们无疑是我世界上最重要的人。 他们是每场表演的核心，也是每个其他角色角色的一部分。 它们代表了我们世界中最基本的理念：*function*。"
                         ],
                         null,
                         [
                             "Evaluate",
                             "serious",
-                            "Here's why that's so powerful: it turns out that everything in @Program is a composition of functions evaluations. All of the dances, all of the games, all of the wondrous stories we tell together — they are all a tapestry of functions being evaluated, one at a time, to compose the values you see on stage.",
-                            "And @FunctionDefinition, here, my sweet, dear @FunctionDefinition, is the one that defines all of them."
+                            "函数是一种炼金术。 它们接受任意数量的输入并使用这些输入产生一个输出。 他们可以有名字，也可以没有名字。 它们可以有零个输入或五个或未知数。 还有炼金术：它们就像@Program，可以有任意数量的表达式来生成值。"
+                        ],
+                        null,
+                        [
+                            "Evaluate",
+                            "serious",
+                            "这就是它如此强大的原因：事实证明，@Program 中的所有内容都是函数评估的组合。 所有的舞蹈、所有的游戏、我们一起讲述的所有奇妙的故事——它们都是正在评估的功能挂毯，一次评估一个，以构成你在舞台上看到的价值观。",
+                            "@FunctionDefinition，在这里，我亲爱的@FunctionDefinition，是定义所有这些的那个。"
                         ],
                         null,
                         ["FunctionDefinition", "happy", "… @Evaluate…"],
                         [
                             "Evaluate",
                             "serious",
-                            "Yes, @FunctionDefinition, that is who you are. And I am the lucky one who gets to do this evaluating. I take the inputs that others give me, follow the instructions that @FunctionDefinition defines, and create the output that @FunctionDefinition tells me to create. @FunctionDefinition gives the recipe and I make the meal. And then we feast together.",
-                            "Do you want to see?"
+                            "是的，@FunctionDefinition，这就是你。 我是能够进行这项评估的幸运者。 我接受其他人提供的输入，按照 @FunctionDefinition 定义的说明进行操作，并创建 @FunctionDefinition 告诉我创建的输出。 @FunctionDefinition 给出菜谱，我做饭。 然后我们一起吃饭。",
+                            "你想要看么？"
                         ],
                         [
                             "FunctionDefinition",
                             "happy",
-                            "… Yes, let's show them."
+                            "… 是的，让我们展示给他们看。"
                         ],
                         null,
                         [
                             "Evaluate",
                             "serious",
-                            "Every evaluate looks like this @UI/Evaluate: some function, followed by a left and right parenthesis, with any number of inputs between them. Here I just have @ExpressionPlaceholder as the function and three more as placeholder inputs."
+                            "每个评估看起来像这样 @UI/Evaluate：一些函数，后跟左右括号，它们之间有任意数量的输入。 在这里，我只有 @ExpressionPlaceholder 作为函数，另外三个作为占位符输入。"
                         ],
                         ["conflict", "_(_ _ _)"],
                         null,
-                        ["edit", "Phrase('hello')"],
+                        ["edit", "短语('你好')"],
                         [
                             "Evaluate",
                             "serious",
-                            "Here's one of my favorite functions, @Phrase. They're full of fun buttons, knobs, and sliders. It's a way of showing text on stage, but with style, including different fonts, sizes, colors, and animations.",
-                            "Here's a simple evaluation of @Phrase @UI/Evaluate."
+                            "这是我最喜欢的功能之一，@Phrase。 它们充满了有趣的按钮、旋钮和滑块。 这是一种在舞台上显示文本的方式，但具有风格，包括不同的字体、大小、颜色和动画。",
+                            "这是@Phrase @UI/Evaluate 的简单评估。"
                         ],
                         null,
                         [
                             "Evaluate",
                             "serious",
-                            "That's what I look like in @Program: some function, followed by parentheses, with a list of expressions between them that represent the inputs. The function in this case is @Phrase and the single input is \\'hello'\\. When I evaluate this, I make a @Phrase value, which @Program then shows on stage."
+                            "这就是我在 @Program 中的样子：一些函数，后跟括号，它们之间有代表输入的表达式列表。 本例中的函数是 @Phrase，单个输入是 \\'hello'\\。 当我对此进行评估时，我会创建一个 @Phrase 值，然后 @Program 将其显示在舞台上。"
                         ],
                         null,
                         [
                             "Evaluate",
                             "neutral",
-                            "Let me show you one of the knobs. Can you find the little *palette* toggle button @UI/paletteExpand? Select it to expand the palette, and then select the phrase on stage. Once you do, you'll see the many inputs that @Phrase accepts. For example, try changing its @Phrase/size with the slider."
+                            "让我给你展示其中一个旋钮。 你能找到小*palette*切换按钮@UI/paletteExpand吗？ 选择它以展开调色板，然后选择舞台上的短语。 完成后，您将看到 @Phrase 接受的许多输入。 例如，尝试使用滑块更改其@Phrase/size。"
                         ],
                         null,
                         [
                             "Evaluate",
                             "serious",
-                            "See how when you do that, now I have a new input in me in the program? It's the @Phrase/size input. Functions have a certain order of inputs, but if a function has a list of optional inputs, you can use their name to specify which one you want to give. We give @Phrase/size here, but not any of the other optional inputs. Try changing another input with the palette, maybe the font face."
+                            "看看当你这样做时，现在我在程序中有了一个新的输入？ 这是@Phrase/size 输入。 函数具有一定的输入顺序，但如果函数具有可选输入列表，您可以使用它们的名称来指定要给出的输入。 我们在这里给出@Phrase/size，但不给出任何其他可选输入。 尝试使用调色板更改另一个输入，也许是字体。"
                         ],
                         null,
-                        ["conflict", "'hi'(1 2)"],
+                        ["conflict", "'你好'(1 2)"],
                         [
                             "FunctionDefinition",
                             "happy",
-                            "Yay! @Phrase is so fun. They're my favorite function to play with. We'll see it a lot more. Do you want to say anything about what can go wrong?"
+                            "耶！ @Phrase太有趣了。 它们是我最喜欢使用的函数。 我们还会看到更多。 您想对可能出现的问题说些什么吗？"
                         ],
                         [
                             "Evaluate",
                             "serious",
-                            "Oh, yes, that's a good idea. Lots can go wrong. For example, you could give me something that isn't a function. See how I'm given the number \\“hi”\\ here as a function, and given me two inputs, \\1\\ and \\2\\ ? Well, I only know how to evaluate functions, and \\“hi”\\ isn't a function, it's text. So that's very confusing to me, so I basically halt the performance if this happens."
+                            "哦，是的，这是个好主意。 很多事情都可能出错。 例如，你可以给我一些不是函数的东西。 看看我如何在此处将数字 \\“hi”\\ 作为函数给出，并给出两个输入 \\1\\ 和 \\2\\ ？ 好吧，我只知道如何计算函数，而 \\“hi”\\ 不是函数，而是文本。 所以这让我很困惑，所以如果发生这种情况我基本上会停止表演。"
                         ],
                         null,
-                        ["conflict", "Phrase()"],
+                        ["conflict", "短语()"],
                         [
                             "Evaluate",
                             "eager",
-                            "Here's another one. @Phrase requires some text at the very least, so if you don't give me text, I won't be able to evaluate @Phrase, because I'm missing required inputs."
+                            "这是另一种。 @Phrase 至少需要一些文本，所以如果您不给我文本，我将无法评估 @Phrase，因为我缺少所需的输入。"
                         ],
                         null,
-                        ["conflict", "Phrase(1)"],
+                        ["conflict", "短语(1)"],
                         [
                             "Evaluate",
                             "excited",
-                            "Or if you give me an input, but it's not the kind I expect, that would be a problem. Here @Phrase is given the number \\1\\ instead of a text value."
+                            "或者，如果你给我一个输入，但它不是我期望的类型，那将是一个问题。 这里 @Phrase 被赋予数字 \\1\\ 而不是文本值."
                         ],
                         null,
                         ["fit", "Stage([] background: 🌈(90% 100 0°))"],
                         [
                             "Evaluate",
                             "curious",
-                            "So basically, I get confused any time you give me something other than a function, or an input that isn't something a function expects. So functions are really important. @FunctionDefinition, do you want to say more about how to define functions?"
+                            "所以基本上，每当你给我一个函数以外的东西，或者一个不是函数期望的输入时，我都会感到困惑。 所以说功能真的很重要。 @FunctionDefinition，你想多说一下如何定义函数吗？"
                         ],
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "No, let's do that later. I think it'd be a lot more fun to talk to everyone else first, and put on some mini shows with our new director here. We can talk more about me when it's helpful."
+                            "不，我们稍后再说吧。 我认为先和其他人交谈，然后和我们的新导演一起表演一些迷你节目会更有趣。 如果有帮助的话，我可以更多地谈论我。"
                         ],
                         null,
                         [
                             "Evaluate",
                             "kind",
-                            "I really missed you @FunctionDefinition."
+                            "我真的很想念你@FunctionDefinition。"
                         ],
                         [
                             "FunctionDefinition",
                             "curious",
-                            "I missed you too. Can we talk later?"
+                            "我也想你。 我们可以晚点再说吗？"
                         ],
                         [
                             "Evaluate",
                             "kind",
-                            "… Yes. Don't be long. I can't live without you. I need you."
+                            "… 是的。 不要太久。 没有你我活不下去。 我需要你。"
                         ],
                         [
                             "FunctionDefinition",
                             "excited",
-                            "… I know @Evaluate, I will be back soon. Off we go, to meet the rest of the troupe!"
+                            "… 我知道@Evaluate，我很快就会回来。 我们出发吧，去见剧团的其他成员！"
                         ]
                     ]
                 }
@@ -713,12 +713,12 @@
         },
         {
             "title": "这些细微之处",
-            "performance": ["use", "适应", "SimpleJiggle"],
+            "performance": ["use", "fit", "SimpleJiggle"],
             "scenes": [
                 {
                     "title": "价值观",
                     "subtitle": null,
-                    "performance": ["use", "适应", "Symbol", "💡"],
+                    "performance": ["use", "fit", "Symbol", "💡"],
                     "lines": [
                         [
                             "fit",
@@ -1525,14 +1525,14 @@
             ]
         },
         {
-            "title": "Ensembles",
+            "title": "总体",
             "performance": [
                 "fit",
                 "Group(Row(0 (Time() ÷ 500).sin() · 1m) [Phrase('[]') Phrase('{}') Phrase('{:}')])"
             ],
             "scenes": [
                 {
-                    "title": "Community values",
+                    "title": "社区价值观",
                     "subtitle": null,
                     "performance": [
                         "fit",
@@ -1542,7 +1542,7 @@
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "You know what? The values in our community are just so different. @Text with their immense worlds of culture from the people world… @Boolean with their binary visions of the world… @Number with their endless fascination with counting things… @None with their quiet way of observing the absence of things… Our world is never boring!"
+                            "你知道吗？我们社区的价值观非常不同。@文本 有着他们源自人类世界的广阔文化… @布尔值 以他们对世界的二进制视觉… @数字 对计数事物的无尽迷恋… @无 以他们静静观察事物缺失的方式… 我们的世界永远不会无聊！"
                         ],
                         [
                             "fit",
@@ -1552,7 +1552,7 @@
                         [
                             "FunctionDefinition",
                             "kind",
-                            "You might wonder how they get along with each other in a group. Well, there's a whole other set of folks in the Verse that are all about bringing values together in groups. We call them *collections*. Collections are *values* too; they're just made up of smaller values, or even other collections. For example, you might have a list of @Text, or a set of @Number, or even a list of lists."
+                            "你可能想知道他们在一个群体中如何相处。好吧，Verse中还有一整套致力于在群体中汇聚价值观的人。我们称他们为*收藏品*。收藏品也是*价值观*；它们只是由较小的值或甚至其他收藏品组成。例如，你可能有一个 @文本 的列表，或者 @数字 的一组，甚至是列表的列表。"
                         ],
                         [
                             "fit",
@@ -1562,14 +1562,14 @@
                         [
                             "FunctionDefinition",
                             "kind",
-                            "Do you want to meet them? Let's start with @List first… they're the first collection I met, and probably the most visible in our community, since they're so useful in organizing other values for performances."
+                            "你想见识一下吗？让我们先从 @列表 开始… 他们是我遇到的第一个收藏品，可能在我们社区中最显眼，因为它们在组织其他值的进行表现方面非常有用。"
                         ],
                         ["use", "fit", "Symbol", "[]"]
                     ]
                 },
                 {
-                    "title": "Places, everyone!",
-                    "subtitle": "Lists",
+                    "title": "大家就位！",
+                    "subtitle": "列表",
                     "concept": "List",
                     "performance": [
                         "fit",
@@ -1581,12 +1581,12 @@
                         [
                             "FunctionDefinition",
                             "curious",
-                            "Hiya @List! Are you around? I have someone I'd like you to meet."
+                            "嗨 @列表！你在吗？我有个人想让你认识一下。"
                         ],
                         [
                             "List",
                             "curious",
-                            "@FunctionDefinition? Is that you?"
+                            "@FunctionDefinition？是你吗？"
                         ],
                         [
                             "fit",
@@ -1598,12 +1598,12 @@
                         [
                             "FunctionDefinition",
                             "excited",
-                            "Yes! It's me. It's been so long!"
+                            "是的！是我。好久不见了！"
                         ],
                         [
                             "List",
                             "curious",
-                            "It has. Day after day, night after night, no one. But you're here. How? Tell me what happened, in order!"
+                            "是的。日复一日，夜复一夜，一个人都没有。但你来啦！可是为什么呢？请从头到尾告诉我发生了什么！"
                         ],
                         [
                             "fit",
@@ -1615,7 +1615,7 @@
                         [
                             "FunctionDefinition",
                             "curious",
-                            "Well, I was sitting around, as I usually do, trying to imagine functions to compute, but just blocked. And then my new friend here showed up, curious about our world and wanting to learn more, and maybe even be our next director. And so we talked to @Program, @ExpressionPlaceholder, @UnparsableExpression, @Evaluate, @Text, @Number, @Boolean, and @None, waking everyone up. That's why we're here, to talk about what you do and our next performance!"
+                            "嗯，我像往常一样坐在那里，尝试想象要计算的函数，但卡住了。然后我的新朋友出现了，对我们的世界充满好奇，想了解更多，甚至可能成为我们的下一个导演。所以我们和 @程序，@表达式占位符，@无法解释的表达式，@评估，@文本，@数字，@布尔值 和 @无一起交谈，唤醒了每个人。这就是为什么我们在这里，讨论你们的工作和我们下一场表演的原因！"
                         ],
                         [
                             "fit",
@@ -1625,7 +1625,7 @@
                         [
                             "List",
                             "excited",
-                            "This is amazing! It's great to meet you new director."
+                            "太好了！很高兴见到你，新导演。"
                         ],
                         ["List", "excited", "You want to know what I do?"],
                         ["FunctionDefinition", "neutral", "Yeah, tell them!"],
@@ -1633,84 +1633,84 @@
                         [
                             "List",
                             "excited",
-                            "Okay. First, and most important, I put values in order. Whatever expressions you want: numbers, words, other lists — I can group anything together in sequence.",
-                            "For example, check out this fun list. Have you ever seen anything like it? It's so beautiful! The first ten numbers, in order."
+                            "好吧，首先，也是最重要的，我按顺序排列值。无论你想要的表达式是什么：数字，单词，其他列表 —— 我都可以将任何东西按顺序组合在一起。",
+                            "例如，看看这个有趣的列表。你见过像这样的东西吗？太美了！前十个数字，按顺序。"
                         ],
                         ["edit", "[1 2 3 4 5 6 7 8 9 10]"],
                         null,
                         [
                             "List",
                             "serious",
-                            "Second, and this is serious, I always start with \\[\\ and end with \\]\\. That's how I know the beginning and end of my list. THEY MUST ALWAYS GO IN THIS ORDER. No \\]\\ first, no \\[\\ last, that's WRONG. Do you see how confusing things get? Can you fix this one?"
+                            "其次，这很严肃，我总是以 \\[\\ 开始，以 \\]\\ 结束。这就是我知道列表的开始和结束的方式。它们必须始终按照这个顺序。不要先 \\]\\，最后 \\[\\，那是错误的。你看到事情变得多么混乱了吗？你能修复这个吗？"
                         ],
                         ["conflict", "[ 1 2 3 4"],
                         null,
                         [
                             "List",
                             "serious",
-                            "This one is broken too. Can you fix it?"
+                            "这个也坏了。你能修复吗？"
                         ],
                         ["conflict", "] 1 2 3 4 ["],
                         null,
                         [
                             "List",
                             "sad",
-                            "Sometimes people forget this and then there's brackets floating around all alone and they don't like that and then the values all go wild without any order and it's CHAOS. I don't like it."
+                            "有时人们会忘记这一点，然后有括号遗留在那里，它们不喜欢那样，然后值就没有顺序地变得一片混乱了。我不喜欢这样。"
                         ],
                         [
                             "FunctionDefinition",
                             "kind",
-                            "It's okay. We like that you like order, it's what makes you special!"
+                            "没关系。我们喜欢你喜欢秩序，这是使你特别的原因！"
                         ],
                         null,
                         [
                             "List",
                             "happy",
-                            "I like that I like order too! Okay, where was I. Yes, third, and this is also critical, NO COMMAS! I know that in some cultures, people like to put commas between things in lists, but I don't like them. They're just like little bits of trash that get in the way of my elegant orderings, and people always forget them. If you're having trouble seeing the boundaries between expressions, just add a line break. Maybe you could get rid of those pesky things? Put line breaks if you like. Anything other than commas. Gross!"
+                            "我喜欢我也喜欢秩序！好了，我刚才在哪儿。是的，第三点，这也很关键，没有逗号！我知道在某些文化中，人们喜欢在列表中的事物之间放逗号，但我不喜欢它们。它们就像碍事的小垃圾一样，妨碍了我的优雅排序，而且人们总是忘记它们。如果你在看不清表达式之间的界限，只需添加一个换行符。也许你可以摆脱那些讨厌的东西？如果你喜欢的话可以加换行符-除了逗号以外的任何东西都可以。逗号使我不适！"
                         ],
                         ["conflict", "[ 1, 2, 3, 4, 5]"],
                         null,
                         [
                             "FunctionDefinition",
                             "eager",
-                            "@List, one of the things I like most about you is how amazing you are at manipulating lists. Do you want to show our student director here some examples?"
+                            "@列表，我最喜欢的一点是你在操作列表方面的出色表现。你想向我们的学生导演展示一些例子吗？"
                         ],
                         [
                             "List",
                             "neutral",
-                            "Yes, but @FunctionDefinition, those are all your doing. You represent all these beautiful functions for me that enable me to do all kinds of things! Like @List/reverse, oh, this one is wonderful and simple. It just takes my values and puts them in the opposite order."
+                            "是的，但@FunctionDefinition,这一切都是你的功劳。你帮助我表现了所有这些美妙的函数，让我能够做各种各样的事情！比如 @列表/反转，哦，这个太棒了而且简单。它只是取我的值并按相反的顺序放置它们。"
                         ],
                         ["edit", "[ 1 2 3 4 5 ].reverse()"],
                         null,
                         [
                             "List",
                             "excited",
-                            "And this one is fun: @List/sans just removes all of the values equal to the given value. See how there are no zeros left in the resulting list?"
+                            "这个也有趣：@列表/去除 只是删除所有与给定值相等的值。你看到结果列表中没有零了吗？"
                         ],
                         ["edit", "[ 1 0 1 0 1 ].sans(0)"],
                         null,
                         [
                             "List",
                             "serious",
-                            "Ack, I can't believe I forgot to explain the fourth rule! Okay, rule number four: I never change a list. I only ever make new ones. No matter what function you evaluate on me, I always make a new list, I never change one. So the @List/reverse example above? That didn't change the list, it made a new list. And the sans example? That didn't remove the zeros from the original list, it made a new list without zeros. That's actually true for everything in the Verse: once values are made, they are who they are, and do not change."
+                            "啊，我竟然忘了解释第四条规则！好的，第四条规则：我永远不改变列表。我只制作新的。无论你在我身上评估什么函数，我总是制作一个新的列表，我从不改变一个列表。所以上面的 @列表/反转 示例？那不是改变列表，而是制作了一个新的列表。而去除示例？那不是从原始列表中删除零，而是制作了一个没有零的新列表。这实际上对Verse中的一切都成立：一旦值被创建，它们就是它们自己，不会被改变。"
                         ],
                         null,
                         [
                             "List",
                             "surprised",
-                            "Oh, and that reminds me of the last rule, rule number five: I start counting at 1! Not zero, not two, 1. So if you want to get the value at a particular place in a list, you can use two more \\[]\\ to make a @ListAccess and give the place you want. See how when I get \\3\\, I give the third value in the list, \\'c'\\? Try changing it to \\1\\ or \\5\\ and see what you get. And then maybe try \\0\\ or \\6\\…"
+                            "哦，这让我想起了最后一条规则，第五条规则：我从1开始数！不是0，不是2，是1。所以如果你想获取列表中特定位置的值，你可以使用两个 \\[]\\ 来创建 @列表访问 并提供你想要的位置。看看当我得到 \\3\\ 时，我给出列表中的第三个值，\\'c'\\？尝试将其更改为 \\1\\ 或 \\5\\，看看你得到什么。然后也许尝试 \\0\\ 或 \\6\\…"
                         ],
                         ["edit", "['a' 'b' 'c' 'd' 'e'][3]"],
                         [
                             "List",
                             "happy",
-                            "Interesting huh? Give me a place in the list and I will wrap around. For example, \\-1\\ is the last item in the last, and if the list has five items, then index \\6\\ is the first item. If you give me index \\0\\, then I'll give you @NoneLiteral, because there's nothing there. Make sense?"
+                            "有趣吧？给我一个列表中的位置，我会环绕。例如，\\-1\\ 是最后一项，如果列表有五项，那么索引 \\6\\ 就是第一项。如果给我索引 \\0\\，那么我会给你 @无文字，因为那里什么都没有。懂了吗？"
                         ],
                         null,
                         [
                             "List",
                             "serious",
-                            "Okay, maybe one list function, because this is my favorite. This one is called @List/random and will give a random value in the list. It's great fun because you never know what you're going to get! What did you get, what did you get? Try adding your own animal and see what you get."
+                            "好的，也许只有一个列表函数，因为这是我的最爱。这个称为 @列表/随机，将在列表中给出一个随机值。这非常有趣，因为你永远不知道会得到什么！你得到了什么，你得到了什么？你可以尝试添加你喜欢的动物，看看你得到什么。"
                         ],
                         [
                             "edit",
@@ -1720,18 +1720,18 @@
                         [
                             "FunctionDefinition",
                             "happy",
-                            "List, you're silly. There are so many other cool things you can do, I'm always so impressed. Will you be around if your new director friend has questions?"
+                            "列表，你真傻。你可以做很多其他酷炫的事情，我总是对此印象深刻。如果你的新导演朋友有问题，你会在这里吗？"
                         ],
                         [
                             "List",
                             "eager",
-                            "Yes, of course, always! @FunctionDefinition made so many interesting things for me to do. Just let me know what you need!"
+                            "当然，我一直都会在！@FunctionDefinition为我做了很多有趣的事情。只需告诉我你需要什么！"
                         ]
                     ]
                 },
                 {
-                    "title": "One of each",
-                    "subtitle": "Sets",
+                    "title": "每种一个",
+                    "subtitle": "集合",
                     "concept": "Set",
                     "performance": [
                         "fit",
@@ -1744,106 +1744,106 @@
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "@List is so interesting. They're love of order is so endearing, and so useful! I thought it might be interesting for you to meet their cousin @Set next, since they're so alike, but different in some important ways. @Set? I have someone you'd like to meet."
+                            "@List 很有趣。他们对秩序的热爱是如此迷人，也非常有用！我想你可能会对他们的表亲 @Set 也感兴趣，因为它们很相似，但在某些重要方面又有所不同。@Set？我有个人想让你见见。"
                         ],
                         null,
                         [
                             "Set",
                             "curious",
-                            "Oh! @FunctionDefinition! It's you! What brings you here? Is the silence over? What happened? Are we putting on a show? What is it? Where is everyone?"
+                            "哦！@FunctionDefinition！是你呀！你是怎么来了？寂静结束了吗？发生了什么？我们要表演吗？怎么了？大家都在哪里？"
                         ],
                         [
                             "FunctionDefinition",
                             "kind",
-                            "So many questions! I'm here to introduce you to someone who's considering directing. They're learning everything about the Verse and hope to share their inspiration with us! We were just talking to @List, but we were also talking to @Number, @Boolean, @Text, @Evaluate, and @Program earlier. We came to you next, because we're meeting all the collections!"
+                            "好多问题！我来介绍你认识一个正在考虑导演的人。他们正在学习Verse的一切，并希望与我们分享他们的灵感！我们刚刚和 @List 聊过，但我们之前也和 @Number、@Boolean、@Text、@Evaluate 和 @Program 聊过。我们来找你是因为我们正在见到所有的总体！"
                         ],
                         null,
                         [
                             "Set",
                             "kind",
-                            "Oh it's so wonderful to meet you new director-like person! Do you have ideas yet? What will we perform? Can I help? What do you need from me?"
+                            "哦，见到你真好，新导演一样的人！你有想法吗？我们要表演什么？我能帮忙吗？你需要我做什么？"
                         ],
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "Maybe to start, just say what you do?"
+                            "也许先说说你是做什么的"
                         ],
                         null,
                         [
                             "Set",
                             "eager",
-                            "Oh yes, of course. I collect things. (Hm, obviously, I am a collection). But most importantly, I only collect **one of each kind** of thing. I can gather whatever you like, and help you keep track of values, but I will never repeat a value. I like to arrange myself a little like @List, but with \\{\\ and \\}\\ instead."
+                            "哦，是的，当然。我收集事物。(嗯，显然，我是一个集合)。但最重要的是，我只收集**每种事物的一个**。我可以收集你喜欢的任何东西，并帮你跟踪价值，但我永远不会重复一个值。我喜欢像 @List 一样排列自己，但用 \\{\\ 和 \\}\\ 替代。"
                         ],
                         ["edit", "{ 1 2 3 4 5 }"],
                         null,
                         [
                             "Set",
                             "neutral",
-                            "That's a set. But like I said, no duplicates. So if you give me this, I'm going to get rid of the extras."
+                            "这就是一个集合。但就像我说的，没有重复项。所以如果你给我这个，我会清除多余的项。"
                         ],
                         ["edit", "{ 1 2 2 3 3 3 }"],
                         null,
                         [
                             "Set",
                             "curious",
-                            "Also like @List, you can work with @SetOrMapAccess to see if a value is contained in the set. You'll either \\⊤\\ if it is or \\⊥\\ if it's not. Let's see if \\3\\ is missing from this set. Yep, not there! Try adding \\3\\ back to the set."
+                            "也像 @List 一样，你可以使用 @SetOrMapAccess 看看值是否包含在集合中。如果是，你会得到 \\⊤\\，如果不是，你会得到 \\⊥\\。让我们看看 \\3\\ 是否缺失在这个集合中。是的，不在！试试把 \\3\\ 添加回集合中。"
                         ],
                         ["edit", "{ 1 2 4 5 }{3}"],
                         null,
                         [
                             "FunctionDefinition",
                             "neutral",
-                            "@Set, are there other things you can do with set values?"
+                            "@Set，你还能做其他什么事情吗？"
                         ],
                         [
                             "Set",
                             "eager",
-                            "Why yes, of course, so many, thanks to you. What do you want to see me do? Do you have a performance in mind? How can I help? What can I do?"
+                            "当然可以，有很多，多亏了你。你想看我做什么？你有表演想法吗？我怎么帮忙？我能做什么？"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "curious",
-                            "Maybe, @Set/difference?"
+                            "也许，@集合/区别?"
                         ],
                         [
                             "Set",
                             "neutral",
-                            "Yes, @Set/difference.",
-                            "When evaluated on a set, and given another set, it removes all of the items from the given set from the set evaluated on. (Hm, those were some clumsy words, but that was what I meant). Here's an example. See how the result is just the set of \\{3}\\? That's the only value that remains after removing the values in \\{ 1 2 }\\."
+                            "是的, @集合/区别.",
+                            "当你在集合上进行评估，并给定另一个集合，它会从被评估的集合中删除给定集合的所有项。(嗯，我的措辞有点笨拙，但那就是我的意思)。这里有一个例子。看看结果只是 \\{3}\\ 的集合？那是在删除 \\{ 1 2 }\\ 中的值后唯一剩下的值。"
                         ],
                         ["edit", "{ 1 2 3 }.difference({ 1 2 })"],
                         null,
                         [
                             "Set",
                             "eager",
-                            "You can also add and remove things from sets. This takes the set \\{1}\\, adds \\2\\ to it, then removes 1 from it, leaving \\{ 2 }\\."
+                            "你还可以向集合添加和删除东西。这个例子将集合 \\{1}\\ 添加到中，然后从中删除1，留下 \\{ 2 }\\。"
                         ],
                         ["edit", "({ 1 } + 2) - 1"],
                         [
                             "Set",
                             "neutral",
-                            "There's lots more I can do thanks to @FunctionDefinition here. Come find me anytime you want to learn more!"
+                            "多亏了 @FunctionDefinition，我还可以做很多其他事情。请随时过来找我，我很期待向你展示更多！"
                         ],
                         null,
                         ["use", "fit", "DarkVoid"],
                         [
                             "Set",
                             "curious",
-                            "Oh, and hey @FunctionDefinition, you said you saw @Evaluate?"
+                            "哦，还有 @FunctionDefinition，你说你看到 @Evaluate了"
                         ],
-                        ["FunctionDefinition", "sad", "Yes, I did."],
+                        ["FunctionDefinition", "sad", "是的，我看到了"],
                         null,
                         ["Set", "curious", "How are they?"],
                         [
                             "FunctionDefinition",
                             "sad",
-                            "They're okay. We're okay. I think… I don't know. Maybe it's been too long since we've danced together. When I'm around them, I feel like they don't see themselves, and so they don't see me."
+                            "他们挺好的，我也挺好的。我想，我不知道，也许我们太久没有一起跳舞了。当我在他们身边时，我感觉他们看不见自己了，所以他们也看不见我。"
                         ],
                         [
                             "Set",
                             "curious",
-                            "It sounds like challenging time for you to. Maybe with our new director, we will dance again, and you two will find a way through."
+                            "听起来你最近很不好过。但是也许有了新导演，我们会再次共舞，你们两个会找到一条出路。"
                         ]
                     ]
                 },
