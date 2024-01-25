@@ -2026,8 +2026,9 @@
                     "inputs": []
                 },
                 "shuffled": {
-                    "doc": ["$?"],
-                    "names": "$? shuffle",
+                    "doc": ["Haga una nueva lista con los elementos en el último ordenado al azar.",
+                    "\\ ['Apple' 'Banana' 'Mango']. Shuffled () \\"],
+                    "names": "barajar",
                     "inputs": []
                 },
                 "first": {
