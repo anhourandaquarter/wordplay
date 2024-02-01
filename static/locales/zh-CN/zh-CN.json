@@ -4015,6 +4015,8 @@
             },
             "landing": {
                 "call": ["嗨！想要与我们一起赋予文字生命吗？😊"],
+                "value": "$! 无论您的能力如何，都可以通过世界语言中的动画单词、表情符号和符号来学习编码。",
+                "description": "$! Wordplay 是一种创新的编程语言 🖥️，具有区块和文字编辑 📝、时间 🕦、声音 🎤、网页 🔗 和物理 🌎 等有趣的输入、即时时间旅行调试 ⏪ 以及全面的文档 🗂️。所有这些都在不断增长的世界语言清单中🌐，遵循最新的网络可访问性标准♿️。与朋友、私人团体或全世界分享↗️。永远免费来自<University of Washington Information School@https://ischool.uw.edu/>。",
                 "beta": [
                     "Wordplay 处于 测试阶段。这意味着功能可能会更改或无法按预期工作，并且本地化可能不完整。",
                     "但这也意味着我们需要您的反馈！请在 <Discord@https://discord.gg/Jh2Qq9husy> 或 <GitHub@https://github.com/wordplaydev/wordplay/issues> 上报告错误并分享想法。如果您能帮助，请查看我们的 <1.0 计划@https://github.com/wordplaydev/wordplay/milestones/1.0> 和 <贡献信息@https://github.com/wordplaydev/wordplay/wiki/contribute>。"
