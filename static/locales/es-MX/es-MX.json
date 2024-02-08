@@ -2026,8 +2026,10 @@
                     "inputs": []
                 },
                 "shuffled": {
-                    "doc": ["$?"],
-                    "names": "$? shuffle",
+                    "doc": [ "Haga una nueva lista con los elementos en el último ordenado al azar.",
+                    "\\['manzana' 'banana' 'mango'].barajada()\\"
+                ],
+                    "names": "barajada",
                     "inputs": []
                 },
                 "first": {
@@ -2947,9 +2949,26 @@
             }
         },
         "Scene": {
-            "doc": "$?",
-            "names": "$? Scene",
-            "outputs": { "names": "$?", "doc": "$?" }
+            "doc": [
+                "/Boop boop boop/",
+                "/Hola, @FunctionDefinition aquí. Veo que encontraste @Scene.",
+                "Creo que @Scene es particularmente genial. La idea básica es que le das una lista de @Phrase o @Group y luego los mostrará en secuencia y se detendrá en el último.",
+                "Para controlar el tiempo, puedes establecer la @Phrase/duration en cada salida, y se mostrará durante ese tiempo antes de pasar al siguiente, y utilizará las transiciones de @Phrase/entering o @Phrase/exiting que hayas establecido. Si las estableces en un @Sequence, usará su duración.",
+                "Todo eso te permite hacer cosas como esta pequeña @Scene, que muestra estas tres frases en secuencia:",
+                "\\Scene([\n\tPhrase('Hola' duration: 1s)\n\tPhrase('¿Cómo estás?' duration: 2s rotation: 5° entering: Pose(rotation: 0°))\n\tPhrase('Estoy bien')\n])\\",
+                "¿Ves cómo la primera salida se muestra durante un segundo, luego la siguiente durante dos segundos, pero animada a una rotación de cinco grados, y luego muestra la última?",
+                "Puedes hacer secuencias muy elaboradas de salidas y animaciones con @Scene, e incluso hacer porciones de ellas dinámicas o interactivas, como con cualquier otra @Phrase o @Group.",
+                "Si tienes salidas animadas que están anidadas (un @Group con una @Phrase animada dentro), @Scene esperará a que termine todo el contenido animado en el @Group.",
+                "¡Ah, y un último pequeño secreto! Incluso puedes poner @Boolean en la lista, y si son \\⊥\\, @Scene se pausará y esperará a que se vuelva verdadero.",
+                "Por ejemplo, si quisieras hacer una secuencia de @Phrase y solo avanzar cuando @Button cambie, podrías hacer esto:",
+                "\\click: ∆ Button()\nScene([\n\tPhrase('Hola')\n\tclick\n\tPhrase('¿Cómo estás?' duration: 0.25s rotation: 5° entering: Pose(rotation: 0°))\n\tclick\n\tPhrase('Estoy bien')\n])\\",
+                "¿Ves cómo se pausa después de cada @Phrase y espera a que @Button cambie antes de avanzar?"
+            ],
+            "names": ["🎬", "Escena"],
+            "outputs": { 
+                "names": "salidas", 
+                "doc": "La lista de salidas para mostrar en secuencia."
+            }
         },
         "Motion": {
             "doc": [
@@ -3254,8 +3273,8 @@
                 "names": "materia"
             },
             "aura": {
-                "doc": "$?",
-                "names": "$? aura"
+                "doc": "El opcional @Aura para mostrar detrás de mí.¡Hazme brillar!",
+                "names": "aura"
             },
             "name": {
                 "doc": [
@@ -3654,33 +3673,36 @@
             }
         },
         "Aura": {
-            "doc": "$?",
-            "names": "$? Aura",
+            "doc": [
+                "Soy un AURA.¡Hago @Phrase BRILLAR! Como esto:",
+                "\\Frase(\n\t'¡Estoy BRILLANDO!' \n\taura: Aura(Color(50% 100 118°) 0.1m 0m 0.1m\n)\\"
+            ],
+            "names": ["🔮", "Aura"],
             "color": {
-                "doc": "$?",
-                "names": "$? color"
+                "doc": "El @Color que debería ser la @Aura.",
+                "names": "color"
             },
             "blur": {
-                "doc": "$?",
-                "names": "$? blur"
+                "doc": "Qué borrosa debería ser el @Aura. \\0m\\ significa que no está ni un poco borrosa.",
+                "names": "borrón"
             },
             "offsetX": {
-                "doc": "$?",
-                "names": "$? offsetX"
+                "doc": "A qué distancia a la izquierda o a la derecha debería aparecer. \\0m\\ está directamente debajo.",
+                "names": "offsetX"
             },
             "offsetY": {
-                "doc": "How far down the @Aura should go",
-                "names": "$? offset"
+                "doc": "Qué tan arriba o abajo debería aparecer.\\0m\\ está directamente debajo.",
+                "names": "offsetY"
             }
         },
         "Stage": {
             "doc": [
-                "HI. ESCENARIO AQUÍ. DIME QUÉ MOSTRAR Y LO MOSTRARÉ.",
-                "\\Stage([Frase('cosas')])\\",
+                "HOLA. ESCENARIO AQUÍ. DIME QUÉ MOSTRAR Y LO MOSTRARÉ.",
+                "\\Escenario([Frase('cosas')])\\",
                 "SI QUIERES, DAME UN @Color DE FONDO Y ILUMINARÉ EL ESCENARIO EN CONSECUENCIA.",
-                "\\Stage([Frase('cosas')] Color(0% 0 0°) color: Color(100% 0 0°))\\",
+                "\\Escenario([Frase('cosas')] Color(0% 0 0°) color: Color(100% 0 0°))\\",
                 "TAMBIÉN PUEDES DARME UN BORDE DE MARCO Y RECORTARÉ.",
-                "\\Stage([Frase('cosas')] Color(0% 0 0°) Rectángulo(-1m -1m 1m 1m) color: Color(100% 0 0°))\\"
+                "\\Escenario([Frase('cosas')] Color(0% 0 0°) Rectángulo(-1m -1m 1m 1m) color: Color(100% 0 0°))\\"
             ],
             "names": ["🎭", "Escenario"],
             "content": {

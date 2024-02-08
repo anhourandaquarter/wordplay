@@ -8,7 +8,7 @@
             "performance": ["use", "fit", "DarkVoid"],
             "scenes": [
                 {
-                    "title": "Silence",
+                    "title": "Silencio",
                     "subtitle": null,
                     "performance": ["use", "fit", "DarkVoid"],
                     "lines": [
@@ -132,7 +132,7 @@
                 },
                 {
                     "title": "Would you like a program?",
-                    "subtitle": "Program",
+                    "subtitle": "Programa",
                     "concept": "Program",
                     "performance": ["use", "fit", "Symbol", "📄"],
                     "lines": [
@@ -241,7 +241,7 @@
                 },
                 {
                     "title": "Holding space",
-                    "subtitle": "Placeholder",
+                    "subtitle": "Marcador de Posición",
                     "concept": "ExpressionPlaceholder",
                     "performance": ["use", "fit", "DarkVoid"],
                     "lines": [
@@ -352,7 +352,7 @@
                 },
                 {
                     "title": "Say again?",
-                    "subtitle": "Unparsable",
+                    "subtitle": "No Analizable",
                     "concept": "UnparsableExpression",
                     "performance": ["use", "fit", "Symbol", "ahkeolfewvk"],
                     "lines": [
@@ -495,7 +495,7 @@
                 },
                 {
                     "title": "Love is in the err",
-                    "subtitle": "Evaluate",
+                    "subtitle": "Evaluar",
                     "concept": "Evaluate",
                     "performance": [
                         "fit",
@@ -769,7 +769,7 @@
                 },
                 {
                     "title": "Quote, unquote",
-                    "subtitle": "Text",
+                    "subtitle": "Texto",
                     "concept": "TextLiteral",
                     "performance": [
                         "fit",
@@ -944,7 +944,7 @@
                 },
                 {
                     "title": "Symbol in the middle",
-                    "subtitle": "Infix",
+                    "subtitle": "Infijo",
                     "concept": "BinaryEvaluate",
                     "performance": [
                         "fit",
@@ -1028,7 +1028,7 @@
                 },
                 {
                     "title": "Yes and no",
-                    "subtitle": "Truth",
+                    "subtitle": "Verdad",
                     "concept": "Boolean",
                     "performance": [
                         "fit",
@@ -1215,7 +1215,7 @@
                 },
                 {
                     "title": "Let me count the ways",
-                    "subtitle": "Numbers",
+                    "subtitle": "Números",
                     "concept": "Number",
                     "performance": [
                         "fit",
@@ -1402,7 +1402,7 @@
                 },
                 {
                     "title": "Opening (re)marks",
-                    "subtitle": "Prefix",
+                    "subtitle": "Prefijo",
                     "concept": "UnaryEvaluate",
                     "performance": ["use", "fit", "Symbol", "~"],
                     "lines": [
@@ -1447,7 +1447,7 @@
                 },
                 {
                     "title": "Emptiness",
-                    "subtitle": "Nothing",
+                    "subtitle": "Nada",
                     "concept": "None",
                     "performance": [
                         "fix",
@@ -1570,7 +1570,7 @@
                 },
                 {
                     "title": "Places, everyone!",
-                    "subtitle": "Lists",
+                    "subtitle": "Listas",
                     "concept": "List",
                     "performance": [
                         "fit",
@@ -1732,7 +1732,7 @@
                 },
                 {
                     "title": "One of each",
-                    "subtitle": "Sets",
+                    "subtitle": "Conjuntos",
                     "concept": "Set",
                     "performance": [
                         "fit",
@@ -1850,7 +1850,7 @@
                 },
                 {
                     "title": "One to one",
-                    "subtitle": "Mappings",
+                    "subtitle": "Mapeos",
                     "concept": "Map",
                     "performance": [
                         "fit",
@@ -2047,7 +2047,7 @@
                 },
                 {
                     "title": "Nosotros podemos ser lo que sea",
-                    "subtitle": "Convert",
+                    "subtitle": "Convertir",
                     "concept": "Convert",
                     "performance": ["use", "fix", "FlyIn", "→"],
                     "lines": [
@@ -2206,7 +2206,7 @@
                 },
                 {
                     "title": "How to choose?",
-                    "subtitle": "Decisions",
+                    "subtitle": "Decisiones",
                     "concept": "Conditional",
                     "performance": ["use", "fix", "FlyIn", "?"],
                     "lines": [
@@ -2336,7 +2336,7 @@
             "performance": ["use", "fit", "TakeTheMic"],
             "scenes": [
                 {
-                    "title": "Input",
+                    "title": "Entrada",
                     "subtitle": null,
                     "performance": ["use", "fit", "DarkVoid"],
                     "lines": [
@@ -2369,7 +2369,7 @@
                 },
                 {
                     "title": "Tick, tick, tick...",
-                    "subtitle": "Time",
+                    "subtitle": "Tiempo",
                     "concept": "Time",
                     "performance": ["use", "fit", "Symbol", "🕦"],
                     "lines": [
@@ -2428,7 +2428,7 @@
                 },
                 {
                     "title": "Clickity clack",
-                    "subtitle": "Key",
+                    "subtitle": "Tecla",
                     "concept": "Key",
                     "performance": ["use", "fit", "Symbol", "⌨️"],
                     "lines": [
@@ -2477,7 +2477,7 @@
                 },
                 {
                     "title": "Hummmmmmm…",
-                    "subtitle": "Pointer",
+                    "subtitle": "Puntero",
                     "concept": "Pointer",
                     "performance": ["use", "fit", "Symbol", "👆🏻"],
                     "lines": [
@@ -2518,7 +2518,7 @@
                 },
                 {
                     "title": "And... now!",
-                    "subtitle": "Button",
+                    "subtitle": "Botón",
                     "concept": "Button",
                     "performance": ["use", "fit", "Symbol", "🖱️"],
                     "lines": [
@@ -2548,7 +2548,7 @@
                 },
                 {
                     "title": "Is anyone listening?",
-                    "subtitle": "Volume",
+                    "subtitle": "Volumen",
                     "concept": "Volume",
                     "performance": ["use", "fit", "Symbol", "🎤"],
                     "lines": [
@@ -2571,7 +2571,7 @@
                 },
                 {
                     "title": "You never know…",
-                    "subtitle": "Random",
+                    "subtitle": "Aleatorio",
                     "concept": "Random",
                     "performance": [
                         "fit",
@@ -2608,7 +2608,7 @@
                 },
                 {
                     "title": "Move me",
-                    "subtitle": "Placement",
+                    "subtitle": "Ubicación",
                     "concept": "Placement",
                     "performance": [
                         "fix",
@@ -2652,7 +2652,7 @@
                 },
                 {
                     "title": "Keeping moving",
-                    "subtitle": "Motion",
+                    "subtitle": "Movimiento",
                     "concept": "Motion",
                     "performance": [
                         "fix",
@@ -2778,7 +2778,7 @@
                 },
                 {
                     "title": "Let's talk",
-                    "subtitle": "Chat",
+                    "subtitle": "Charlar",
                     "concept": "Chat",
                     "performance": ["fit", "Phrase('🗣️')"],
                     "lines": [
@@ -2807,7 +2807,7 @@
                 },
                 {
                     "title": "Say what?",
-                    "subtitle": "Webpage",
+                    "subtitle": "Página Webe",
                     "concept": "Webpage",
                     "performance": ["fix", "Webpage('https://wordplay.dev')"],
                     "lines": [
@@ -2847,7 +2847,7 @@
                 },
                 {
                     "title": "On cue",
-                    "subtitle": "Reaction",
+                    "subtitle": "Reacción",
                     "concept": "Reaction",
                     "performance": ["use", "fit", "Symbol", "…"],
                     "lines": [
@@ -2985,7 +2985,7 @@
             "performance": ["use", "fix", "RainingEmoji"],
             "scenes": [
                 {
-                    "title": "Output",
+                    "title": "Salida",
                     "subtitle": null,
                     "performance": ["use", "fix", "StaticRainingEmoji"],
                     "lines": [
@@ -3027,7 +3027,7 @@
                 },
                 {
                     "title": "Say what?",
-                    "subtitle": "Phrase",
+                    "subtitle": "Frase",
                     "concept": "Phrase",
                     "performance": ["use", "fit", "Symbol", "💬"],
                     "lines": [
@@ -3317,7 +3317,7 @@
                 },
                 {
                     "title": "1, 2, 3, 4, 1, 2, 3, 4",
-                    "subtitle": "Sequence",
+                    "subtitle": "Secuencia",
                     "concept": "Sequence",
                     "performance": ["use", "fix", "DancingEmoji", "💃"],
                     "lines": [
@@ -3494,7 +3494,7 @@
                 },
                 {
                     "title": "Places please",
-                    "subtitle": "Group",
+                    "subtitle": "Grupo",
                     "concept": "Group",
                     "performance": [
                         "fit",
@@ -3868,12 +3868,12 @@
                         [
                             "FunctionDefinition",
                             "excited",
-                            "Okay, okay, so now you know @Stage, @Group, @Phrase, and the many things you can do with them. Now you might be thinking, what if I want to tell a story with them?"
+                            "Okay, okay, ahora conoces @Stage, @Group, @Phrase y las muchas cosas que puedes hacer con ellos. Ahora podrías estar pensando, ¿y si quiero contar una historia con ellos?"
                         ],
                         [
                             "FunctionDefinition",
                             "serious",
-                            "Scene is really cool. The basic idea is to give it a list of @Phrase or @Group, and it will show them in order, letting you show a sequence of content."
+                            "Escenario es realmente genial. La idea básica es darle una lista de @Phrase o @Group, y los mostrará en orden, permitiéndote mostrar una secuencia de contenido"
                         ],
                         null,
                         [
@@ -3882,19 +3882,19 @@
                             "    Phrase('3')",
                             "    Phrase('2')",
                             "    Phrase('1')",
-                            "    Phrase('Boo!')",
+                            "    Phrase('¡Boo!')",
                             "])"
                         ],
                         [
                             "FunctionDefinition",
                             "serious",
-                            "Here's an example. Did you see how it counted down and then said 'Boo!'? You can reset to see it again."
+                            "Aquí hay un ejemplo. ¿Viste cómo contaba y luego dijo '¡Boo!'? Puedes reiniciar para verlo de nuevo."
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "serious",
-                            "If we want to slow it down, we can specify exact durations for each @Phrase. Try editing the durations and seeing what happens when they change."
+                            "Si queremos ralentizarlo, podemos especificar duraciones exactas para cada @Phrase. Intenta editar las duraciones y observa qué sucede cuando cambian."
                         ],
                         [
                             "edit",
@@ -3902,14 +3902,14 @@
                             "    Phrase('3' duration: 1s)",
                             "    Phrase('2' duration: 1s)",
                             "    Phrase('1' duration: 1s)",
-                            "    Phrase('Boo!')",
+                            "    Phrase('¡Boo!')",
                             "])"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "serious",
-                            "And now you might be thinking, what about transitions between them? We can control that with @Phrase/entering and @Phrase/exiting, setting @Pose to start and end on. Here, for example, we start and end each @Phrase as invisible, so it fades in and out."
+                            "Y ahora podrías estar pensando, ¿qué pasa con las transiciones entre ellas? Podemos controlarlo con @Phrase/entering y @Phrase/exiting, estableciendo @Pose para comenzar y terminar. Aquí, por ejemplo, comenzamos y terminamos cada @Phrase como invisible, para que aparezca y desaparezca."
                         ],
                         [
                             "edit",
@@ -3917,14 +3917,14 @@
                             "    Phrase('3' duration: 1s entering: Pose(opacity: 0) exiting: Pose(opacity: 0))",
                             "    Phrase('2' duration: 1s entering: Pose(opacity: 0) exiting: Pose(opacity: 0))",
                             "    Phrase('1' duration: 1s entering: Pose(opacity: 0) exiting: Pose(opacity: 0))",
-                            "    Phrase('Boo!')",
+                            "    Phrase('¡Boo!')",
                             "])"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "serious",
-                            "We can even set a @Sequence on one of them to animate it before advancing. Did you see the 2 spin?"
+                            "Incluso podemos establecer un @Sequence en uno de ellos para animarlo antes de avanzar. ¿Viste cómo el 2 giró?"
                         ],
                         [
                             "edit",
@@ -3932,14 +3932,14 @@
                             "    Phrase('3' duration: 1s entering: Pose(opacity: 0) exiting: Pose(opacity: 0))",
                             "    Phrase('2' entering: Sequence({0%: Pose(rotation: 0°) 50%: Pose(rotation: 360°) 100%: Pose(rotation: 0°)} duration: 1s))",
                             "    Phrase('1' duration: 1s entering: Pose(opacity: 0) exiting: Pose(opacity: 0))",
-                            "    Phrase('Boo!')",
+                            "    Phrase('¡Boo!')",
                             "])"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "serious",
-                            "We can change the content however we want, even making it dynamic. For example, let's make the numbers random and the ending word random! Each time it restarts, we get different content."
+                            "Podemos cambiar el contenido como queramos, incluso hacerlo dinámico. Por ejemplo, hagamos que los números y la palabra final sean aleatorios. Cada vez que se reinicia, obtenemos un contenido diferente."
                         ],
                         [
                             "edit",
@@ -3947,28 +3947,28 @@
                             "    Phrase(Random(1 100)→'' duration: 1s)",
                             "    Phrase(Random(1 100)→'' duration: 1s)",
                             "    Phrase(Random(1 100)→'' duration: 1s)",
-                            "    Phrase(['Boo!' 'Peep!' 'Hey!' 'Helloooo'].random())",
+                            "    Phrase(['¡Boo!' 'Peep!' '¡Hola!' 'Holaaaa'].random())",
                             "])"
                         ],
                         null,
                         [
                             "FunctionDefinition",
                             "excited",
-                            "But you can also make them interactive."
+                            "Pero también puedes hacerlos interactivos."
                         ],
                         [
                             "FunctionDefinition",
                             "serious",
-                            "The secret is putting a @Boolean where you want to pause and wait for something to be true. For example, we can wait for the mouse button to change. See how @Scene waits after each @Phrase for the button to be clicked?"
+                            "El secreto es poner un @Boolean donde quieras pausar y esperar a que algo sea verdadero. Por ejemplo, podemos esperar a que cambie el botón del mouse. ¿Ves cómo @Scene espera después de cada @Phrase a que se haga clic en el botón?"
                         ],
                         [
                             "edit",
                             "Scene([",
-                            "    Phrase('one')",
+                            "    Phrase('uno')",
                             "    ∆ Button()",
-                            "    Phrase('two')",
+                            "    Phrase('dos')",
                             "    ∆ Button()",
-                            "    Phrase('three')",
+                            "    Phrase('tres')",
                             "])"
                         ],
                         null,
