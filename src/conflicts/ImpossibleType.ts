@@ -1,25 +1,31 @@
 import Conflict from './Conflict';
 import type Type from '@nodes/Type';
-import type Is from '@nodes/Is';
-import type Locale from '@locale/Locale';
 import concretize from '../locale/concretize';
+import type Locales from '../locale/Locales';
+import NodeRef from '@locale/NodeRef';
+import type Context from '@nodes/Context';
+import type Expression from '@nodes/Expression';
 
 export class ImpossibleType extends Conflict {
-    readonly is: Is;
+    readonly expression: Expression;
     readonly givenType: Type;
 
-    constructor(is: Is, givenType: Type) {
-        super(false);
-        this.is = is;
+    constructor(expresion: Expression, givenType: Type) {
+        super(true);
+        this.expression = expresion;
         this.givenType = givenType;
     }
 
     getConflictingNodes() {
         return {
             primary: {
-                node: this.is,
-                explanation: (locale: Locale) =>
-                    concretize(locale, locale.node.Is.conflict.ImpossibleType),
+                node: this.expression,
+                explanation: (locales: Locales, context: Context) =>
+                    concretize(
+                        locales,
+                        locales.get((l) => l.node.Is.conflict.ImpossibleType),
+                        new NodeRef(this.givenType, locales, context)
+                    ),
             },
         };
     }

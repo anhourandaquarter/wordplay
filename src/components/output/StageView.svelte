@@ -18,7 +18,7 @@
     import Place from '@output/Place';
     import { DefaultSize } from '@output/Stage';
     import { createPlace } from '@output/Place';
-    import Scene, { type Moved, type OutputInfoSet } from '@output/Scene';
+    import Animator, { type Moved, type OutputInfoSet } from '@output/Animator';
     import GroupView from './GroupView.svelte';
     import { tick } from 'svelte';
     import Phrase from '@output/Phrase';
@@ -35,7 +35,7 @@
     } from '../project/Contexts';
     import type Evaluator from '@runtime/Evaluator';
     import type Output from '../../output/Output';
-    import { animationFactor, locale, locales } from '../../db/Database';
+    import { animationFactor, locales } from '../../db/Database';
     import {
         describeEnteredOutput,
         describeMovedOutput,
@@ -62,18 +62,45 @@
     let view: HTMLElement | null = null;
 
     let mounted = false;
-    onMount(() => (mounted = true));
+    onMount(() => {
+        mounted = true;
+
+        if (typeof ResizeObserver !== 'undefined')
+            observer = new ResizeObserver((entries) => {
+                const el = entries.at(0);
+                if (el) {
+                    let resized =
+                        viewportWidth !== el.contentRect.width ||
+                        viewportHeight !== el.contentRect.height;
+
+                    if (resized) {
+                        if (viewportWidth !== 0 && viewportHeight !== 0)
+                            changed = true;
+                        viewportWidth = el.contentRect.width;
+                        viewportHeight = el.contentRect.height;
+
+                        setTimeout(() => (changed = false), 250);
+                    }
+                }
+            });
+
+        /** Whenever a font finishes loading, re-render. */
+        document.fonts.onloadingdone = () => {
+            stage = stage;
+        };
+    });
 
     /**
      * Here we keep track of whether the stage has not been rerendered for some period of time.
      * We use this as an optimization, only generating expensive templated aria-labels for Group and Phrase views
      * when the screen is still, or when we haven't announced for a while. This is because screen reader users wouldn't be able to track something changing any faster,
      * since reading takes time.
+     * We only do this if the stage is interactive. Otherwise, no descriptions.
      */
     let stillTimeout: NodeJS.Timeout | undefined = undefined;
     let lastAnnouncement = 0;
     let announce = false;
-    $: if (stage) {
+    $: if (interactive && stage) {
         // Start by assuming we're not going to announce.
         announce = false;
         // Have we not announced in a while? Let's announce now.
@@ -85,12 +112,16 @@
         // Clear any timeout we had set up recently, then make a new one, announcing in a bit.
         if (stillTimeout) clearTimeout(stillTimeout);
         stillTimeout = setTimeout(() => {
-            announce = true;
+            if (!announce) {
+                announce = true;
+            }
             lastAnnouncement = Date.now();
-        }, 300);
+        }, 1000);
     }
 
+    /** A set of all currently exiting outputs that need to be rendered in their last location. */
     let exiting: OutputInfoSet = new Map();
+
     let entered: Map<string, Output> = new Map();
     let present: Map<string, Output> = new Map();
     let moved: Moved = new Map();
@@ -100,18 +131,18 @@
 
     // Announce changes on stage.
     $: if ($announcer) {
-        const language = $locales[0].language;
+        const language = $locales.getLocale().language;
         if (entered.size > 0)
             $announcer(
                 'entered',
                 language,
-                describeEnteredOutput($locales, entered)
+                describeEnteredOutput($locales, entered),
             );
         for (const change of describedChangedOutput(
             $locales,
             entered,
             present,
-            previouslyPresent
+            previouslyPresent,
         ))
             $announcer('changed', language, change);
         if (moved.size > 0)
@@ -125,30 +156,35 @@
     let adjustedFocus: Place = createPlace(evaluator, 0, 0, -12);
 
     /** A stage to manage entries, exits, animations. A new one each time the for each project. */
-    let scene: Scene;
+    let animator: Animator;
     $: {
         // Previous scene? Stop it.
-        if (scene !== undefined) scene.stop();
+        if (animator !== undefined) animator.stop();
         // Make a new one.
-        scene = new Scene(
+        animator = new Animator(
             evaluator,
-            // When output exits, remove it from the map and triggering a render.
+            // When output exits, remove it from the map and triggering a render so that its removed from stage.
             (name) => {
                 if (exiting.has(name)) {
                     exiting.delete(name);
+                    // Update the set to force render
                     exiting = new Map(exiting);
                 }
             },
             // When the animating poses or sequences on stage change, update the store
             (nodes) => {
+                // Update the set of animated nodes.
                 if (interactive && animatingNodes)
                     animatingNodes.set(new Set(nodes));
-            }
+            },
         );
     }
 
     /** When this is unmounted, stop all animations.*/
-    onDestroy(() => scene.stop());
+    onDestroy(() => {
+        animator.stop();
+        if (observer) observer.disconnect();
+    });
 
     /** Expose the editable context to all children */
     let editableStore = writable<boolean>(editable);
@@ -157,22 +193,31 @@
     setContext('project', project);
 
     /** Whenever the stage, languages, fonts, or rendered focus changes, update the rendered scene accordingly. */
-    $: {
-        const results = scene.update(
+    $: if (interactive) {
+        const results = animator.update(
             stage,
             interactive,
             renderedFocus,
             viewportWidth,
             viewportHeight,
-            context
+            context,
         );
 
         previouslyPresent = present;
         let animate: (() => void) | undefined = undefined;
-        if (results !== undefined)
-            ({ entered, present, moved, entered, animate } = results);
+        if (results !== undefined) {
+            ({ entered, present, moved, animate } = results);
 
-        // Defer rendering until we have a view so that animations can be bound to DOM elements.
+            // Get the list of newly exited phrases and add them to our set.
+            for (const [key, val] of results.exiting) {
+                exiting.set(key, val);
+            }
+            // Update the map of exiting outputs to render them to the view
+            exiting = new Map(exiting);
+        }
+
+        // Defer animation initialization until we have a view so that animations can be bound to DOM elements.
+        // Otherwise, animations will not have a DOM element to animate and will stop.
         tick().then(() => {
             if (animate) animate();
         });
@@ -184,8 +229,8 @@
     $: renderedFocus = stage.place
         ? stage.place
         : fit && fitFocus && $evaluation?.playing === true
-        ? fitFocus
-        : adjustedFocus;
+          ? fitFocus
+          : adjustedFocus;
 
     $: center = new Place(stage.value, 0, 0, 0);
 
@@ -193,36 +238,24 @@
 
     /** Keep track of the tile view's content window size for use in fitting content to the window */
     let parent: Element | null;
-    let observer: ResizeObserver | undefined;
+    let observer: ResizeObserver | null = null;
     let viewportWidth = 0;
     let viewportHeight = 0;
     let changed = false;
-    $: {
-        if (observer && parent) observer.unobserve(parent);
-        if (view && view.parentElement) {
+    $: if (view && view.parentElement && observer) {
+        if (parent !== view.parentElement) {
+            if (parent) observer.unobserve(parent);
             parent = view.parentElement;
-            observer = new ResizeObserver((entries) => {
-                const el = entries.at(0);
-                if (el) {
-                    changed =
-                        viewportWidth !== el.contentRect.width ||
-                        viewportHeight !== el.contentRect.height;
-                    viewportWidth = el.contentRect.width;
-                    viewportHeight = el.contentRect.height;
-
-                    if (changed) setTimeout(() => (changed = false), 250);
-                }
-            });
             observer.observe(parent);
         }
     }
 
     $: context = new RenderContext(
-        stage.face ?? $locale.ui.font.app,
+        stage.face ?? $locales.getLocale().ui.font.app,
         stage.size ?? DefaultSize,
         $locales,
         $loadedFonts,
-        $animationFactor
+        $animationFactor,
     );
     $: contentBounds = stage.getLayout(context);
 
@@ -259,7 +292,7 @@
             evaluator,
             -(contentBounds.left + contentBounds.width / 2),
             contentBounds.top - contentBounds.height / 2,
-            z
+            z,
         );
         // If we're currently fitting to content, just make the adjusted focus the same in case the setting is inactive.
         // This ensures we start from where we left off.
@@ -270,7 +303,7 @@
         setFocus(
             renderedFocus.x + dx,
             renderedFocus.y + dy,
-            renderedFocus.z + dz
+            renderedFocus.z + dz,
         );
     };
 
@@ -286,7 +319,7 @@
     <section
         class="output stage {interactive && !editing
             ? 'live'
-            : 'inert'} {project.main.names.getNames()[0]}"
+            : 'inert'} {project.getMain().names.getNames()[0]}"
         class:interactive
         class:changed
         class:editing={$evaluation?.playing === false && !painting}
@@ -318,12 +351,12 @@
             {#if grid}
                 {@const left = Math.min(
                     0,
-                    Math.floor(contentBounds.left - GRID_PADDING)
+                    Math.floor(contentBounds.left - GRID_PADDING),
                 )}
                 {@const right = Math.max(0, contentBounds.right + GRID_PADDING)}
                 {@const bottom = Math.min(
                     0,
-                    Math.floor(contentBounds.bottom - GRID_PADDING)
+                    Math.floor(contentBounds.bottom - GRID_PADDING),
                 )}
                 {@const top = Math.max(0, contentBounds.top + GRID_PADDING)}
                 <!-- Render a grid if this is the root and the grid is on. Apply the same transform that we do the the verse. -->
@@ -391,16 +424,10 @@
 {/if}
 
 <style>
-    .interactor {
-        width: 100%;
-        height: 100%;
-    }
-
     .stage {
         user-select: none;
-        width: 100%;
-        height: 100%;
         position: relative;
+        flex-grow: 1;
 
         color: var(--wordplay-foreground);
 

@@ -11,22 +11,25 @@ import {
     SET_OPEN_SYMBOL,
 } from '@parser/Symbols';
 import type { BasisTypeName } from '../basis/BasisConstants';
-import type Locale from '@locale/Locale';
 import type Expression from '../nodes/Expression';
 import type Concretizer from '../nodes/Concretizer';
+import type Locales from '../locale/Locales';
 
 export default class MapValue extends SimpleValue {
     readonly values: [Value, Value][];
 
+    /** Later values with equivalent keys override earlier values in the list. */
     constructor(creator: Expression, values: [Value, Value][]) {
         super(creator);
 
         this.values = [];
         values.forEach((kv) => {
-            if (
-                this.values.find((kv2) => kv2[0].isEqualTo(kv[0])) === undefined
-            )
-                this.values.push(kv);
+            // If a key already exists, override it.
+            const existingKeyIndex = this.values.findIndex((kv2) =>
+                kv2[0].isEqualTo(kv[0]),
+            );
+            if (existingKeyIndex < 0) this.values.push(kv);
+            else this.values[existingKeyIndex] = kv;
         });
     }
 
@@ -51,7 +54,7 @@ export default class MapValue extends SimpleValue {
                 value.values.find(
                     (otherKeyValue) =>
                         keyValue[0].isEqualTo(otherKeyValue[0]) &&
-                        keyValue[1].isEqualTo(otherKeyValue[1])
+                        keyValue[1].isEqualTo(otherKeyValue[1]),
                 ) === undefined
             )
                 return false;
@@ -75,14 +78,14 @@ export default class MapValue extends SimpleValue {
     unset(requestor: Expression, key: Value) {
         return new MapValue(
             requestor,
-            this.values.filter((kv) => !kv[0].isEqualTo(key))
+            this.values.filter((kv) => !kv[0].isEqualTo(key)),
         );
     }
 
     remove(requestor: Expression, value: Value) {
         return new MapValue(
             requestor,
-            this.values.filter((kv) => !kv[1].isEqualTo(value))
+            this.values.filter((kv) => !kv[1].isEqualTo(value)),
         );
     }
 
@@ -98,12 +101,12 @@ export default class MapValue extends SimpleValue {
         return MapType.make(
             UnionType.getPossibleUnion(
                 context,
-                this.values.map((v) => v[0].getType(context))
+                this.values.map((v) => v[0].getType(context)),
             ),
             UnionType.getPossibleUnion(
                 context,
-                this.values.map((v) => v[1].getType(context))
-            )
+                this.values.map((v) => v[1].getType(context)),
+            ),
         );
     }
 
@@ -111,19 +114,26 @@ export default class MapValue extends SimpleValue {
         return 'map';
     }
 
-    toWordplay(locales: Locale[]): string {
+    toWordplay(locales?: Locales): string {
         return `${SET_OPEN_SYMBOL}${this.values
             .map(
                 ([key, value]) =>
                     `${key.toWordplay(locales)}${BIND_SYMBOL}${value.toWordplay(
-                        locales
-                    )}`
+                        locales,
+                    )}`,
             )
             .join(' ')}${SET_CLOSE_SYMBOL}`;
     }
 
-    getDescription(concretize: Concretizer, locale: Locale) {
-        return concretize(locale, locale.term.map);
+    getDescription(concretize: Concretizer, locales: Locales) {
+        return concretize(
+            locales,
+            locales.get((l) => l.term.map),
+        );
+    }
+
+    getRepresentativeText() {
+        return SET_OPEN_SYMBOL + BIND_SYMBOL + SET_CLOSE_SYMBOL;
     }
 
     getSize() {

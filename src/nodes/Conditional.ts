@@ -1,7 +1,7 @@
 import BooleanType from './BooleanType';
 import type Conflict from '@conflicts/Conflict';
 import ExpectedBooleanCondition from '@conflicts/ExpectedBooleanCondition';
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import Token from './Token';
 import type Type from './Type';
 import type Step from '@runtime/Step';
@@ -10,7 +10,6 @@ import Jump from '@runtime/Jump';
 import type Context from './Context';
 import UnionType from './UnionType';
 import type TypeSet from './TypeSet';
-import type Bind from './Bind';
 import Start from '@runtime/Start';
 import { QUESTION_SYMBOL } from '@parser/Symbols';
 import Sym from './Sym';
@@ -18,13 +17,13 @@ import Finish from '@runtime/Finish';
 import type Evaluator from '@runtime/Evaluator';
 import type Value from '@values/Value';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import NodeRef from '@locale/NodeRef';
 import Glyphs from '../lore/Glyphs';
 import Purpose from '../concepts/Purpose';
 import concretize from '../locale/concretize';
 import ExpressionPlaceholder from './ExpressionPlaceholder';
 import type Node from './Node';
+import type Locales from '../locale/Locales';
 
 export default class Conditional extends Expression {
     readonly condition: Expression;
@@ -36,7 +35,7 @@ export default class Conditional extends Expression {
         condition: Expression,
         conditional: Token,
         yes: Expression,
-        no: Expression
+        no: Expression,
     ) {
         super();
 
@@ -53,7 +52,7 @@ export default class Conditional extends Expression {
             condition,
             new Token(QUESTION_SYMBOL, Sym.BooleanType),
             yes,
-            no
+            no,
         );
     }
 
@@ -61,7 +60,7 @@ export default class Conditional extends Expression {
         type: Type | undefined,
         node: Node,
         selected: boolean,
-        context: Context
+        context: Context,
     ) {
         return [
             node instanceof Expression &&
@@ -70,14 +69,18 @@ export default class Conditional extends Expression {
                 ? Conditional.make(
                       node,
                       ExpressionPlaceholder.make(),
-                      ExpressionPlaceholder.make()
+                      ExpressionPlaceholder.make(),
                   )
                 : Conditional.make(
                       ExpressionPlaceholder.make(BooleanType.make()),
                       ExpressionPlaceholder.make(),
-                      ExpressionPlaceholder.make()
+                      ExpressionPlaceholder.make(),
                   ),
         ];
+    }
+
+    getDescriptor() {
+        return 'Conditional';
     }
 
     getGrammar(): Grammar {
@@ -85,8 +88,8 @@ export default class Conditional extends Expression {
             {
                 name: 'condition',
                 kind: node(Expression),
-                label: (translation: Locale) =>
-                    translation.node.Conditional.condition,
+                label: (locales: Locales) =>
+                    locales.get((l) => l.node.Conditional.condition),
                 // Must be boolean typed
                 getType: () => BooleanType.make(),
             },
@@ -98,15 +101,16 @@ export default class Conditional extends Expression {
             {
                 name: 'yes',
                 kind: node(Expression),
-                label: (translation: Locale) =>
-                    translation.node.Conditional.yes,
+                label: (locales: Locales) =>
+                    locales.get((l) => l.node.Conditional.yes),
                 space: true,
                 indent: true,
             },
             {
                 name: 'no',
                 kind: node(Expression),
-                label: (translation: Locale) => translation.node.Conditional.no,
+                label: (locales: Locales) =>
+                    locales.get((l) => l.node.Conditional.no),
                 space: true,
                 indent: true,
             },
@@ -118,7 +122,7 @@ export default class Conditional extends Expression {
             this.replaceChild('condition', this.condition, replace),
             this.replaceChild<Token>('question', this.question, replace),
             this.replaceChild<Expression>('yes', this.yes, replace),
-            this.replaceChild<Expression>('no', this.no, replace)
+            this.replaceChild<Expression>('no', this.no, replace),
         ) as this;
     }
 
@@ -173,31 +177,26 @@ export default class Conditional extends Expression {
     /**
      * Type checks narrow the set to the specified type, if contained in the set and if the check is on the same bind.
      * */
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
         // Evaluate the condition with the current types.
-        const revisedTypes = this.condition.evaluateTypeSet(
-            bind,
-            original,
-            current,
-            context
-        );
+        const revisedTypes = this.condition.evaluateTypeGuards(current, guard);
+
+        // The condition did some guarding if the intersection of the revised and current sets is smaller than the current set
+        const guarded =
+            current.intersection(revisedTypes, guard.context).size() <
+            current.size();
 
         // Evaluate the yes branch with the revised types.
         if (this.yes instanceof Expression)
-            this.yes.evaluateTypeSet(bind, original, revisedTypes, context);
+            this.yes.evaluateTypeGuards(revisedTypes, guard);
 
-        // Evaluate the no branch with the complement of the revised types.
+        // Evaluate the no branch with the complement of the revised types, unless they weren't guarded, in which case we pass through the current types.
         if (this.no instanceof Expression) {
-            this.no.evaluateTypeSet(
-                bind,
-                original,
-                current.difference(revisedTypes, context),
-                context
+            this.no.evaluateTypeGuards(
+                guarded
+                    ? current.difference(revisedTypes, guard.context)
+                    : current,
+                guard,
             );
         }
 
@@ -212,27 +211,27 @@ export default class Conditional extends Expression {
         return this.question;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Conditional;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Conditional);
     }
 
-    getStartExplanations(locale: Locale, context: Context) {
+    getStartExplanations(locales: Locales, context: Context) {
         return concretize(
-            locale,
-            locale.node.Conditional.start,
-            new NodeRef(this.condition, locale, context)
+            locales,
+            locales.get((l) => l.node.Conditional.start),
+            new NodeRef(this.condition, locales, context),
         );
     }
 
     getFinishExplanations(
-        locale: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         return concretize(
-            locale,
-            locale.node.Conditional.finish,
-            this.getValueIfDefined(locale, context, evaluator)
+            locales,
+            locales.get((l) => l.node.Conditional.finish),
+            this.getValueIfDefined(locales, context, evaluator),
         );
     }
 

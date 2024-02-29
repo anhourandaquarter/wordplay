@@ -1,15 +1,16 @@
 <script lang="ts">
-    import { PUBLIC_CONTEXT } from '$env/static/public';
     import Header from '@components/app/Header.svelte';
     import BigLink from '../components/app/BigLink.svelte';
     import Background from '../components/app/Background.svelte';
-    import { locale } from '../db/Database';
+    import { locales } from '../db/Database';
     import Writing from '../components/app/Writing.svelte';
-    import Speech from '../components/lore/Speech.svelte';
-    import Glyphs from '../lore/Glyphs';
-    import Emotion from '../lore/Emotion';
+    // import Speech from '../components/lore/Speech.svelte';
+    // import Glyphs from '../lore/Glyphs';
+    // import Emotion from '../lore/Emotion';
     import MarkupHtmlView from '../components/concepts/MarkupHTMLView.svelte';
-    import Link from '../components/app/Link.svelte';
+    import Beta from './Beta.svelte';
+    import Lead from '@components/app/Lead.svelte';
+    import Emoji from '@components/app/Emoji.svelte';
 </script>
 
 <svelte:head>
@@ -20,56 +21,75 @@
 
 <Background />
 <Writing>
-    <Header>{$locale.wordplay}<sub>.dev</sub></Header>
-    <div class="welcome">
-        <Speech glyph={Glyphs.Function} emotion={Emotion.happy}
-            ><svelte:fragment slot="content"
-                ><MarkupHtmlView
-                    markup={$locale.ui.page.landing.call}
-                /></svelte:fragment
-            ></Speech
-        >
-    </div>
-    {#if PUBLIC_CONTEXT === 'prod'}
-        <p
-            >Coming Fall 2023. Write <Link external to="https://amyjko.com"
-                >Amy</Link
-            > for details, or see our <Link
-                external
-                to="https://github.com/wordplaydev/wordplay/milestone/1"
-                >progress toward beta</Link
-            >.</p
-        >
-    {:else}
-        <BigLink to="/learn" subtitle={$locale.ui.page.landing.link.learn}
-            >{$locale.ui.page.learn.header}</BigLink
-        >
-        <BigLink to="/projects" subtitle={$locale.ui.page.landing.link.projects}
-            >{$locale.ui.page.projects.header}</BigLink
-        >
-        <BigLink
-            to="/galleries"
-            subtitle={$locale.ui.page.landing.link.galleries}
-            >{$locale.ui.page.galleries.header}</BigLink
-        >
-        <BigLink to="/about" subtitle={$locale.ui.page.landing.link.about}
-            >{$locale.ui.page.about.header}</BigLink
-        >
-        <BigLink to="/rights" subtitle={$locale.ui.page.landing.link.rights}
-            >{$locale.ui.page.rights.header}</BigLink
-        >
-    {/if}
+    <Beta />
+    <Header><Emoji>💬</Emoji>{$locales.get((l) => l.wordplay)}</Header>
+    <Lead
+        ><MarkupHtmlView
+            markup={$locales.get((l) => l.ui.page.landing.value)}
+        /></Lead
+    >
+    <!-- <div class="welcome">
+        <div style:width="10em" style:margin-inline-start="-2.5em">
+            <Speech glyph={Glyphs.Function} emotion={Emotion.happy} big
+                ><svelte:fragment slot="content"
+                    ><MarkupHtmlView
+                        markup={$locales.get((l) => l.ui.page.landing.call)}
+                    /></svelte:fragment
+                ></Speech
+            >
+        </div>
+    </div> -->
+    <MarkupHtmlView
+        markup={$locales.get((l) => l.ui.page.landing.description)}
+    />
+    <br />
+    <BigLink
+        to="/learn"
+        subtitle={$locales.get((l) => l.ui.page.landing.link.learn)}
+        >{$locales.get((l) => l.ui.page.learn.header)}</BigLink
+    >
+    <BigLink
+        to="/projects"
+        subtitle={$locales.get((l) => l.ui.page.landing.link.projects)}
+        >{$locales.get((l) => l.ui.page.projects.header)}</BigLink
+    >
+    <BigLink
+        to="/galleries"
+        subtitle={$locales.get((l) => l.ui.page.landing.link.galleries)}
+        >{$locales.get((l) => l.ui.page.galleries.header)}</BigLink
+    >
+    <BigLink
+        to="/login"
+        subtitle={$locales.get((l) => l.ui.page.login.subtitle)}
+        >{$locales.get((l) => l.ui.page.login.header)}</BigLink
+    >
+    <BigLink
+        smaller
+        to="/about"
+        subtitle={$locales.get((l) => l.ui.page.landing.link.about)}
+        >{$locales.get((l) => l.ui.page.about.header)}</BigLink
+    >
+    <BigLink
+        smaller
+        to="/rights"
+        subtitle={$locales.get((l) => l.ui.page.landing.link.rights)}
+        >{$locales.get((l) => l.ui.page.rights.header)}</BigLink
+    >
+    <BigLink
+        smaller
+        to="/donate"
+        subtitle={$locales.get((l) => l.ui.page.donate.prompt)}
+        >{$locales.get((l) => l.ui.page.donate.header)}</BigLink
+    >
 </Writing>
 
-<style>
-    sub {
-        font-size: 30%;
-    }
-
+<!-- <style>
     .welcome {
-        margin-inline-start: -2em;
+        display: flex;
+        flex-direction: row;
+        gap: calc(var(--wordplay-spacing) * 2);
         margin-top: 2em;
         margin-bottom: 2em;
-        width: 50%;
+        max-width: 100%;
     }
-</style>
+</style> -->

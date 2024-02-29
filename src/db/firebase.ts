@@ -19,7 +19,7 @@ import {
     getFunctions,
     type Functions,
 } from 'firebase/functions';
-import { getAnalytics, type Analytics } from 'firebase/analytics';
+import { getAnalytics, type Analytics, setConsent } from 'firebase/analytics';
 
 let auth: Auth | undefined = undefined;
 let firestore: Firestore | undefined = undefined;
@@ -28,37 +28,44 @@ let analytics: Analytics | undefined = undefined;
 // Don't connect to firebase when running in node.
 if (typeof process === 'undefined') {
     try {
-        if (PUBLIC_FIREBASE_API_KEY.length > 0) {
-            const firebaseConfig = {
-                apiKey: PUBLIC_FIREBASE_API_KEY,
-                authDomain: PUBLIC_FIREBASE_AUTH_DOMAIN,
-                projectId: PUBLIC_FIREBASE_PROJECT_ID,
-                messagingSenderId: PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-                appId: PUBLIC_FIREBASE_APP_ID,
-                measurementId: PUBLIC_FIREBASE_MEASUREMENT_ID,
-            };
+        const firebaseConfig = {
+            apiKey: PUBLIC_FIREBASE_API_KEY,
+            authDomain: PUBLIC_FIREBASE_AUTH_DOMAIN,
+            projectId: PUBLIC_FIREBASE_PROJECT_ID,
+            messagingSenderId: PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+            appId: PUBLIC_FIREBASE_APP_ID,
+            measurementId: PUBLIC_FIREBASE_MEASUREMENT_ID,
+        };
 
-            // Initialize Firebase
-            const app =
-                getApps().length === 0
-                    ? initializeApp(firebaseConfig)
-                    : getApp();
+        const uninitialized = getApps().length === 0;
 
-            auth = getAuth(app);
-            firestore = getFirestore(app);
-            functions = getFunctions(app);
-            analytics = getAnalytics(app);
+        // Initialize Firebase
+        const app = uninitialized ? initializeApp(firebaseConfig) : getApp();
 
-            // Initialize emulator if environment is local.
-            if (PUBLIC_CONTEXT === 'local') {
-                connectFirestoreEmulator(firestore, 'localhost', 8080);
-                connectAuthEmulator(auth, 'http://localhost:9099');
-                connectFunctionsEmulator(functions, 'localhost', 5001);
-            }
+        const emulating = PUBLIC_CONTEXT === 'local';
+
+        auth = getAuth(app);
+
+        firestore = getFirestore(app);
+        functions = getFunctions(app);
+        analytics = emulating ? undefined : getAnalytics(app);
+
+        // Deny consent for analytics, ad tracking, and personalization tracking.
+        setConsent({
+            analytics_storage: 'denied',
+            ad_storage: 'denied',
+            personalization_storage: 'denied',
+        });
+
+        // Initialize emulator if environment is local.
+        if (emulating) {
+            connectFirestoreEmulator(firestore, 'localhost', 8080);
+            connectAuthEmulator(auth, 'http://localhost:9099');
+            connectFunctionsEmulator(functions, 'localhost', 5001);
         }
     } catch (err) {
-        console.log('*** NO ACCESS TO FIREBASE ***');
-        console.log(err);
+        console.error('*** NO ACCESS TO FIREBASE ***');
+        console.error(err);
     }
 }
 

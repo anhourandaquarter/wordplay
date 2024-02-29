@@ -3,7 +3,7 @@
     import Feedback from '@components/app/Feedback.svelte';
     import Loading from '@components/app/Loading.svelte';
     import Writing from '@components/app/Writing.svelte';
-    import { Galleries, Projects, locale } from '@db/Database';
+    import { Galleries, Projects, locales } from '@db/Database';
     import Header from '@components/app/Header.svelte';
     import MarkupHtmlView from '@components/concepts/MarkupHTMLView.svelte';
     import { goto } from '$app/navigation';
@@ -20,9 +20,8 @@
     import type Project from '../../../models/Project';
     import ProjectPreviewSet from '@components/app/ProjectPreviewSet.svelte';
     import Button from '../../../components/widgets/Button.svelte';
-    import { locales } from '@db/Database';
     import { EDIT_SYMBOL } from '../../../parser/Symbols';
-    import getProjectLink from '../../../components/app/getProjectLink';
+    import Spinning from '@components/app/Spinning.svelte';
 
     const user = getUser();
 
@@ -35,15 +34,15 @@
         const galleryID = context
             ? decodeURI(context.params.galleryid)
             : undefined;
-        if (galleryID) {
+        if (galleryID && !(gallery && gallery.getID() === galleryID)) {
             // Unsubscribe from the previous gallery store.
             if (galleryUnsubscribe) galleryUnsubscribe();
             Galleries.getStore(galleryID).then((store) => {
                 // Found a store? Subscribe to it, updating the gallery when it changes.
                 if (store) {
-                    galleryUnsubscribe = store.subscribe(
-                        (gal) => (gallery = gal)
-                    );
+                    galleryUnsubscribe = store.subscribe((gal) => {
+                        gallery = gal;
+                    });
                 }
                 // Not found? No gallery.
                 else gallery = undefined;
@@ -53,29 +52,34 @@
 
     onDestroy(() => pageUnsubscribe());
 
-    $: name = gallery?.getName($locale);
-    $: description = gallery?.getDescription($locale);
+    $: name = gallery?.getName($locales);
+    $: description = gallery?.getDescription($locales);
     $: editable = gallery
         ? $user !== null && gallery.getCurators().includes($user.uid)
         : false;
 
     // Anytime the gallery changes, refresh the project list.
+    $: if (gallery) loadProjects();
+
     let projects: Project[] | undefined = undefined;
-    $: if (gallery) {
-        Promise.all(gallery.getProjects().map((id) => Projects.get(id))).then(
-            (results) =>
-                (projects = results.filter(
-                    (result): result is Project => result !== undefined
-                ))
-        );
-    } else projects = undefined;
+
+    async function loadProjects() {
+        if (gallery === undefined || gallery === null) return;
+        projects = (
+            await Promise.all(
+                gallery
+                    .getProjects()
+                    .map((projectID) => Projects.get(projectID))
+            )
+        ).filter((proj): proj is Project => proj !== undefined);
+    }
 
     function newProject() {
         if (gallery === undefined || gallery === null) return;
         // Add the new project
         const newProjectID = Projects.create(
-            $locales,
-            $locale.newProject,
+            $locales.getLocales(),
+            $locales.getLocale().newProject,
             gallery.getID()
         );
         // Add it to this gallery.
@@ -91,38 +95,56 @@
 {:else}
     <Writing>
         {#if gallery === undefined}
-            <Feedback>{$locale.ui.gallery.error.unknown}</Feedback>
+            <Feedback
+                >{$locales.get((l) => l.ui.gallery.error.unknown)}</Feedback
+            >
         {:else}
             <Header
                 >{#if editable}<TextField
                         text={name ?? ''}
-                        description={$locale.ui.gallery.field.name.description}
-                        placeholder={$locale.ui.gallery.field.name.placeholder}
+                        description={$locales.get(
+                            (l) => l.ui.gallery.field.name.description
+                        )}
+                        placeholder={$locales.get(
+                            (l) => l.ui.gallery.field.name.placeholder
+                        )}
                         done={(text) =>
                             gallery
                                 ? Galleries.edit(
-                                      gallery.withName(text, $locale)
+                                      gallery.withName(
+                                          text,
+                                          $locales.getLocale()
+                                      )
                                   )
                                 : undefined}
-                    />{:else if name}{name}{:else}{$locale.ui.gallery.field.name
-                        .placeholder}{/if}</Header
+                    />{:else if name}{name}{:else}{$locales.get(
+                        (l) => l.ui.gallery.field.name.placeholder
+                    )}{/if}</Header
             >
             <div class="collection">
                 {#if !editable}<MarkupHtmlView
                         markup={description
                             ? description.split('\n').join('\n\n')
-                            : $locale.ui.gallery.field.description.placeholder}
+                            : $locales.get(
+                                  (l) =>
+                                      l.ui.gallery.field.description.placeholder
+                              )}
                     />{:else}
                     <TextBox
                         text={description ?? ''}
-                        description={$locale.ui.gallery.field.description
-                            .description}
-                        placeholder={$locale.ui.gallery.field.description
-                            .placeholder}
+                        description={$locales.get(
+                            (l) => l.ui.gallery.field.description.description
+                        )}
+                        placeholder={$locales.get(
+                            (l) => l.ui.gallery.field.description.placeholder
+                        )}
                         done={(text) =>
                             gallery
                                 ? Galleries.edit(
-                                      gallery.withDescription(text, $locale)
+                                      gallery.withDescription(
+                                          text,
+                                          $locales.getLocale()
+                                      )
                                   )
                                 : undefined}
                     />
@@ -131,33 +153,47 @@
                 {#if projects}
                     <ProjectPreviewSet
                         set={projects}
-                        edit={{
-                            description:
-                                $locale.ui.page.projects.button.editproject,
-                            action: (project) =>
-                                goto(getProjectLink(project, false)),
-                            label: EDIT_SYMBOL,
-                        }}
+                        edit={editable
+                            ? {
+                                  description: $locales.get(
+                                      (l) =>
+                                          l.ui.page.projects.button.editproject
+                                  ),
+                                  action: (project) =>
+                                      goto(project.getLink(false)),
+                                  label: EDIT_SYMBOL,
+                              }
+                            : false}
                         remove={(project) => {
-                            return {
-                                prompt: $locale.ui.gallery.confirm.remove
-                                    .prompt,
-                                description:
-                                    $locale.ui.gallery.confirm.remove
-                                        .description,
-                                action: () =>
-                                    gallery
-                                        ? Galleries.removeProject(project)
-                                        : undefined,
-                                label: '⨉',
-                            };
+                            return editable
+                                ? {
+                                      prompt: $locales.get(
+                                          (l) =>
+                                              l.ui.gallery.confirm.remove.prompt
+                                      ),
+                                      description: $locales.get(
+                                          (l) =>
+                                              l.ui.gallery.confirm.remove
+                                                  .description
+                                      ),
+                                      action: () =>
+                                          gallery
+                                              ? Galleries.removeProject(project)
+                                              : undefined,
+                                      label: '⨉',
+                                  }
+                                : false;
                         }}
                     />
+                {:else}
+                    <Spinning large />
                 {/if}
 
                 {#if editable}
                     <Button
-                        tip={$locale.ui.page.projects.button.newproject}
+                        tip={$locales.get(
+                            (l) => l.ui.page.projects.button.newproject
+                        )}
                         action={newProject}
                         ><span style:font-size="xxx-large">+</span>
                     </Button>
@@ -166,10 +202,14 @@
 
             {#if editable || gallery.getCurators().length > 0}
                 <Subheader
-                    >{$locale.ui.gallery.subheader.curators.header}</Subheader
+                    >{$locales.get(
+                        (l) => l.ui.gallery.subheader.curators.header
+                    )}</Subheader
                 >
                 <MarkupHtmlView
-                    markup={$locale.ui.gallery.subheader.curators.explanation}
+                    markup={$locales.get(
+                        (l) => l.ui.gallery.subheader.curators.explanation
+                    )}
                 />
                 <CreatorList
                     uids={gallery.getCurators()}
@@ -194,10 +234,14 @@
 
             {#if editable || gallery.getCreators().length > 0}
                 <Subheader
-                    >{$locale.ui.gallery.subheader.creators.header}</Subheader
+                    >{$locales.get(
+                        (l) => l.ui.gallery.subheader.creators.header
+                    )}</Subheader
                 >
                 <MarkupHtmlView
-                    markup={$locale.ui.gallery.subheader.creators.explanation}
+                    markup={$locales.get(
+                        (l) => l.ui.gallery.subheader.creators.explanation
+                    )}
                 />
                 <CreatorList
                     anonymize={!editable}
@@ -225,25 +269,34 @@
                     }}
                 />
                 <Subheader
-                    >{$locale.ui.gallery.subheader.delete.header}</Subheader
+                    >{$locales.get(
+                        (l) => l.ui.gallery.subheader.delete.header
+                    )}</Subheader
                 >
                 <MarkupHtmlView
-                    markup={$locale.ui.gallery.subheader.delete.explanation}
+                    markup={$locales.get(
+                        (l) => l.ui.gallery.subheader.delete.explanation
+                    )}
                 />
 
                 <p>
                     <ConfirmButton
                         background
-                        tip={$locale.ui.gallery.confirm.delete.description}
-                        prompt={$locale.ui.gallery.confirm.delete.prompt}
+                        tip={$locales.get(
+                            (l) => l.ui.gallery.confirm.delete.description
+                        )}
+                        prompt={$locales.get(
+                            (l) => l.ui.gallery.confirm.delete.prompt
+                        )}
                         action={async () => {
                             if (gallery) {
                                 await Galleries.delete(gallery);
                                 goto('/projects');
                             }
                         }}
-                        >{$locale.ui.gallery.confirm.delete
-                            .prompt}</ConfirmButton
+                        >{$locales.get(
+                            (l) => l.ui.gallery.confirm.delete.prompt
+                        )}</ConfirmButton
                     >
                 </p>
             {/if}

@@ -1,5 +1,5 @@
 import type Conflict from '@conflicts/Conflict';
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import Token from './Token';
 import type Type from './Type';
 import type Evaluator from '@runtime/Evaluator';
@@ -8,7 +8,6 @@ import type Step from '@runtime/Step';
 import Finish from '@runtime/Finish';
 import type Context from './Context';
 import StreamType from './StreamType';
-import type Bind from './Bind';
 import type TypeSet from './TypeSet';
 import TypeException from '@values/TypeException';
 import AnyType from './AnyType';
@@ -17,7 +16,6 @@ import { CHANGE_SYMBOL } from '@parser/Symbols';
 import Start from '@runtime/Start';
 import BoolValue from '@values/BoolValue';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import SimpleExpression from './SimpleExpression';
 import NodeRef from '@locale/NodeRef';
 import BooleanType from './BooleanType';
@@ -27,6 +25,7 @@ import type { BasisTypeName } from '../basis/BasisConstants';
 import IncompatibleInput from '../conflicts/IncompatibleInput';
 import concretize from '../locale/concretize';
 import ExpressionPlaceholder from './ExpressionPlaceholder';
+import type Locales from '../locale/Locales';
 
 export default class Changed extends SimpleExpression {
     readonly change: Token;
@@ -43,6 +42,10 @@ export default class Changed extends SimpleExpression {
 
     static make(stream: Expression) {
         return new Changed(new Token(CHANGE_SYMBOL, Sym.Change), stream);
+    }
+
+    getDescriptor() {
+        return 'Changed';
     }
 
     getGrammar(): Grammar {
@@ -65,7 +68,7 @@ export default class Changed extends SimpleExpression {
     clone(replace?: Replacement) {
         return new Changed(
             this.replaceChild('change', this.change, replace),
-            this.replaceChild('stream', this.stream, replace)
+            this.replaceChild('stream', this.stream, replace),
         ) as this;
     }
 
@@ -119,20 +122,15 @@ export default class Changed extends SimpleExpression {
                 this,
                 evaluator,
                 StreamType.make(new AnyType()),
-                value
+                value,
             );
 
         return new BoolValue(this, evaluator.didStreamCauseReaction(stream));
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
         if (this.stream instanceof Expression)
-            this.stream.evaluateTypeSet(bind, original, current, context);
+            this.stream.evaluateTypeGuards(current, guard);
         return current;
     }
 
@@ -143,15 +141,15 @@ export default class Changed extends SimpleExpression {
         return this.change;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Changed;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Changed);
     }
 
-    getStartExplanations(locale: Locale, context: Context) {
+    getStartExplanations(locales: Locales, context: Context) {
         return concretize(
-            locale,
-            locale.node.Changed.start,
-            new NodeRef(this.stream, locale, context)
+            locales,
+            locales.get((l) => l.node.Changed.start),
+            new NodeRef(this.stream, locales, context),
         );
     }
 

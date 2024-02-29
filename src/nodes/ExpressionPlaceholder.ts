@@ -16,7 +16,6 @@ import PlaceholderToken from './PlaceholderToken';
 import UnimplementedType from './UnimplementedType';
 import TypeToken from './TypeToken';
 import { node, type Grammar, type Replacement, none, any } from './Node';
-import type Locale from '@locale/Locale';
 import SimpleExpression from './SimpleExpression';
 import type { Template } from '@locale/Locale';
 import Glyphs from '../lore/Glyphs';
@@ -29,6 +28,7 @@ import BinaryEvaluate from './BinaryEvaluate';
 import FunctionDefinition from './FunctionDefinition';
 import Sym from './Sym';
 import Purpose from '../concepts/Purpose';
+import type Locales from '../locale/Locales';
 
 export default class ExpressionPlaceholder extends SimpleExpression {
     readonly placeholder: Token | undefined;
@@ -38,7 +38,7 @@ export default class ExpressionPlaceholder extends SimpleExpression {
     constructor(
         placeholder: Token | undefined,
         dot: Token | undefined,
-        type: Type | undefined
+        type: Type | undefined,
     ) {
         super();
 
@@ -54,7 +54,7 @@ export default class ExpressionPlaceholder extends SimpleExpression {
         return new ExpressionPlaceholder(
             new PlaceholderToken(),
             type !== undefined ? new TypeToken() : undefined,
-            type
+            type,
         );
     }
 
@@ -63,26 +63,33 @@ export default class ExpressionPlaceholder extends SimpleExpression {
         return [ExpressionPlaceholder.make(undefined)];
     }
 
+    getDescriptor() {
+        return 'ExpressionPlaceholder';
+    }
+
     getGrammar(): Grammar {
         return [
             {
                 name: 'placeholder',
                 kind: node(Sym.Placeholder),
                 label: (
-                    translation: Locale,
+                    locales: Locales,
                     _: Node,
                     context: Context,
-                    root: Root
+                    root: Root,
                 ): Template => {
                     const parent: Node | undefined = root.getParent(this);
                     // See if the parent has a label.
                     return (
                         parent?.getChildPlaceholderLabel(
                             this,
-                            translation,
+                            locales,
                             context,
-                            root
-                        ) ?? translation.node.ExpressionPlaceholder.placeholder
+                            root,
+                        ) ??
+                        locales.get(
+                            (l) => l.node.ExpressionPlaceholder.placeholder,
+                        )
                     );
                 },
             },
@@ -102,7 +109,7 @@ export default class ExpressionPlaceholder extends SimpleExpression {
         return new ExpressionPlaceholder(
             this.replaceChild('placeholder', this.placeholder, replace),
             this.replaceChild('dot', this.dot, replace),
-            this.replaceChild('type', this.type, replace)
+            this.replaceChild('type', this.type, replace),
         ) as this;
     }
 
@@ -153,7 +160,7 @@ export default class ExpressionPlaceholder extends SimpleExpression {
         return [
             new Halt(
                 (evaluator) => new UnimplementedException(evaluator, this),
-                this
+                this,
             ),
         ];
     }
@@ -163,15 +170,7 @@ export default class ExpressionPlaceholder extends SimpleExpression {
         return new UnimplementedException(evaluator, this);
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
-        bind;
-        original;
-        context;
+    evaluateTypeGuards(current: TypeSet) {
         return current;
     }
 
@@ -182,18 +181,21 @@ export default class ExpressionPlaceholder extends SimpleExpression {
         return this.placeholder ?? this;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.ExpressionPlaceholder;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.ExpressionPlaceholder);
     }
 
-    getDescriptionInput(locale: Locale, context: Context) {
+    getDescriptionInput(locales: Locales, context: Context) {
         return [
-            this.type ? new NodeRef(this.type, locale, context) : undefined,
+            this.type ? new NodeRef(this.type, locales, context) : undefined,
         ];
     }
 
-    getStartExplanations(locale: Locale) {
-        return concretize(locale, locale.node.ExpressionPlaceholder.start);
+    getStartExplanations(locales: Locales) {
+        return concretize(
+            locales,
+            locales.get((l) => l.node.ExpressionPlaceholder.start),
+        );
     }
 
     getGlyphs() {

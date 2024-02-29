@@ -11,9 +11,9 @@ import type Pose from './Pose';
 import type { DefinitePose } from './Pose';
 import type RenderContext from './RenderContext';
 import Fonts, { type SupportedFace } from '../basis/Fonts';
-import type Locale from '../locale/Locale';
+import type Locales from '../locale/Locales';
 
-export function createOutputType(locales: Locale[]) {
+export function createOutputType(locales: Locales) {
     return toStructure(`
     ${getBind(locales, (locale) => locale.output.Output, TYPE_SYMBOL)}()
 `);
@@ -51,7 +51,7 @@ export default abstract class Output extends Valued {
         moving: Pose | Sequence | undefined = undefined,
         exiting: Pose | Sequence | undefined = undefined,
         duration: number,
-        style: string
+        style: string,
     ) {
         super(value);
 
@@ -87,8 +87,10 @@ export default abstract class Output extends Valued {
 
     abstract getOutput(): (Output | null)[];
     abstract getBackground(): Color | undefined;
-    abstract getShortDescription(locales: Locale[]): string;
-    abstract getDescription(locales: Locale[]): string;
+    abstract getShortDescription(locales: Locales): string;
+    abstract getDescription(locales: Locales): string;
+
+    abstract getEntryAnimated(): Output[];
 
     /* 
     Given a predict function that takes a type input, recursively scans
@@ -113,6 +115,8 @@ export default abstract class Output extends Valued {
     getRenderContext(context: RenderContext) {
         return context.withFontAndSize(this.face, this.size);
     }
+
+    abstract getRepresentativeText(locales: Locales): string | undefined;
 
     getHTMLID(): string {
         return `output-${this.getName()}`;

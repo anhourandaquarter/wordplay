@@ -5,17 +5,8 @@
     import { LocalesSymbol, UserSymbol } from '../components/project/Contexts';
     import { writable } from 'svelte/store';
     import Fonts from '../basis/Fonts';
-    import {
-        locales,
-        DB,
-        animationFactor,
-        languages,
-        dark,
-    } from '../db/Database';
+    import { locales, DB, animationFactor, dark } from '../db/Database';
     import { browser } from '$app/environment';
-    import { goto } from '$app/navigation';
-    import { PUBLIC_CONTEXT } from '$env/static/public';
-    import { page } from '$app/stores';
     import { getLanguageDirection } from '../locale/LanguageCode';
 
     /** Expose the translations as context, updating them as necessary */
@@ -30,7 +21,7 @@
 
     // Keep the page's language and direction up to date.
     $: if (typeof document !== 'undefined') {
-        const language = $locales[0].language;
+        const language = $locales.getLocale().language;
         document.documentElement.setAttribute('lang', language);
         document.documentElement.setAttribute(
             'dir',
@@ -57,9 +48,6 @@
         };
     });
 
-    // Are we pre-beta in prod? Always go back to the beginning.
-    $: if (browser && $page && PUBLIC_CONTEXT === 'prod') goto('/');
-
     function prefersDark() {
         return (
             typeof window !== 'undefined' &&
@@ -80,20 +68,26 @@
     class:dark={$dark}
     style:--animation-factor={$animationFactor}
     style:--wordplay-app-font={Array.from(
-        new Set([...$locales.map((locale) => locale.ui.font.app), 'Noto Emoji'])
+        new Set([
+            ...$locales.getLocales().map((locale) => locale.ui.font.app),
+            'Noto Emoji',
+            'Noto Color Emoji',
+        ])
     )
         .map((font) => `"${font}"`)
         .join(', ')}
     style:--wordplay-code-font={Array.from(
         new Set([
-            ...$locales.map((locale) => locale.ui.font.code),
-            'Noto Mono',
+            ...$locales.getLocales().map((locale) => locale.ui.font.code),
+            'Noto Sans Mono',
             'Noto Emoji',
+            'Noto Color Emoji',
+            'Noto Sans',
         ])
     )
         .map((font) => `"${font}"`)
         .join(', ')}
-    lang={$languages[0]}
+    lang={$locales.getLocale().language}
 >
     <slot />
     {#if !loaded && lag}

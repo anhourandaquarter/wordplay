@@ -15,10 +15,10 @@ import type { BasisTypeName } from '../basis/BasisConstants';
 import UnknownNameType from './UnknownNameType';
 import type Node from './Node';
 import { node, type Grammar, type Replacement, optional } from './Node';
-import type Locale from '@locale/Locale';
 import { UnknownName } from '@conflicts/UnknownName';
 import Emotion from '../lore/Emotion';
 import Sym from './Sym';
+import type Locales from '../locale/Locales';
 
 export default class NameType extends Type {
     readonly name: Token;
@@ -41,6 +41,10 @@ export default class NameType extends Type {
 
     static make(name: string, definition?: Definition) {
         return new NameType(new NameToken(name), undefined, definition);
+    }
+
+    getDescriptor() {
+        return 'NameType';
     }
 
     getGrammar(): Grammar {
@@ -167,8 +171,8 @@ export default class NameType extends Type {
         return 'name';
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.NameType;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.NameType);
     }
 
     getGlyphs() {

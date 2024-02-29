@@ -7,13 +7,13 @@ import TextType from '../nodes/TextType';
 import TextValue from '../values/TextValue';
 import StreamType from '../nodes/StreamType';
 import createStreamEvaluator from './createStreamEvaluator';
-import type Locale from '../locale/Locale';
+import type Locales from '../locale/Locales';
 
 export default class Chat extends StreamValue<TextValue, string> {
     constructor(evaluator: Evaluator) {
         super(
             evaluator,
-            evaluator.project.shares.input.Key,
+            evaluator.project.shares.input.Chat,
             new TextValue(evaluator.getMain(), ''),
             ''
         );
@@ -40,7 +40,7 @@ export default class Chat extends StreamValue<TextValue, string> {
     }
 }
 
-export function createChatDefinition(locales: Locale[]) {
+export function createChatDefinition(locales: Locales) {
     return StreamDefinition.make(
         getDocLocales(locales, (locale) => locale.input.Chat.doc),
         getNameLocales(locales, (locale) => locale.input.Chat.names),

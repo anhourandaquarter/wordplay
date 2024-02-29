@@ -1,6 +1,6 @@
 import type Node from './Node';
 import Bind from './Bind';
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import Token from './Token';
 import Sym from './Sym';
 import Type from './Type';
@@ -42,6 +42,7 @@ import PropertyReference from './PropertyReference';
 import Reference from './Reference';
 import Purpose from '../concepts/Purpose';
 import DefinitionExpression from './DefinitionExpression';
+import type Locales from '../locale/Locales';
 
 export default class FunctionDefinition extends DefinitionExpression {
     readonly docs?: Docs;
@@ -67,7 +68,7 @@ export default class FunctionDefinition extends DefinitionExpression {
         close: Token | undefined,
         dot: Token | undefined,
         output: Type | undefined,
-        expression: Expression | undefined
+        expression: Expression | undefined,
     ) {
         super();
 
@@ -93,7 +94,7 @@ export default class FunctionDefinition extends DefinitionExpression {
         types: TypeVariables | undefined,
         inputs: Bind[],
         expression: Expression,
-        output?: Type
+        output?: Type,
     ) {
         return new FunctionDefinition(
             docs,
@@ -106,7 +107,7 @@ export default class FunctionDefinition extends DefinitionExpression {
             new EvalCloseToken(),
             output === undefined ? undefined : new TypeToken(),
             output,
-            expression
+            expression,
         );
     }
 
@@ -118,64 +119,67 @@ export default class FunctionDefinition extends DefinitionExpression {
                 undefined,
                 [],
                 ExpressionPlaceholder.make(),
-                undefined
+                undefined,
             ),
         ];
     }
 
+    getDescriptor() {
+        return 'FunctionDefinition';
+    }
+
     /** Create an expression that evaluates this function with typed placeholders for its inputs. */
     getEvaluateTemplate(
-        nameOrLocales: Locale[] | string,
+        nameOrLocales: Locales | string,
         context: Context,
-        structureType: Expression | Type | undefined
+        structureType: Expression | Type | undefined,
     ) {
         const possibleStructure = context.getRoot(this)?.getParent(this);
-        const structure =
-            structureType instanceof Expression
-                ? structureType
-                : possibleStructure instanceof StructureDefinition
-                ? possibleStructure
-                : undefined;
+        const structure = structureType
+            ? structureType
+            : possibleStructure instanceof StructureDefinition
+              ? possibleStructure
+              : undefined;
         const reference = Reference.make(
             typeof nameOrLocales === 'string'
                 ? nameOrLocales
-                : this.names.getPreferredNameString(nameOrLocales),
-            this
+                : nameOrLocales.getName(this.names),
+            this,
         );
         return this.isOperator() && this.inputs.length === 0
             ? new UnaryEvaluate(
                   new Reference(
-                      new Token(this.getOperatorName() ?? '_', Sym.Operator)
+                      new Token(this.getOperatorName() ?? '_', Sym.Operator),
                   ),
                   structureType instanceof Expression
                       ? structureType
-                      : ExpressionPlaceholder.make(structureType?.clone())
+                      : ExpressionPlaceholder.make(structureType?.clone()),
               )
             : this.isOperator() && this.inputs.length === 1
-            ? new BinaryEvaluate(
-                  structureType instanceof Expression
-                      ? structureType
-                      : ExpressionPlaceholder.make(structureType),
-                  Reference.make(this.getOperatorName() ?? '_'),
-                  ExpressionPlaceholder.make()
-              )
-            : Evaluate.make(
-                  structure
-                      ? PropertyReference.make(
-                            structureType instanceof Expression
-                                ? structureType
-                                : ExpressionPlaceholder.make(structureType),
-                            reference
-                        )
-                      : reference,
-                  this.inputs
-                      .filter((input) => !input.hasDefault())
-                      .map((input) => {
-                          if (input.type instanceof FunctionType)
-                              return input.type.getTemplate(context);
-                          else return ExpressionPlaceholder.make();
-                      })
-              );
+              ? new BinaryEvaluate(
+                    structureType instanceof Expression
+                        ? structureType
+                        : ExpressionPlaceholder.make(structureType),
+                    Reference.make(this.getOperatorName() ?? '_'),
+                    ExpressionPlaceholder.make(),
+                )
+              : Evaluate.make(
+                    structure
+                        ? PropertyReference.make(
+                              structureType instanceof Expression
+                                  ? structureType
+                                  : ExpressionPlaceholder.make(structureType),
+                              reference,
+                          )
+                        : reference,
+                    this.inputs
+                        .filter((input) => !input.hasDefault())
+                        .map((input) => {
+                            if (input.type instanceof FunctionType)
+                                return input.type.getTemplate(context);
+                            else return ExpressionPlaceholder.make();
+                        }),
+                );
     }
 
     getGrammar(): Grammar {
@@ -210,6 +214,11 @@ export default class FunctionDefinition extends DefinitionExpression {
         ];
     }
 
+    /** Used by Evaluator to get the steps for the evaluation of this function. */
+    getEvaluationSteps(evaluator: Evaluator, context: Context): Step[] {
+        return this.expression?.compile(evaluator, context) ?? [];
+    }
+
     getPurpose() {
         return Purpose.Evaluate;
     }
@@ -226,7 +235,7 @@ export default class FunctionDefinition extends DefinitionExpression {
             this.replaceChild('close', this.close, replace),
             this.replaceChild('dot', this.dot, replace),
             this.replaceChild('output', this.output, replace),
-            this.replaceChild('expression', this.expression, replace)
+            this.replaceChild('expression', this.expression, replace),
         ) as this;
     }
 
@@ -274,7 +283,7 @@ export default class FunctionDefinition extends DefinitionExpression {
         }
         return this.getOutputType(context).accepts(
             fun.getOutputType(context),
-            context
+            context,
         );
     }
 
@@ -319,8 +328,8 @@ export default class FunctionDefinition extends DefinitionExpression {
                         this.names,
                         this.output,
                         this.expression,
-                        type
-                    )
+                        type,
+                    ),
                 );
             }
         }
@@ -332,7 +341,7 @@ export default class FunctionDefinition extends DefinitionExpression {
         // Does an input declare the name that isn't the one asking?
         return [
             ...(this.inputs.filter(
-                (i) => i instanceof Bind && i !== node
+                (i) => i instanceof Bind && i !== node,
             ) as Bind[]),
             ...(this.types ? this.types.variables : []),
         ];
@@ -343,7 +352,7 @@ export default class FunctionDefinition extends DefinitionExpression {
             this.types,
             this.inputs,
             this.getOutputType(context),
-            this
+            this,
         );
     }
 
@@ -351,8 +360,8 @@ export default class FunctionDefinition extends DefinitionExpression {
         return this.output instanceof Type
             ? this.output
             : this.expression === undefined
-            ? new UnimplementedType(this)
-            : this.expression.getType(context);
+              ? new UnimplementedType(this)
+              : this.expression.getType(context);
     }
 
     /** Functions have no dependencies; once they are defined, they cannot change what they evaluate to. */
@@ -386,7 +395,7 @@ export default class FunctionDefinition extends DefinitionExpression {
                 ? new InternalException(
                       this,
                       evaluator,
-                      'there is no evaluation, which should be impossible'
+                      'there is no evaluation, which should be impossible',
                   )
                 : new FunctionValue(this, context);
 
@@ -415,32 +424,30 @@ export default class FunctionDefinition extends DefinitionExpression {
                 this.output.isEqualTo(definition.output) &&
                 this.inputs.length === definition.inputs.length &&
                 this.inputs.every((input, index) =>
-                    input.isEqualTo(definition.inputs[index])
+                    input.isEqualTo(definition.inputs[index]),
                 ))
         );
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
         if (this.expression !== undefined)
-            this.expression.evaluateTypeSet(bind, original, current, context);
+            this.expression.evaluateTypeGuards(current, guard);
         return current;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.FunctionDefinition;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.FunctionDefinition);
     }
 
-    getStartExplanations(locale: Locale) {
-        return concretize(locale, locale.node.FunctionDefinition.start);
+    getStartExplanations(locales: Locales) {
+        return concretize(
+            locales,
+            locales.get((l) => l.node.FunctionDefinition.start),
+        );
     }
 
-    getDescriptionInputs(locale: Locale) {
-        return [this.names.getPreferredNameString([locale])];
+    getDescriptionInputs(locales: Locales) {
+        return [locales.getName(this.names)];
     }
 
     getGlyphs() {

@@ -1,8 +1,9 @@
 <!-- A modifiable list of creators -->
 <script lang="ts">
+    import isValidUsername from '@db/isValidUsername';
     import type { Creator } from '../../db/CreatorDatabase';
-    import { DB, locale } from '../../db/Database';
-    import validateEmail from '../../db/validEmail';
+    import { DB, locales } from '../../db/Database';
+    import validEmail from '../../db/isValidEmail';
     import CreatorView from '../app/CreatorView.svelte';
     import Feedback from '../app/Feedback.svelte';
     import Spinning from '../app/Spinning.svelte';
@@ -16,24 +17,27 @@
     export let editable: boolean;
     export let anonymize: boolean;
 
-    $: if (email) unknown = false;
+    $: if (emailOrUsername) unknown = false;
 
     let adding = false;
-    let email = '';
+    let emailOrUsername = '';
     let unknown = false;
 
     let creators: Record<string, Creator | null> = {};
-    $: DB.Creators.getCreatorsByEmail(uids).then((map) => (creators = map));
+    $: DB.Creators.getCreatorsByUIDs(uids).then((map) => (creators = map));
 
-    function validCollaborator(email: string) {
+    function validCollaborator(emailOrUsername: string) {
         // Don't add self
-        return validateEmail(email) && email !== DB.getUserEmail();
+        return (
+            (validEmail(emailOrUsername) || isValidUsername(emailOrUsername)) &&
+            emailOrUsername !== DB.getUserEmail()
+        );
     }
 
     async function addCreator() {
-        if (validCollaborator(email)) {
+        if (validCollaborator(emailOrUsername)) {
             adding = true;
-            const userID = await DB.Creators.getUID(email);
+            const userID = await DB.Creators.getUID(emailOrUsername);
             adding = false;
             if (userID === null) {
                 unknown = true;
@@ -41,7 +45,7 @@
                 unknown = false;
                 add(userID);
             }
-            email = '';
+            emailOrUsername = '';
         }
     }
 </script>
@@ -49,19 +53,29 @@
 {#if editable}
     <form class="form" on:submit={addCreator}>
         <TextField
-            bind:text={email}
-            placeholder={$locale.ui.dialog.share.field.email.placeholder}
-            description={$locale.ui.dialog.share.field.email.description}
-            validator={validateEmail}
+            bind:text={emailOrUsername}
+            placeholder={$locales.get(
+                (l) => l.ui.dialog.share.field.emailOrUsername.placeholder,
+            )}
+            description={$locales.get(
+                (l) => l.ui.dialog.share.field.emailOrUsername.description,
+            )}
+            validator={validCollaborator}
         />
         <Button
-            tip={$locale.ui.dialog.share.button.submit}
-            active={validCollaborator(email)}
+            submit
+            background
+            tip={$locales.get((l) => l.ui.dialog.share.button.submit)}
+            active={validCollaborator(emailOrUsername)}
             action={() => undefined}>&gt;</Button
         >
         {#if adding}<Spinning label="" />{/if}
         {#if unknown}
-            <Feedback>{$locale.ui.dialog.share.error.unknown}</Feedback>{/if}
+            <Feedback
+                >{$locales.get(
+                    (l) => l.ui.dialog.share.error.unknown,
+                )}</Feedback
+            >{/if}
     </form>
 {/if}
 
@@ -72,7 +86,9 @@
                     {anonymize}
                     {creator}
                 />{:else}?{/if}{#if editable}<Button
-                    tip={$locale.ui.project.button.removeCollaborator}
+                    tip={$locales.get(
+                        (l) => l.ui.project.button.removeCollaborator,
+                    )}
                     active={removable(uid)}
                     action={() => remove(uid)}>⨉</Button
                 >{/if}</div

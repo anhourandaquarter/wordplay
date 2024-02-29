@@ -6,8 +6,8 @@ import Sym from './Sym';
 import Type from './Type';
 import type TypeSet from './TypeSet';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import Glyphs from '../lore/Glyphs';
+import type Locales from '../locale/Locales';
 
 export default class ConversionType extends Type {
     readonly input: Type;
@@ -30,6 +30,10 @@ export default class ConversionType extends Type {
             new Token(CONVERT_SYMBOL, Sym.Convert),
             output
         );
+    }
+
+    getDescriptor() {
+        return 'ConversionType';
     }
 
     getGrammar(): Grammar {
@@ -69,8 +73,8 @@ export default class ConversionType extends Type {
         return 'conversion';
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.ConversionType;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.ConversionType);
     }
 
     getGlyphs() {

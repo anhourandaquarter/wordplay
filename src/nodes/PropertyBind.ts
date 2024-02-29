@@ -7,12 +7,10 @@ import type Step from '@runtime/Step';
 import Start from '@runtime/Start';
 import Finish from '@runtime/Finish';
 import type Context from './Context';
-import type Bind from './Bind';
 import type TypeSet from './TypeSet';
 import NameException from '@values/NameException';
 import type Value from '@values/Value';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import BindToken from './BindToken';
 import StructureValue from '../values/StructureValue';
 import ValueException from '../values/ValueException';
@@ -26,6 +24,7 @@ import Sym from './Sym';
 import ExpressionPlaceholder from './ExpressionPlaceholder';
 import Reference from './Reference';
 import type Node from './Node';
+import type Locales from '../locale/Locales';
 
 export default class PropertyBind extends Expression {
     readonly reference: PropertyReference;
@@ -49,7 +48,7 @@ export default class PropertyBind extends Expression {
     static getPossibleNodes(
         type: Type | undefined,
         node: Node,
-        selected: boolean
+        selected: boolean,
     ) {
         return [
             node instanceof PropertyReference && selected
@@ -57,11 +56,15 @@ export default class PropertyBind extends Expression {
                 : PropertyBind.make(
                       PropertyReference.make(
                           ExpressionPlaceholder.make(),
-                          Reference.make('_')
+                          Reference.make('_'),
                       ),
-                      ExpressionPlaceholder.make(type)
+                      ExpressionPlaceholder.make(type),
                   ),
         ];
+    }
+
+    getDescriptor() {
+        return 'PropertyBind';
     }
 
     getGrammar(): Grammar {
@@ -76,7 +79,7 @@ export default class PropertyBind extends Expression {
         return new PropertyBind(
             this.replaceChild('reference', this.reference, replace),
             this.replaceChild('bind', this.bind, replace),
-            this.replaceChild('value', this.value, replace)
+            this.replaceChild('value', this.value, replace),
         ) as this;
     }
 
@@ -96,7 +99,7 @@ export default class PropertyBind extends Expression {
                     this.reference,
                     propertyType,
                     this,
-                    valueType
+                    valueType,
                 ),
             ];
 
@@ -141,7 +144,7 @@ export default class PropertyBind extends Expression {
         const newStructure = subject.withValue(
             this,
             this.reference.name.name.getText(),
-            value
+            value,
         );
 
         if (newStructure === undefined)
@@ -149,13 +152,13 @@ export default class PropertyBind extends Expression {
                 this.reference,
                 this.reference.name.name,
                 subject,
-                evaluator
+                evaluator,
             );
 
         return newStructure;
     }
 
-    evaluateTypeSet(_: Bind, __: TypeSet, current: TypeSet) {
+    evaluateTypeGuards(current: TypeSet) {
         return current;
     }
 
@@ -166,26 +169,29 @@ export default class PropertyBind extends Expression {
         return this.bind;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.PropertyBind;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.PropertyBind);
     }
 
-    getStartExplanations(locale: Locale) {
-        return concretize(locale, locale.node.PropertyBind.start);
+    getStartExplanations(locales: Locales) {
+        return concretize(
+            locales,
+            locales.get((l) => l.node.PropertyBind.start),
+        );
     }
 
     getFinishExplanations(
-        locale: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         return concretize(
-            locale,
-            locale.node.PropertyBind.finish,
+            locales,
+            locales.get((l) => l.node.PropertyBind.finish),
             this.reference.name
-                ? new NodeRef(this.reference.name, locale, context)
+                ? new NodeRef(this.reference.name, locales, context)
                 : undefined,
-            this.getValueIfDefined(locale, context, evaluator)
+            this.getValueIfDefined(locales, context, evaluator),
         );
     }
 
@@ -193,10 +199,10 @@ export default class PropertyBind extends Expression {
         return Glyphs.Bind;
     }
 
-    getDescriptionInputs(locale: Locale, context: Context) {
+    getDescriptionInputs(locales: Locales, context: Context) {
         return [
             this.reference.name
-                ? new NodeRef(this.reference.name, locale, context)
+                ? new NodeRef(this.reference.name, locales, context)
                 : undefined,
         ];
     }

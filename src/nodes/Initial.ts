@@ -5,13 +5,11 @@ import type Type from './Type';
 import type Evaluator from '@runtime/Evaluator';
 import type Value from '@values/Value';
 import type Step from '@runtime/Step';
-import type Bind from './Bind';
 import type TypeSet from './TypeSet';
 import Sym from './Sym';
 import { INITIAL_SYMBOL } from '@parser/Symbols';
 import BoolValue from '@values/BoolValue';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import SimpleExpression from './SimpleExpression';
 import BooleanType from './BooleanType';
 import StartFinish from '@runtime/StartFinish';
@@ -20,6 +18,7 @@ import Glyphs from '../lore/Glyphs';
 import Purpose from '../concepts/Purpose';
 import type { BasisTypeName } from '../basis/BasisConstants';
 import concretize from '../locale/concretize';
+import type Locales from '../locale/Locales';
 
 export default class Initial extends SimpleExpression {
     readonly diamond: Token;
@@ -40,13 +39,17 @@ export default class Initial extends SimpleExpression {
         return [Initial.make()];
     }
 
+    getDescriptor() {
+        return 'Initial';
+    }
+
     getGrammar(): Grammar {
         return [{ name: 'diamond', kind: node(Sym.Initial) }];
     }
 
     clone(replace?: Replacement) {
         return new Initial(
-            this.replaceChild('diamond', this.diamond, replace)
+            this.replaceChild('diamond', this.diamond, replace),
         ) as this;
     }
 
@@ -85,7 +88,7 @@ export default class Initial extends SimpleExpression {
         return new BoolValue(this, evaluator.isInitialEvaluation());
     }
 
-    evaluateTypeSet(_: Bind, __: TypeSet, current: TypeSet) {
+    evaluateTypeGuards(current: TypeSet) {
         return current;
     }
 
@@ -97,12 +100,15 @@ export default class Initial extends SimpleExpression {
         return this.diamond;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Initial;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Initial);
     }
 
-    getStartExplanations(locale: Locale) {
-        return concretize(locale, locale.node.Initial.name);
+    getStartExplanations(locales: Locales) {
+        return concretize(
+            locales,
+            locales.get((l) => l.node.Initial.name),
+        );
     }
 
     getGlyphs() {

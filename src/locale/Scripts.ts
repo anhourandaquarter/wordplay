@@ -1,5 +1,22 @@
 export type WritingDirection = 'ltr' | 'rtl';
 export type WritingLayout = 'horizontal-tb' | 'vertical-rl' | 'vertical-lr';
+export const HorizontalLayout = '↔↓';
+export const VerticalRightLeftLayout = '↕←';
+export const VerticalLeftRightLayout = '↕→';
+export type WritingLayoutSymbol =
+    | typeof HorizontalLayout
+    | typeof VerticalLeftRightLayout
+    | typeof VerticalRightLeftLayout;
+
+export const CSSByLayout: Record<WritingLayoutSymbol, WritingLayout> = {
+    '↔↓': 'horizontal-tb',
+    '↕←': 'vertical-rl',
+    '↕→': 'vertical-lr',
+};
+
+export function layoutToCSS(layout: WritingLayoutSymbol): WritingLayout {
+    return CSSByLayout[layout] ?? 'horizontal-tb';
+}
 
 export type ScriptMetadata = {
     direction: WritingDirection;
@@ -13,7 +30,7 @@ export const Scripts = {
     Latn: { direction: 'ltr', layout: 'horizontal-tb' },
     Cyrl: { direction: 'ltr', layout: 'horizontal-tb' },
     Grek: { direction: 'ltr', layout: 'horizontal-tb' },
-    Kore: { direction: 'ltr', layout: 'vertical-rl' },
+    Kore: { direction: 'ltr', layout: 'horizontal-tb' },
     Ethi: { direction: 'ltr', layout: 'horizontal-tb' },
     Hebr: { direction: 'rtl', layout: 'horizontal-tb' },
     Arab: { direction: 'rtl', layout: 'horizontal-tb' },
@@ -25,7 +42,7 @@ export const Scripts = {
     Yiii: { direction: 'ltr', layout: 'horizontal-tb' },
     Cans: { direction: 'ltr', layout: 'horizontal-tb' },
     Jpan: { direction: 'ltr', layout: 'horizontal-tb' },
-    Hira: { direction: 'ltr', layout: 'vertical-rl' },
+    Hira: { direction: 'ltr', layout: 'horizontal-tb' },
     Kana: { direction: 'ltr', layout: 'horizontal-tb' },
     Mymr: { direction: 'ltr', layout: 'horizontal-tb' },
     Syrc: { direction: 'rtl', layout: 'horizontal-tb' },
@@ -34,7 +51,7 @@ export const Scripts = {
     Thai: { direction: 'ltr', layout: 'horizontal-tb' },
     Telu: { direction: 'ltr', layout: 'horizontal-tb' },
     Sinh: { direction: 'ltr', layout: 'horizontal-tb' },
-    Mong: { direction: 'ltr', layout: 'vertical-lr' },
+    Mong: { direction: 'ltr', layout: 'horizontal-tb' },
     Laoo: { direction: 'ltr', layout: 'horizontal-tb' },
     Knda: { direction: 'ltr', layout: 'horizontal-tb' },
     Khmr: { direction: 'ltr', layout: 'horizontal-tb' },

@@ -8,7 +8,7 @@
     export let uiid: string | undefined = undefined;
 </script>
 
-<span class="switch" data-uiid={uiid}>
+<span class="switch" data-uiid={uiid} class:on>
     <span
         class={`button off ${on ? 'inactive' : 'active'}`}
         role="button"
@@ -16,7 +16,7 @@
         aria-label={offTip}
         tabindex={on ? 0 : null}
         title={offTip}
-        on:pointerdown|stopPropagation={() => toggle(false)}
+        on:click|stopPropagation={() => toggle(false)}
         on:keydown={(event) =>
             event.key === 'Enter' || event.key === ' '
                 ? toggle(false)
@@ -28,7 +28,7 @@
         aria-label={onTip}
         tabindex={on ? null : 0}
         title={onTip}
-        on:pointerdown|stopPropagation={(event) =>
+        on:click|stopPropagation={(event) =>
             event.button === 0 ? toggle(true) : undefined}
         on:keydown={(event) =>
             event.key === 'Enter' || event.key === ' '
@@ -73,10 +73,16 @@
     }
 
     .divider {
+        display: inline-block;
+        transform: translateX(-1px);
         width: var(--wordplay-border-width);
         border-right: var(--wordplay-border-width) solid
             var(--wordplay-border-color);
         height: 1.5em;
+    }
+
+    .on .divider {
+        transform: translateX(1px);
     }
 
     .button.inactive:hover {

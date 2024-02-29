@@ -10,6 +10,7 @@ import Sym from './Sym';
 import Token from './Token';
 import { TYPE_SYMBOL } from '../parser/Symbols';
 import type Definition from './Definition';
+import type Locales from '../locale/Locales';
 
 export default class TypeVariable extends Node {
     readonly names: Names;
@@ -36,6 +37,10 @@ export default class TypeVariable extends Node {
             type ? new Token(TYPE_SYMBOL, Sym.Type) : undefined,
             type
         );
+    }
+
+    getDescriptor() {
+        return 'TypeVariable';
     }
 
     getGrammar(): Grammar {
@@ -87,8 +92,8 @@ export default class TypeVariable extends Node {
         return definition === this;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.TypeVariable;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.TypeVariable);
     }
 
     getGlyphs() {

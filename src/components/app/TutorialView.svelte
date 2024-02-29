@@ -16,7 +16,7 @@
     import PlayView from './PlayView.svelte';
     import Button from '../widgets/Button.svelte';
     import Source from '../../nodes/Source';
-    import { locale, locales, Projects } from '../../db/Database';
+    import { locales, Projects } from '@db/Database';
     import type Spaces from '../../parser/Spaces';
     import { toMarkup } from '../../parser/toMarkup';
     import MarkupHTMLView from '../concepts/MarkupHTMLView.svelte';
@@ -33,10 +33,12 @@
     import type Markup from '../../nodes/Markup';
     import Header from './Header.svelte';
     import { PersistenceType } from '../../db/ProjectHistory';
+    import Options from '@components/widgets/Options.svelte';
     import { moderatedFlags } from '../../models/Moderation';
 
     export let progress: Progress;
     export let navigate: (progress: Progress) => void;
+    export let fallback: boolean;
 
     // Get the concept index and path from the project view and put it in
     // a store, and the store in a context so that ContextViewUI can access the index.
@@ -82,8 +84,8 @@
             turn.speech
                 .nodes()
                 .filter(
-                    (node): node is ConceptLink => node instanceof ConceptLink
-                )
+                    (node): node is ConceptLink => node instanceof ConceptLink,
+                ),
         )
         .flat()
         .filter((concept) => concept.concept.getText().startsWith('@UI/'))
@@ -118,7 +120,7 @@
     $: source = isUse
         ? Performances[performance[2] as keyof typeof Performances].apply(
               undefined,
-              performance.slice(3) as [string]
+              performance.slice(3) as [string],
           )
         : performance.slice(1).join('\n');
 
@@ -126,14 +128,21 @@
     let initialProject: Project;
     $: if (
         initialProject === undefined ||
-        progress.getProjectID() !== initialProject.id
+        progress.getProjectID() !== initialProject.getID()
     )
-        initialProject = new Project(
+        initialProject = Project.make(
             progress.getProjectID(),
-            scene ? scene.title : act ? act.title : $locale.wordplay,
-            new Source($locale.term.start, source),
+            scene
+                ? scene.title
+                : act
+                  ? act.title
+                  : $locales.getLocale().wordplay,
+            new Source(
+                $locales.get((l) => l.term.start),
+                source,
+            ),
             [],
-            $locales,
+            $locales.getLocales(),
             $user?.uid ?? null,
             [],
             false,
@@ -142,7 +151,7 @@
             false,
             false,
             null,
-            moderatedFlags()
+            moderatedFlags(),
         );
 
     // Every time the progress changes, see if there's a revision to the project stored in the database,
@@ -159,7 +168,7 @@
                     initialProject,
                     true,
                     PersistenceType.Local,
-                    false
+                    false,
                 )?.getStore();
         });
     }
@@ -167,19 +176,58 @@
     // Every time the progress changes, get the store for the corresponding project, if there is one.
     $: projectStore = Projects.getStore(progress.getProjectID());
 
-    // Every time the project store changes, update the context.
-    $: if (projectStore)
-        setContext<ProjectContext>(ProjectSymbol, projectStore);
+    // Create a reactive context of the current project.
+    const project = writable<Project | undefined>(undefined);
+    setContext<ProjectContext>(ProjectSymbol, project);
+
+    // Every time the project store changes, update the project context.
+    $: project.set($projectStore);
 
     // When the project changes to something other than the initial project, start persisting it.
     $: if ($projectStore !== undefined && !$projectStore.equals(initialProject))
-        Projects.getHistory($projectStore.id)?.setPersist(
-            PersistenceType.Local
+        Projects.getHistory($projectStore.getID())?.setPersist(
+            PersistenceType.Local,
         );
 
-    let selection: Progress | undefined = undefined;
-    function handleSelect() {
-        if (selection) navigate(selection);
+    // Compute the options for the select based on the tutorial
+    $: lessons = progress.tutorial.acts.map((act, actIndex) => {
+        return {
+            label: act.title,
+            options: act.scenes.map((scene, sceneIndex) => {
+                return {
+                    value: JSON.stringify(
+                        new Progress(
+                            progress.tutorial,
+                            actIndex + 1,
+                            sceneIndex + 1,
+                            0,
+                        ).serialize(),
+                    ),
+                    label: scene.subtitle ?? scene.title,
+                };
+            }),
+        };
+    });
+
+    function handleSelect(lesson: string | undefined) {
+        if (lesson === undefined) return;
+        const lessonJSON = JSON.parse(lesson);
+        if (
+            'act' in lessonJSON &&
+            typeof lessonJSON.act === 'number' &&
+            'scene' in lessonJSON &&
+            typeof lessonJSON.scene === 'number' &&
+            'line' in lessonJSON &&
+            typeof lessonJSON.line === 'number'
+        ) {
+            const newProgress = new Progress(
+                progress.tutorial,
+                lessonJSON.act,
+                lessonJSON.scene,
+                lessonJSON.line,
+            );
+            navigate(newProgress);
+        }
     }
 
     async function handleKey(event: KeyboardEvent) {
@@ -209,76 +257,85 @@
 />
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<section
-    class="tutorial"
-    on:keydown={handleKey}
-    on:pointerdown|stopPropagation|preventDefault={() => nextButton?.focus()}
->
+<section class="tutorial" on:keydown={handleKey}>
     <div class="header">
-        <Header>Learn</Header>
+        <Header block={false}
+            >{#if fallback}🚧{/if}
+            {$locales.get(
+                (l) => l.ui.page.learn.header,
+            )}{#if fallback}🚧{/if}</Header
+        >
         <nav>
-            <Button
-                tip={$locale.ui.page.learn.button.previous}
-                action={() => navigate(progress.previousPause() ?? progress)}
-                active={progress.previousPause() !== undefined}
-                bind:view={previousButton}>⇦</Button
-            >
-            <Button
-                tip={$locale.ui.page.learn.button.next}
-                action={() => navigate(progress.nextPause() ?? progress)}
-                active={progress.nextPause() !== undefined}
-                bind:view={nextButton}>⇨</Button
-            >
-            <!-- A hierarchical select of tutorial units and lessons  -->
-            <select
-                bind:value={selection}
-                on:change={handleSelect}
-                on:pointerdown|stopPropagation
-                on:keydown|stopPropagation
-            >
-                {#each progress.tutorial.acts as act, actIndex}
-                    <optgroup label={act.title}>
-                        {#each act.scenes as scene, sceneIndex}
-                            <option
-                                value={new Progress(
-                                    progress.tutorial,
-                                    actIndex + 1,
-                                    sceneIndex + 1,
-                                    0
-                                )}>{scene.subtitle ?? scene.title}</option
-                            >
-                        {/each}
-                    </optgroup>
-                {/each}
-            </select>
-            <Note
-                >{#if act !== undefined}{act.title}{/if}
-                {#if act !== undefined && scene !== undefined}&mdash; {scene.subtitle ??
-                        scene.title}{/if}
-                {#if act !== undefined && scene !== undefined && progress.pause > 0}
-                    <span class="progress"
-                        >&mdash; {progress.pause} /
-                        {scene
-                            ? scene.lines.filter((line) => line === null)
-                                  .length + 1
-                            : '?'}</span
-                    >{/if}</Note
-            >
+            {#if act !== undefined}
+                <Note>
+                    {act.title}
+                    <sub
+                        >{progress.tutorial.acts.findIndex(
+                            (candidate) => candidate === act,
+                        ) + 1}/{progress.tutorial.acts.length}</sub
+                    ></Note
+                >{/if}
+            <!-- A select component tutorial lessons, grouped by unit. The value is always line zero so that the label is selected correctly.  -->
+            <Options
+                label={$locales.get((l) => l.ui.page.learn.options.lesson)}
+                value={JSON.stringify(progress.withLine(0).serialize())}
+                change={handleSelect}
+                id="current-lesson"
+                options={lessons}
+            ></Options>
         </nav>
     </div>
     <div class="content">
         <div role="article" class="dialog">
-            <div class="turns" aria-live="assertive">
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div
+                class="turns"
+                aria-live="assertive"
+                on:click|stopPropagation={() => nextButton?.focus()}
+            >
+                <div class="controls">
+                    <Button
+                        large
+                        tip={$locales.get(
+                            (l) => l.ui.page.learn.button.previous,
+                        )}
+                        action={() =>
+                            navigate(progress.previousPause() ?? progress)}
+                        active={progress.previousPause() !== undefined}
+                        bind:view={previousButton}>⇦</Button
+                    >
+                    {#if act !== undefined && scene !== undefined && (scene.subtitle ?? scene.title)}<Note
+                            >{scene.subtitle ?? scene.title}
+                            {#if act !== undefined && scene !== undefined && progress.pause > 0}
+                                <sub class="progress"
+                                    >{progress.pause}/{scene
+                                        ? scene.lines.filter(
+                                              (line) => line === null,
+                                          ).length + 1
+                                        : '?'}</sub
+                                >{/if}</Note
+                        >{/if}
+                    <Button
+                        large
+                        tip={$locales.get((l) => l.ui.page.learn.button.next)}
+                        action={() =>
+                            navigate(progress.nextPause() ?? progress)}
+                        active={progress.nextPause() !== undefined}
+                        bind:view={nextButton}>⇨</Button
+                    >
+                </div>
                 {#if act === undefined}
-                    <div class="title play">{$locale.wordplay}</div>
+                    <div class="title play"
+                        >{$locales.get((l) => l.wordplay)}</div
+                    >
                 {:else if scene === undefined}
                     <div class="title act"
-                        >{$locale.term.act}
+                        >{$locales.get((l) => l.term.act)}
                         {progress.act}<p><em>{act.title}</em></p></div
                     >
                 {:else if dialog === undefined}
                     <div class="title scene"
-                        >{$locale.term.scene}
+                        >{$locales.get((l) => l.term.scene)}
                         {progress.scene}<p><em>{scene.title}</em></p
                         >{#if scene.subtitle}<em>{scene.subtitle}</em>{/if}</div
                     >
@@ -315,10 +372,11 @@
                         project={$projectStore ?? initialProject}
                         original={initialProject}
                         bind:index={concepts}
-                        playing={!editable}
+                        showOutput={!editable}
                         {fit}
                         autofocus={false}
-                        showHelp={false}
+                        warn={false}
+                        shareable={false}
                     /></div
                 >{:else}<PlayView
                     project={$projectStore ?? initialProject}
@@ -416,9 +474,10 @@
     nav {
         padding: var(--wordplay-spacing);
         display: flex;
-        flex-direction: row;
-        gap: calc(2 * var(--wordplay-spacing));
-        align-items: center;
+        flex-direction: column;
+        gap: var(--wordplay-spacing);
+        align-items: start;
+        justify-content: center;
         width: 100%;
     }
 
@@ -448,22 +507,10 @@
         justify-self: center;
     }
 
-    select {
-        width: 1.25em;
-        border: none;
-        cursor: pointer;
-        padding: var(--wordplay-spacing);
-        border-radius: var(--wordplay-border-radius);
-    }
-
-    select:focus {
-        background: var(--wordplay-focus-color);
-        color: var(--wordplay-background);
-        font-weight: bold;
-        outline: none;
-    }
-
-    select::after {
-        content: 'a';
+    .controls {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
     }
 </style>

@@ -1,34 +1,41 @@
 <script lang="ts">
     import { get } from 'svelte/store';
-    import { Galleries, Projects, locale } from '../../db/Database';
+    import { Galleries, Projects, locales } from '../../db/Database';
     import type Project from '../../models/Project';
     import Subheader from '../app/Subheader.svelte';
     import MarkupHtmlView from '../concepts/MarkupHTMLView.svelte';
-    import Dialog from '../widgets/Dialog.svelte';
     import Options from '../widgets/Options.svelte';
     import { getUser } from './Contexts';
     import CreatorList from './CreatorList.svelte';
     import Public from './Public.svelte';
+    import Feedback from '@components/app/Feedback.svelte';
+    import PII from './PII.svelte';
 
-    export let show: boolean;
     export let project: Project;
 
     const user = getUser();
     const creatorGalleries = Galleries.creatorGalleries;
 </script>
 
-<Dialog bind:show description={$locale.ui.dialog.share}>
+{#if $user === null}
+    <Feedback>{$locales.get((l) => l.ui.dialog.share.error.anonymous)}</Feedback
+    >
+{:else}
     <Subheader
-        >{$locale.ui.dialog.share.subheader.collaborators.header}</Subheader
+        >{$locales.get(
+            (l) => l.ui.dialog.share.subheader.collaborators.header,
+        )}</Subheader
     >
     <MarkupHtmlView
-        markup={$locale.ui.dialog.share.subheader.collaborators.explanation}
+        markup={$locales.get(
+            (l) => l.ui.dialog.share.subheader.collaborators.explanation,
+        )}
     />
 
     <CreatorList
         anonymize={false}
-        uids={project.collaborators}
-        editable={$user !== null && project.owner === $user.uid}
+        uids={project.getCollaborators()}
+        editable={$user !== null && project.getOwner() === $user.uid}
         add={(userID) =>
             Projects.reviseProject(project.withCollaborator(userID))}
         remove={(userID) =>
@@ -36,20 +43,27 @@
         removable={() => true}
     />
 
-    <Subheader>{$locale.ui.dialog.share.subheader.gallery.header}</Subheader>
+    <Subheader
+        >{$locales.get(
+            (l) => l.ui.dialog.share.subheader.gallery.header,
+        )}</Subheader
+    >
     <MarkupHtmlView
-        markup={$locale.ui.dialog.share.subheader.gallery.explanation}
+        markup={$locales.get(
+            (l) => l.ui.dialog.share.subheader.gallery.explanation,
+        )}
     />
 
     <Options
         id="gallerychooser"
-        value={project.gallery ?? undefined}
+        label={$locales.get((l) => l.ui.dialog.share.options.gallery)}
+        value={project.getGallery() ?? undefined}
         options={[
             { value: undefined, label: '—' },
             ...Array.from($creatorGalleries.values()).map((gallery) => {
                 return {
                     value: get(gallery).getID(),
-                    label: get(gallery).getName($locale),
+                    label: get(gallery).getName($locales),
                 };
             }),
         ]}
@@ -61,11 +75,13 @@
     />
 
     <Public
-        isPublic={project.public}
+        isPublic={project.isPublic()}
         set={(choice) => Projects.reviseProject(project.asPublic(choice === 1))}
-        flags={project.flags}
+        flags={project.getFlags()}
     />
-</Dialog>
 
-<style>
-</style>
+    <PII
+        nonPII={project.getNonPII()}
+        unmark={(piiText) => Projects.reviseProject(project.withPII(piiText))}
+    />
+{/if}

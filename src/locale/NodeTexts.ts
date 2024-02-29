@@ -261,6 +261,7 @@ type NodeTexts = {
              */
             ExpectedBooleanCondition: ConflictText;
         }>;
+    Otherwise: NodeText & ExpressionText;
     /** A definition of a conversion, e.g. `→ # #m 5` */
     ConversionDefinition: DescriptiveNodeText &
         SimpleExpressionText &
@@ -629,7 +630,18 @@ type NodeTexts = {
      * One alternate translation of a text literal, e.g., the `'hola/es`' of `'hi'/en'hola'/es`
      * Description inputs: $1 = the text
      */
-    Translation: DescriptiveNodeText;
+    Translation: DescriptiveNodeText &
+        Conflicts<{
+            phone: InternalConflictText;
+            email: InternalConflictText;
+            address: InternalConflictText;
+            tin: InternalConflictText;
+            handle: InternalConflictText;
+            /** How to describe the resolution of the sensitive information conflict. */
+            resolution: Template;
+            /** Note to remind users where they can manage sensitive information for their project. */
+            reminder: Template;
+        }>;
     /**
      * A formatted text literal, e.g., ` `hello *wordplay*` `
      * Description inputs: $1 = the text
@@ -821,4 +833,4 @@ type NodeTexts = {
     NonFunctionType: DescriptiveNodeText;
 };
 
-export default NodeTexts;
+export { type NodeTexts as default };

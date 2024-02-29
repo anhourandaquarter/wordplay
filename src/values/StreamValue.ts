@@ -5,18 +5,18 @@ import type Value from '@values/Value';
 import type Evaluator from '@runtime/Evaluator';
 import type { StepNumber } from '@runtime/Evaluator';
 import type { BasisTypeName } from '../basis/BasisConstants';
-import type Locale from '@locale/Locale';
 import type StreamDefinition from '../nodes/StreamDefinition';
 import type Expression from '../nodes/Expression';
 import ListValue from '@values/ListValue';
 import type Concretizer from '../nodes/Concretizer';
+import type Locales from '../locale/Locales';
 
 export const MAX_STREAM_LENGTH = 256;
 
 export default abstract class StreamValue<
     ValueType extends Value = Value,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Raw = any
+    Raw = any,
 > extends SimpleValue {
     /** The evaluator that processes this stream */
     readonly evaluator: Evaluator;
@@ -31,14 +31,14 @@ export default abstract class StreamValue<
     reactors: ((
         stream: StreamValue<Value, any>,
         raw: Raw,
-        silent: boolean
+        silent: boolean,
     ) => void)[] = [];
 
     constructor(
         evaluator: Evaluator,
         definition: StreamDefinition,
         initalValue: ValueType,
-        initialRaw: Raw
+        initialRaw: Raw,
     ) {
         super(evaluator.getMain());
 
@@ -48,12 +48,12 @@ export default abstract class StreamValue<
         this.add(initalValue, initialRaw);
     }
 
-    getDescription(concretize: Concretizer, locale: Locale) {
+    getDescription(concretize: Concretizer, locales: Locales) {
         return concretize(
-            locale,
+            locales,
             this.definition.docs
-                ?.getPreferredLocale(locale)
-                ?.getFirstParagraph() ?? locale.term.stream
+                ?.getPreferredLocale(locales)
+                ?.getFirstParagraph() ?? locales.get((l) => l.term.stream),
         );
     }
 
@@ -61,6 +61,7 @@ export default abstract class StreamValue<
         return value === this;
     }
 
+    /** Defines how the stream should process a raw input value from the past */
     abstract react(raw: Raw): void;
 
     add(value: ValueType, raw: Raw, silent = false) {
@@ -129,7 +130,7 @@ export default abstract class StreamValue<
             requestor,
             this.values
                 .slice(this.values.length - count, this.values.length)
-                .map((val) => val.value)
+                .map((val) => val.value),
         );
     }
 
@@ -137,8 +138,8 @@ export default abstract class StreamValue<
         listener: (
             stream: StreamValue<Value, unknown>,
             raw: Raw,
-            silent: boolean
-        ) => void
+            silent: boolean,
+        ) => void,
     ) {
         this.reactors.push(listener);
     }
@@ -147,8 +148,8 @@ export default abstract class StreamValue<
         listener: (
             stream: StreamValue<Value, unknown>,
             raw: Raw,
-            silent: boolean
-        ) => void
+            silent: boolean,
+        ) => void,
     ) {
         this.reactors = this.reactors.filter((l) => l !== listener);
     }
@@ -159,17 +160,23 @@ export default abstract class StreamValue<
     }
 
     /** Should produce valid Wordplay code string representing the stream's name */
-    toWordplay(locales: Locale[]): string {
-        return this.getPreferredName(locales);
+    toWordplay(locales?: Locales): string {
+        return locales
+            ? this.getPreferredName(locales)
+            : this.definition.names.getNames()[0];
     }
 
-    getPreferredName(locales: Locale[]) {
-        return this.definition.names.getPreferredNameString(locales);
+    getPreferredName(locales: Locales) {
+        return locales.getName(this.definition.names);
     }
 
     /** Should return named values on the stream. */
     resolve(): Value | undefined {
         return undefined;
+    }
+
+    getRepresentativeText(locales: Locales): string {
+        return this.definition.getPreferredName(locales.getLocales());
     }
 
     /** Should start whatever is necessary to start listening to data stream. */

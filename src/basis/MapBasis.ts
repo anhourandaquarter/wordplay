@@ -7,7 +7,11 @@ import ListValue from '@values/ListValue';
 import TextValue from '@values/TextValue';
 import MapValue from '@values/MapValue';
 import SetValue from '@values/SetValue';
-import { createBasisConversion, createBasisFunction } from './Basis';
+import {
+    createBasisConversion,
+    createBasisFunction,
+    createEqualsFunction,
+} from './Basis';
 import BoolValue from '@values/BoolValue';
 import TypeVariables from '@nodes/TypeVariables';
 import { getDocLocales } from '@locale/getDocLocales';
@@ -16,7 +20,6 @@ import TypeVariable from '@nodes/TypeVariable';
 import type Evaluation from '@runtime/Evaluation';
 import type Value from '@values/Value';
 import type Expression from '../nodes/Expression';
-import type Locale from '../locale/Locale';
 import { createFunction, createInputs } from '../locale/Locale';
 import { Iteration } from './Iteration';
 import NumberType from '../nodes/NumberType';
@@ -24,9 +27,9 @@ import NumberValue from '@values/NumberValue';
 import TextType from '../nodes/TextType';
 import SetType from '../nodes/SetType';
 import ListType from '../nodes/ListType';
-import AnyType from '../nodes/AnyType';
+import type Locales from '../locale/Locales';
 
-export default function bootstrapMap(locales: Locale[]) {
+export default function bootstrapMap(locales: Locales) {
     const KeyTypeVariableNames = getNameLocales(
         locales,
         (locale) => locale.basis.Map.key
@@ -74,45 +77,15 @@ export default function bootstrapMap(locales: Locale[]) {
                               );
                     }
                 ),
-                createBasisFunction(
+                createEqualsFunction(
                     locales,
                     (locale) => locale.basis.Map.function.equals,
-                    undefined,
-                    [new AnyType()],
-                    BooleanType.make(),
-                    (requestor, evaluation) => {
-                        const map = evaluation?.getClosure();
-                        const other = evaluation.getInput(0);
-                        return !(
-                            map instanceof MapValue && other instanceof MapValue
-                        )
-                            ? evaluation.getValueOrTypeException(
-                                  requestor,
-                                  MapType.make(),
-                                  other
-                              )
-                            : new BoolValue(requestor, map.isEqualTo(other));
-                    }
+                    true
                 ),
-                createBasisFunction(
+                createEqualsFunction(
                     locales,
                     (locale) => locale.basis.Map.function.notequals,
-                    undefined,
-                    [new AnyType()],
-                    BooleanType.make(),
-                    (requestor, evaluation) => {
-                        const map = evaluation?.getClosure();
-                        const other = evaluation.getInput(0);
-                        return !(
-                            map instanceof MapValue && other instanceof MapValue
-                        )
-                            ? evaluation.getValueOrTypeException(
-                                  requestor,
-                                  MapType.make(),
-                                  other
-                              )
-                            : new BoolValue(requestor, !map.isEqualTo(other));
-                    }
+                    false
                 ),
                 createBasisFunction(
                     locales,

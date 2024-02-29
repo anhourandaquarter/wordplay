@@ -1,5 +1,5 @@
 import type Node from './Node';
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import Row from './Row';
 import type Conflict from '@conflicts/Conflict';
 import UnknownColumn from '@conflicts/UnknownColumn';
@@ -17,7 +17,6 @@ import type Definition from './Definition';
 import type TypeSet from './TypeSet';
 import type Evaluator from '@runtime/Evaluator';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import NodeRef from '@locale/NodeRef';
 import Glyphs from '../lore/Glyphs';
 import IncompatibleInput from '../conflicts/IncompatibleInput';
@@ -39,6 +38,7 @@ import Token from './Token';
 import { TABLE_CLOSE_SYMBOL, UPDATE_SYMBOL } from '../parser/Symbols';
 import Sym from './Sym';
 import ExpressionPlaceholder from './ExpressionPlaceholder';
+import type Locales from '../locale/Locales';
 
 type UpdateState = { table: TableValue; index: number; rows: StructureValue[] };
 
@@ -63,10 +63,14 @@ export default class Update extends Expression {
             new Row(
                 new Token(UPDATE_SYMBOL, Sym.Select),
                 [],
-                new Token(TABLE_CLOSE_SYMBOL, Sym.TableClose)
+                new Token(TABLE_CLOSE_SYMBOL, Sym.TableClose),
             ),
-            query
+            query,
         );
+    }
+
+    getDescriptor() {
+        return 'Update';
     }
 
     getGrammar(): Grammar {
@@ -74,18 +78,18 @@ export default class Update extends Expression {
             {
                 name: 'table',
                 kind: node(Expression),
-                label: (translation: Locale) => translation.term.table,
+                label: (locales: Locales) => locales.get((l) => l.term.table),
             },
             {
                 name: 'row',
                 kind: node(Row),
-                label: (translation: Locale) => translation.term.row,
+                label: (locales: Locales) => locales.get((l) => l.term.row),
                 space: true,
             },
             {
                 name: 'query',
                 kind: node(Expression),
-                label: (translation: Locale) => translation.term.query,
+                label: (locales: Locales) => locales.get((l) => l.term.query),
                 space: true,
             },
         ];
@@ -95,7 +99,7 @@ export default class Update extends Expression {
         type: Type | undefined,
         anchor: Node,
         selected: boolean,
-        context: Context
+        context: Context,
     ) {
         const anchorType =
             anchor instanceof Expression ? anchor.getType(context) : undefined;
@@ -105,7 +109,7 @@ export default class Update extends Expression {
             ? [
                   Update.make(
                       anchor,
-                      ExpressionPlaceholder.make(BooleanType.make())
+                      ExpressionPlaceholder.make(BooleanType.make()),
                   ),
               ]
             : [];
@@ -115,7 +119,7 @@ export default class Update extends Expression {
         return new Update(
             this.replaceChild('table', this.table, replace),
             this.replaceChild('row', this.row, replace),
-            this.replaceChild('query', this.query, replace)
+            this.replaceChild('query', this.query, replace),
         ) as this;
     }
 
@@ -137,7 +141,7 @@ export default class Update extends Expression {
         // Table must be table typed.
         if (!(tableType instanceof TableType)) {
             conflicts.push(
-                new IncompatibleInput(this, tableType, TableType.make([]))
+                new IncompatibleInput(this, tableType, TableType.make([])),
             );
             return conflicts;
         }
@@ -175,8 +179,8 @@ export default class Update extends Expression {
                                 tableType,
                                 cell,
                                 bindType,
-                                cellType
-                            )
+                                cellType,
+                            ),
                         );
                 }
             }
@@ -189,7 +193,11 @@ export default class Update extends Expression {
             !(queryType instanceof BooleanType)
         )
             conflicts.push(
-                new IncompatibleInput(this.query, queryType, BooleanType.make())
+                new IncompatibleInput(
+                    this.query,
+                    queryType,
+                    BooleanType.make(),
+                ),
             );
 
         return conflicts;
@@ -230,7 +238,7 @@ export default class Update extends Expression {
             .map((bind) =>
                 bind instanceof Bind && bind.value
                     ? bind.value.compile(evaluator, context)
-                    : []
+                    : [],
             )
             .flat();
 
@@ -255,7 +263,7 @@ export default class Update extends Expression {
                     if (!(row instanceof StructureValue))
                         return new ValueException(
                             evaluation.getEvaluator(),
-                            this
+                            this,
                         );
                     // Get the values computed
                     const values: Value[] = [];
@@ -269,7 +277,7 @@ export default class Update extends Expression {
                     // Get the query result
                     const match = evaluation.popValue(
                         requestor,
-                        BooleanType.make()
+                        BooleanType.make(),
                     );
                     if (!(match instanceof BoolValue)) return match;
                     // Not a query match? Don't modify the row.
@@ -285,22 +293,22 @@ export default class Update extends Expression {
                                         ? newRow.withValue(
                                               this,
                                               bind.names.getNames()[0],
-                                              value
+                                              value,
                                           )
                                         : undefined;
                                 if (revised === undefined)
                                     return new ValueException(
                                         evaluation.getEvaluator(),
-                                        this
+                                        this,
                                     );
                                 newRow = revised;
                             }
                         }
                         return newRow;
                     }
-                }
+                },
             ),
-            structureType
+            structureType,
         );
 
         // Evaluate the table expression then this.
@@ -317,7 +325,7 @@ export default class Update extends Expression {
                         : evaluator.getValueOrTypeException(
                               this,
                               TableType.make(),
-                              table
+                              table,
                           );
                 },
                 (evaluator, info) => {
@@ -331,8 +339,8 @@ export default class Update extends Expression {
                                 evaluator,
                                 this,
                                 revise,
-                                info.table.rows[info.index]
-                            )
+                                info.table.rows[info.index],
+                            ),
                         );
                         return true;
                     }
@@ -344,7 +352,7 @@ export default class Update extends Expression {
                     info.rows.push(row);
                     // Increment the counter to the next row.
                     info.index = info.index + 1;
-                }
+                },
             ),
             new Finish(this),
         ];
@@ -356,18 +364,13 @@ export default class Update extends Expression {
         return new TableValue(this, table.type, rows);
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
         if (this.table instanceof Expression)
-            this.table.evaluateTypeSet(bind, original, current, context);
+            this.table.evaluateTypeGuards(current, guard);
         if (this.row instanceof Expression)
-            this.row.evaluateTypeSet(bind, original, current, context);
+            this.row.evaluateTypeGuards(current, guard);
         if (this.query instanceof Expression)
-            this.query.evaluateTypeSet(bind, original, current, context);
+            this.query.evaluateTypeGuards(current, guard);
         return current;
     }
 
@@ -378,27 +381,27 @@ export default class Update extends Expression {
         return this.row.close ?? this.row.open;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Update;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Update);
     }
 
-    getStartExplanations(locale: Locale, context: Context) {
+    getStartExplanations(locales: Locales, context: Context) {
         return concretize(
-            locale,
-            locale.node.Update.start,
-            new NodeRef(this.table, locale, context)
+            locales,
+            locales.get((l) => l.node.Update.start),
+            new NodeRef(this.table, locales, context),
         );
     }
 
     getFinishExplanations(
-        locale: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         return concretize(
-            locale,
-            locale.node.Update.finish,
-            this.getValueIfDefined(locale, context, evaluator)
+            locales,
+            locales.get((l) => l.node.Update.finish),
+            this.getValueIfDefined(locales, context, evaluator),
         );
     }
 

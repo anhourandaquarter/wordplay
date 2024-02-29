@@ -1,4 +1,3 @@
-import type Locale from '@locale/Locale';
 import Paragraph from './Paragraph';
 import Glyphs from '../lore/Glyphs';
 import Purpose from '../concepts/Purpose';
@@ -13,6 +12,7 @@ import type Node from './Node';
 import Words from './Words';
 import type { FormattedText } from '../output/Phrase';
 import type { FontWeight } from '../basis/Fonts';
+import type Locales from '../locale/Locales';
 
 /**
  * To refer to an input, use a $, followed by the number of the input desired,
@@ -42,6 +42,10 @@ export default class Markup extends Content {
         return [new Markup([new Paragraph([])])];
     }
 
+    getDescriptor() {
+        return 'Markup';
+    }
+
     getGrammar(): Grammar {
         return [
             {
@@ -56,7 +60,7 @@ export default class Markup extends Content {
     clone(replace?: Replacement) {
         return new Markup(
             this.replaceChild('paragraphs', this.paragraphs, replace),
-            this.spaces
+            this.spaces,
         ) as this;
     }
 
@@ -68,8 +72,8 @@ export default class Markup extends Content {
         return;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Markup;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Markup);
     }
 
     getGlyphs() {
@@ -80,11 +84,11 @@ export default class Markup extends Content {
         return [this.paragraphs.length];
     }
 
-    concretize(locale: Locale, inputs: TemplateInput[]): Markup | undefined {
+    concretize(locales: Locales, inputs: TemplateInput[]): Markup | undefined {
         // Create an empty list of replacements which we'll recursively fill and then update space with.
         const replacements: [Node, Node][] = [];
         const concrete = this.paragraphs.map((p) =>
-            p.concretize(locale, inputs, replacements)
+            p.concretize(locales, inputs, replacements),
         );
 
         let newSpaces = this.spaces;
@@ -99,13 +103,13 @@ export default class Markup extends Content {
 
     getMatchingText(
         text: string,
-        locale: Locale[]
+        locales: Locales,
     ): [string, number] | undefined {
         const wordsWithText = this.paragraphs
             .map((p) => p.nodes())
             .flat()
             .filter(
-                (n): n is Token => n instanceof Token && n.isSymbol(Sym.Words)
+                (n): n is Token => n instanceof Token && n.isSymbol(Sym.Words),
             )
             .filter((w) => w.getText().indexOf(text) >= 0);
 
@@ -115,7 +119,7 @@ export default class Markup extends Content {
                   wordsWithText[0].getText(),
                   wordsWithText[0]
                       .getText()
-                      .toLocaleLowerCase(locale.map((l) => l.language))
+                      .toLocaleLowerCase(locales.getLanguages())
                       .indexOf(text),
               ];
     }
@@ -145,7 +149,8 @@ export default class Markup extends Content {
                         words
                             .map((word) => word.getWeight())
                             .filter(
-                                (word): word is FontWeight => word !== undefined
+                                (word): word is FontWeight =>
+                                    word !== undefined,
                             )
                             .at(-1) ?? 400,
                 });
@@ -157,8 +162,16 @@ export default class Markup extends Content {
     asLine() {
         return new Markup(
             [new Paragraph(this.paragraphs.map((p) => p.segments).flat())],
-            this.spaces
+            this.spaces,
         );
+    }
+
+    getRepresentativeText() {
+        return this.nodes()
+            .filter(
+                (n): n is Token => n instanceof Token && n.isSymbol(Sym.Words),
+            )[0]
+            ?.getText();
     }
 
     toString() {

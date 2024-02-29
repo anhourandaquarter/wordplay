@@ -4,12 +4,9 @@ import type Type from '@nodes/Type';
 import type Step from '@runtime/Step';
 import type Expression from '@nodes/Expression';
 import type Evaluation from '@runtime/Evaluation';
-import type Bind from '@nodes/Bind';
-import type Context from '@nodes/Context';
 import type TypeSet from '@nodes/TypeSet';
 import StartFinish from '@runtime/StartFinish';
 import SimpleExpression from '@nodes/SimpleExpression';
-import type Locale from '@locale/Locale';
 import InternalException from '@values/InternalException';
 import Glyphs from '../lore/Glyphs';
 import concretize from '../locale/concretize';
@@ -17,7 +14,8 @@ import Purpose from '../concepts/Purpose';
 import Start from '@runtime/Start';
 import Finish from '@runtime/Finish';
 import { toTokens } from '../parser/toTokens';
-import parseType from '../parser/paresType';
+import parseType from '../parser/parseType';
+import type Locales from '../locale/Locales';
 
 export default class InternalExpression extends SimpleExpression {
     readonly type: Type;
@@ -27,7 +25,7 @@ export default class InternalExpression extends SimpleExpression {
     constructor(
         type: Type | string,
         steps: Step[],
-        evaluator: (requestor: Expression, evaluator: Evaluation) => Value
+        evaluator: (requestor: Expression, evaluator: Evaluation) => Value,
     ) {
         super();
 
@@ -38,6 +36,10 @@ export default class InternalExpression extends SimpleExpression {
 
         this.steps = steps;
         this.evaluator = evaluator;
+    }
+
+    getDescriptor() {
+        return 'InternalExpression';
     }
 
     computeConflicts() {
@@ -76,7 +78,7 @@ export default class InternalExpression extends SimpleExpression {
             ? new InternalException(
                   this,
                   evaluator,
-                  'there is no evaluation, which should be impossible'
+                  'there is no evaluation, which should be impossible',
               )
             : this.evaluator(this, evaluation);
     }
@@ -86,15 +88,7 @@ export default class InternalExpression extends SimpleExpression {
         return this;
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
-        context;
-        bind;
-        original;
+    evaluateTypeGuards(current: TypeSet) {
         return current;
     }
 
@@ -106,12 +100,15 @@ export default class InternalExpression extends SimpleExpression {
         return this;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.InternalExpression;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.InternalExpression);
     }
 
-    getStartExplanations(locale: Locale) {
-        return concretize(locale, locale.node.InternalExpression.start);
+    getStartExplanations(locales: Locales) {
+        return concretize(
+            locales,
+            locales.get((l) => l.node.InternalExpression.start),
+        );
     }
 
     getGlyphs() {

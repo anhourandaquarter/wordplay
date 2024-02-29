@@ -5,25 +5,36 @@
     import ConceptView from './ConceptView.svelte';
     import type BindConcept from '@concepts/BindConcept';
     import { onMount } from 'svelte';
-    import { locale } from '@db/Database';
+    import { locales } from '@db/Database';
 
     export let concept: StructureConcept;
     export let subconcept: BindConcept | undefined = undefined;
 
-    onMount(() => {
-        if (subconcept) {
-            const inputIndex = concept.inputs.indexOf(subconcept);
-            const propertyIndex = concept.properties.indexOf(subconcept);
+    function showSubconcept(sub: BindConcept | undefined) {
+        if (sub) {
+            const inputIndex = concept.inputs.indexOf(sub);
+            const propertyIndex = concept.properties.indexOf(sub);
             const [kind, index] =
                 inputIndex >= 0
                     ? ['input', inputIndex]
                     : propertyIndex >= 0
-                    ? ['property', propertyIndex]
-                    : [undefined, undefined];
-            if (kind)
-                document.getElementById(`${kind}-${index}`)?.scrollIntoView();
+                      ? ['property', propertyIndex]
+                      : [undefined, undefined];
+            if (kind) {
+                // We have to wait for a bit of animation.
+                setTimeout(() =>
+                    document
+                        .getElementById(`${kind}-${index}`)
+                        ?.scrollIntoView({ block: 'center' }),
+                );
+            }
         }
-    });
+    }
+
+    // Any time the subconcept changes, scroll to it.
+    $: if (subconcept) showSubconcept(subconcept);
+    // When we load, scroll to it.
+    onMount(() => showSubconcept(subconcept));
 </script>
 
 <ConceptView {concept} variables={concept.definition.types}>
@@ -33,39 +44,42 @@
     {/if} -->
 
     {#if concept.inter.length > 0}
-        <h2>{$locale.ui.docs.header.interfaces}</h2>
+        <h2>{$locales.get((l) => l.ui.docs.header.interfaces)}</h2>
         {#each concept.inter as inter}
             <CodeView concept={inter} node={inter.getRepresentation()} />
         {/each}
     {/if}
 
     {#if concept.inputs.length > 0}
-        <h2>{$locale.ui.docs.header.inputs}</h2>
+        <h2>{$locales.get((l) => l.ui.docs.header.inputs)}</h2>
         {#each concept.inputs as bind, index}
-            <div id="input-{index}">
+            <div id="input-{index}" class:selected={bind === subconcept}>
                 <BindConceptView concept={bind} />
             </div>
         {/each}
     {/if}
 
     {#if concept.properties.length > 0}
-        <h2>{$locale.ui.docs.header.properties}</h2>
+        <h2>{$locales.get((l) => l.ui.docs.header.properties)}</h2>
         {#each concept.properties as bind, index}
-            <div id="property-{index + concept.inputs.length}">
+            <div
+                id="property-{index + concept.inputs.length}"
+                class:selected={bind === subconcept}
+            >
                 <BindConceptView concept={bind} />
             </div>
         {/each}
     {/if}
 
     {#if concept.functions.length > 0}
-        <h2>{$locale.ui.docs.header.functions}</h2>
+        <h2>{$locales.get((l) => l.ui.docs.header.functions)}</h2>
         {#each concept.functions as fun}
             <CodeView node={fun.getRepresentation()} concept={fun} />
         {/each}
     {/if}
 
     {#if concept.conversions.length > 0}
-        <h2>{$locale.ui.docs.header.conversions}</h2>
+        <h2>{$locales.get((l) => l.ui.docs.header.conversions)}</h2>
         {#each concept.conversions as conversion}
             <CodeView
                 node={conversion.getRepresentation()}
@@ -74,3 +88,10 @@
         {/each}
     {/if}
 </ConceptView>
+
+<style>
+    .selected {
+        background: var(--wordplay-hover);
+        border-radius: var(--wordplay-border-radius);
+    }
+</style>

@@ -5,11 +5,11 @@ import { TYPE_CLOSE_SYMBOL, TYPE_OPEN_SYMBOL } from '@parser/Symbols';
 import Names from './Names';
 import type TypeVariable from './TypeVariable';
 import type Conflict from '@conflicts/Conflict';
-import type Locale from '@locale/Locale';
 import DuplicateTypeVariable from '@conflicts/DuplicateTypeVariable';
 import Glyphs from '../lore/Glyphs';
 import Purpose from '../concepts/Purpose';
 import Node, { node } from './Node';
+import type Locales from '../locale/Locales';
 
 export default class TypeVariables extends Node {
     readonly open: Token;
@@ -36,6 +36,10 @@ export default class TypeVariables extends Node {
 
     static getPossibleNodes() {
         return [TypeVariables.make()];
+    }
+
+    getDescriptor() {
+        return 'TypeVariables';
     }
 
     getGrammar(): Grammar {
@@ -84,8 +88,8 @@ export default class TypeVariables extends Node {
         return this.variables.some((variable) => variable.names.hasName(name));
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.TypeVariables;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.TypeVariables);
     }
 
     getGlyphs() {

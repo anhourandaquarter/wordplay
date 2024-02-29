@@ -3,6 +3,7 @@
     import type Concept from '@concepts/Concept';
     import CodeView from './CodeView.svelte';
     import Note from '../widgets/Note.svelte';
+    import Expander from '@components/widgets/Expander.svelte';
     import { animationDuration } from '../../db/Database';
 
     export let concepts: Concept[];
@@ -14,7 +15,7 @@
     }
 </script>
 
-<div class="group">
+<div class="concept-group">
     {#each concepts as concept, index}
         {#if expanded || index < 3}
             <span
@@ -30,46 +31,22 @@
     {/each}
 </div>
 {#if expanded || concepts.length > 3}
-    <div
-        role="button"
-        class="expander"
-        class:expanded
-        tabindex="0"
-        on:pointerdown={toggle}
-        on:keydown={(event) =>
-            event.key === ' ' || event.key === 'Enter' ? toggle() : undefined}
-        >{#if expanded}▲{:else}▼{/if}</div
-    >
+    <Expander {expanded} {toggle}></Expander>
 {/if}
 
 <style>
-    .group {
+    .concept-group {
         margin: var(--wordplay-spacing);
         margin-left: 0;
         display: flex;
         flex-wrap: wrap;
         gap: calc(2 * var(--wordplay-spacing));
-    }
-
-    .expander {
-        text-align: center;
-        cursor: pointer;
-        color: var(--wordplay-inactive-color);
-    }
-
-    .expander {
-        transition: transform ease-out;
-        transition-duration: calc(var(--animation-factor) * 200ms);
-    }
-
-    .expander:focus {
-        transform: scale(1.1);
-        color: var(--wordplay-focus-color);
-        outline: none;
-    }
-
-    .expander:hover {
-        transform: scale(1.1);
-        color: var(--wordplay-highlight-color);
+        align-items: baseline;
+        border-top: var(--wordplay-border-color) dotted
+            var(--wordplay-border-width);
+        border-bottom: var(--wordplay-border-color) dotted
+            var(--wordplay-border-width);
+        padding-top: var(--wordplay-spacing);
+        padding-bottom: var(--wordplay-spacing);
     }
 </style>

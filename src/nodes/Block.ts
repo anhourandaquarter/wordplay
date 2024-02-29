@@ -3,7 +3,7 @@ import Bind from './Bind';
 import type Conflict from '@conflicts/Conflict';
 import { ExpectedEndingExpression } from '@conflicts/ExpectedEndingExpression';
 import { IgnoredExpression } from '@conflicts/IgnoredExpression';
-import Expression, { ExpressionKind } from './Expression';
+import Expression, { ExpressionKind, type GuardContext } from './Expression';
 import type Token from './Token';
 import type Type from './Type';
 import type Evaluator from '@runtime/Evaluator';
@@ -23,12 +23,13 @@ import EvalOpenToken from './EvalOpenToken';
 import UnclosedDelimiter from '@conflicts/UnclosedDelimiter';
 import NoExpressionType from './NoExpressionType';
 import { none, type Grammar, type Replacement, node, list, any } from './Node';
-import type Locale from '@locale/Locale';
 import Glyphs from '../lore/Glyphs';
 import concretize from '../locale/concretize';
 import Sym from './Sym';
 import Purpose from '../concepts/Purpose';
 import DefinitionExpression from './DefinitionExpression';
+import type Locales from '../locale/Locales';
+import Evaluation from '@runtime/Evaluation';
 
 export enum BlockKind {
     Root = 'root',
@@ -50,7 +51,7 @@ export default class Block extends Expression {
         kind: BlockKind,
         open?: Token,
         close?: Token,
-        docs?: Docs
+        docs?: Docs,
     ) {
         super();
 
@@ -61,8 +62,8 @@ export default class Block extends Expression {
             docs === undefined
                 ? undefined
                 : docs instanceof Docs
-                ? docs
-                : new Docs(docs);
+                  ? docs
+                  : new Docs(docs);
         this.kind = kind;
 
         this.computeChildren();
@@ -73,14 +74,14 @@ export default class Block extends Expression {
             statements ?? [],
             BlockKind.Block,
             new EvalOpenToken(),
-            new EvalCloseToken()
+            new EvalCloseToken(),
         );
     }
 
     static getPossibleNodes(
-        type: Type | undefined,
+        _: Type | undefined,
         selection: Node | undefined,
-        selected: boolean
+        selected: boolean,
     ) {
         return [
             Block.make(),
@@ -88,6 +89,15 @@ export default class Block extends Expression {
                 ? [Block.make([selection])]
                 : []),
         ];
+    }
+
+    getEvaluationExpression(): Expression {
+        // This expression evaluates itself.
+        return this;
+    }
+
+    getDescriptor() {
+        return 'Block';
     }
 
     getGrammar(): Grammar {
@@ -101,17 +111,20 @@ export default class Block extends Expression {
             {
                 name: 'statements',
                 kind: list(true, node(Expression), node(Bind)),
-                label: (translation: Locale) =>
-                    translation.node.Block.statement,
+                label: (locales: Locales) =>
+                    locales.get((l) => l.node.Block.statement),
                 space: true,
                 indent: !this.isRoot(),
-                newline: this.isRoot() || this.isStructure(),
+                newline:
+                    this.isRoot() ||
+                    (this.isStructure() && this.statements.length > 0),
                 initial: this.isStructure(),
             },
             {
                 name: 'close',
                 kind: any(node(Sym.EvalClose), none()),
-                newline: this.isStructure(),
+                // If it's a structure with more than one definition, insert new line
+                newline: this.isStructure() && this.statements.length > 0,
                 uncompletable: true,
             },
         ];
@@ -139,7 +152,7 @@ export default class Block extends Expression {
             BlockKind.Function,
             this.open,
             this.close,
-            this.docs
+            this.docs,
         );
     }
 
@@ -149,7 +162,7 @@ export default class Block extends Expression {
             this.kind,
             this.replaceChild('open', this.open, replace),
             this.replaceChild('close', this.close, replace),
-            this.replaceChild('docs', this.docs, replace)
+            this.replaceChild('docs', this.docs, replace),
         ) as this;
     }
 
@@ -159,7 +172,7 @@ export default class Block extends Expression {
             this.kind,
             this.open,
             this.close,
-            this.docs
+            this.docs,
         );
     }
 
@@ -198,13 +211,13 @@ export default class Block extends Expression {
             .filter(
                 (s) =>
                     s instanceof Expression &&
-                    !(s instanceof DefinitionExpression || s instanceof Bind)
+                    !(s instanceof DefinitionExpression || s instanceof Bind),
             )
             .forEach((s) => conflicts.push(new IgnoredExpression(this, s)));
 
         if (this.open && this.close === undefined)
             conflicts.push(
-                new UnclosedDelimiter(this, this.open, new EvalCloseToken())
+                new UnclosedDelimiter(this, this.open, new EvalCloseToken()),
             );
 
         return conflicts;
@@ -212,10 +225,10 @@ export default class Block extends Expression {
 
     getStatementIndexContaining(
         node: Node,
-        context: Context
+        context: Context,
     ): number | undefined {
         const containingStatement = this.statements.find(
-            (s) => node === s || context.source.root.hasAncestor(node, s)
+            (s) => node === s || context.source.root.hasAncestor(node, s),
         );
         if (containingStatement === undefined) return;
         const index = this.statements.indexOf(containingStatement);
@@ -234,7 +247,7 @@ export default class Block extends Expression {
                 (s instanceof Bind ||
                     s instanceof FunctionDefinition ||
                     s instanceof StructureDefinition) &&
-                i <= index
+                i <= index,
         );
     }
 
@@ -261,22 +274,36 @@ export default class Block extends Expression {
         return lastStatement === undefined ? [] : [lastStatement];
     }
 
+    /** Used by Evaluator to get the steps for the evaluation of this block. */
+    getEvaluationSteps(evaluator: Evaluator, context: Context) {
+        return this.statements.reduce(
+            (prev: Step[], current) => [
+                ...prev,
+                ...current.compile(evaluator, context),
+            ],
+            [],
+        );
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     compile(evaluator: Evaluator, context: Context): Step[] {
-        // If there are no statements, halt on exception.
+        // A block starts a new evaluation of its steps.
         return [
             new Start(this, (evaluator) => {
-                // Create a new scope for this block.
-                if (this.kind === BlockKind.Block)
-                    evaluator.evaluations[0].scope();
+                // Create a new evaluation to enable closures on bindings created in this block.
+                evaluator.startEvaluation(
+                    new Evaluation(
+                        evaluator,
+                        // This is the evaluation's evaluator
+                        this,
+                        // This is also the evaluation's definition
+                        this,
+                        // Closure is the current evaluation
+                        evaluator.getCurrentEvaluation(),
+                    ),
+                );
                 return undefined;
             }),
-            ...this.statements.reduce(
-                (prev: Step[], current) => [
-                    ...prev,
-                    ...current.compile(evaluator, context),
-                ],
-                []
-            ),
             new Finish(this),
         ];
     }
@@ -291,52 +318,45 @@ export default class Block extends Expression {
     evaluate(evaluator: Evaluator, prior: Value | undefined): Value {
         if (prior) return prior;
 
-        // Pop the scope made for this block if this isn't a structure's block.
-        if (this.kind === BlockKind.Block) evaluator.evaluations[0].unscope();
-
-        // Pop all the values computed
-        const values = [];
-        for (let i = 0; i < this.statements.length; i++)
-            values.push(evaluator.popValue(this));
+        // Get the last value computed in the evaluation's stack.
+        const result = evaluator.popValue(this);
 
         // Root blocks are allowed to have no value, but all others must have one.
-        return this.isStructure() ? new NoneValue(this) : values[0];
+        return this.isStructure() ? new NoneValue(this) : result;
     }
 
     /**
      * Blocks don't do any type checks, but we do have them delegate type checks to their final expression.
      * since we use them for parentheticals in boolean logic.
      * */
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
         if (this.statements.length === 0) return current;
         const last = this.statements[this.statements.length - 1];
         return last instanceof Expression
-            ? last.evaluateTypeSet(bind, original, current, context)
+            ? last.evaluateTypeGuards(current, guard)
             : current;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Block;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Block);
     }
 
-    getStartExplanations(locale: Locale) {
-        return concretize(locale, locale.node.Block.start);
+    getStartExplanations(locales: Locales) {
+        return concretize(
+            locales,
+            locales.get((l) => l.node.Block.start),
+        );
     }
 
     getFinishExplanations(
-        locale: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         return concretize(
-            locale,
-            locale.node.Block.finish,
-            this.getValueIfDefined(locale, context, evaluator)
+            locales,
+            locales.get((l) => l.node.Block.finish),
+            this.getValueIfDefined(locales, context, evaluator),
         );
     }
 

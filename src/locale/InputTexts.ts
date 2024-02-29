@@ -23,6 +23,8 @@ type InputTexts = {
     Time: NameAndDoc & {
         /** The frequency with which time should tick */
         frequency: NameAndDoc;
+        /** Whether the time should be relative or absolute */
+        relative: NameAndDoc;
     };
     /** A stream of amplitude values */
     Volume: NameAndDoc & {
@@ -42,6 +44,11 @@ type InputTexts = {
         height: NameAndDoc;
         /** The frequdncy with which color matrices should be sensed */
         frequency: NameAndDoc;
+    };
+    /** A stream of animated outputs */
+    Scene: NameAndDoc & {
+        /** A list of outputs to show in sequence */
+        outputs: NameAndDoc;
     };
     /** A stream of phrases in places and rotations simulating physics */
     Motion: NameAndDoc & {
@@ -108,4 +115,4 @@ type InputTexts = {
     };
 };
 
-export default InputTexts;
+export { type InputTexts as default };

@@ -10,6 +10,7 @@ import { node, type Replacement, type Grammar } from './Node';
 import Token from './Token';
 import Sym from './Sym';
 import type Node from './Node';
+import type Locales from '../locale/Locales';
 
 /**
  * To refer to an input, use a $, followed by the number of the input desired,
@@ -36,6 +37,10 @@ export default class Mention extends Content {
         return [];
     }
 
+    getDescriptor() {
+        return 'Mention';
+    }
+
     getGrammar(): Grammar {
         return [{ name: 'name', kind: node(Sym.Mention) }];
     }
@@ -52,8 +57,8 @@ export default class Mention extends Content {
     getPurpose() {
         return Purpose.Document;
     }
-    getNodeLocale(locale: Locale) {
-        return locale.node.Mention;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Mention);
     }
 
     getGlyphs(): Glyph {
@@ -61,7 +66,7 @@ export default class Mention extends Content {
     }
 
     concretize(
-        locale: Locale,
+        locales: Locales,
         inputs: TemplateInput[],
         replacements: [Node, Node][]
     ): Token | ValueRef | NodeRef | undefined {
@@ -72,7 +77,7 @@ export default class Mention extends Content {
         const numberMatch = name.match(/^[0-9]+/);
         if (name === '?') {
             const replacement = new Token(
-                locale.ui.template.unwritten,
+                locales.get((l) => l.ui.template.unwritten),
                 Sym.Words
             );
             replacements.push([this, replacement]);
@@ -105,6 +110,7 @@ export default class Mention extends Content {
         // Try to resolve terminology.
         else {
             const id = name as keyof Locale['term'];
+            const locale = locales.getLocale();
             const phrase = Object.hasOwn(locale.term, id)
                 ? locale.term[id]
                 : undefined;

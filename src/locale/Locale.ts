@@ -21,16 +21,21 @@ import { toTokens } from '../parser/toTokens';
 import { DOCS_SYMBOL } from '../parser/Symbols';
 import type { FlagDescriptions } from '../models/Moderation';
 import type { ButtonText, DialogText } from './UITexts';
+import type Locales from './Locales';
+import type { GalleryTexts } from './GalleryTexts';
 
 /** A list of locales that are in progress but not supported yet. Only added when developing locally. */
-const EventuallySupportedLocales = ['zh-CN'];
+export const EventuallySupportedLocales = [];
 
 /** A list of locales officially supported by Wordplay. */
-export const SupportedLocales = [
-    'en-US',
-    'es-MX',
-    ...(import.meta.hot ? EventuallySupportedLocales : []),
-] as const;
+export const SupportedLocales = Array.from(
+    new Set([
+        'en-US',
+        'es-MX',
+        'zh-CN',
+        ...(import.meta.hot ? EventuallySupportedLocales : []),
+    ]),
+);
 
 /** One of the supported locales above */
 export type SupportedLocale = (typeof SupportedLocales)[number];
@@ -65,6 +70,8 @@ export type Locale = {
     output: OutputTexts;
     /** User interface strings */
     ui: UITexts;
+    /** Default gallery text  */
+    gallery: GalleryTexts;
     /** Text related to content moderation */
     moderation: {
         /** What to say to warn viewers before showing content with warnings. */
@@ -77,6 +84,8 @@ export type Locale = {
         moderate: DialogText;
         /** Content moderation rules that creators promise to follow. See en-US.json for ground truth language. */
         flags: FlagDescriptions;
+        /** Progress message */
+        progress: Template;
         /** Buttons on the moderation page */
         button: {
             submit: ButtonText;
@@ -85,7 +94,7 @@ export type Locale = {
     };
 };
 
-export default Locale;
+export { type Locale as default };
 
 export type Template = string;
 
@@ -159,14 +168,14 @@ export function getBestSupportedLocales(locales: string[]) {
         .map((preferredLocale) => {
             // Is there an exact match?
             const exact = SupportedLocales.find(
-                (locale) => preferredLocale === locale
+                (locale) => preferredLocale === locale,
             );
             if (exact) return exact;
             // Does a language match, even if locale doesn't match?
             const languageExact = SupportedLocales.find(
                 (locale) =>
                     getLocaleLanguage(preferredLocale) ===
-                    getLocaleLanguage(locale)
+                    getLocaleLanguage(locale),
             );
             if (languageExact) return languageExact;
             // No match
@@ -180,41 +189,41 @@ export function getBestSupportedLocales(locales: string[]) {
 }
 
 export function createBind(
-    locales: Locale[],
+    locales: Locales,
     nameAndDoc: (locale: Locale) => NameAndDoc,
     type?: Type,
-    value?: Expression
+    value?: Expression,
 ) {
     return Bind.make(
         getDocLocales(locales, (l) => nameAndDoc(l).doc),
         getNameLocales(locales, (l) => nameAndDoc(l).names),
         type,
-        value
+        value,
     );
 }
 
 export function createInputs(
-    locales: Locale[],
+    locales: Locales,
     fun: (locale: Locale) => NameAndDoc[],
-    types: (Type | [Type, Expression])[]
+    types: (Type | [Type, Expression])[],
 ) {
     return types.map((type, index) =>
         createBind(
             locales,
             (l) => fun(l)[index],
             Array.isArray(type) ? type[0] : type,
-            Array.isArray(type) ? type[1] : undefined
-        )
+            Array.isArray(type) ? type[1] : undefined,
+        ),
     );
 }
 
 export function createFunction(
-    locales: Locale[],
+    locales: Locales,
     nameAndDoc: (locale: Locale) => NameAndDoc,
     typeVars: TypeVariables | undefined,
     inputs: Bind[],
     output: Type,
-    expression: Expression
+    expression: Expression,
 ) {
     return FunctionDefinition.make(
         getDocLocales(locales, (l) => nameAndDoc(l).doc),
@@ -222,6 +231,6 @@ export function createFunction(
         typeVars,
         inputs,
         expression,
-        output
+        output,
     );
 }

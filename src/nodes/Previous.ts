@@ -1,5 +1,5 @@
 import type Conflict from '@conflicts/Conflict';
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import NumberType from './NumberType';
 import Token from './Token';
 import type Type from './Type';
@@ -11,7 +11,6 @@ import Finish from '@runtime/Finish';
 import type Context from './Context';
 import StreamType from './StreamType';
 import StreamValue from '@values/StreamValue';
-import type Bind from './Bind';
 import type TypeSet from './TypeSet';
 import TypeException from '@values/TypeException';
 import AnyType from './AnyType';
@@ -21,7 +20,6 @@ import Start from '@runtime/Start';
 import UnionType from './UnionType';
 import NoneType from './NoneType';
 import { node, type Grammar, type Replacement, optional } from './Node';
-import type Locale from '@locale/Locale';
 import NodeRef from '@locale/NodeRef';
 import Glyphs from '../lore/Glyphs';
 import IncompatibleInput from '../conflicts/IncompatibleInput';
@@ -30,6 +28,7 @@ import ExpressionPlaceholder from './ExpressionPlaceholder';
 import Purpose from '../concepts/Purpose';
 import ListType from './ListType';
 import Unit from './Unit';
+import type Locales from '../locale/Locales';
 
 export default class Previous extends Expression {
     readonly previous: Token;
@@ -41,7 +40,7 @@ export default class Previous extends Expression {
         previous: Token,
         range: Token | undefined,
         index: Expression,
-        stream: Expression
+        stream: Expression,
     ) {
         super();
 
@@ -58,7 +57,7 @@ export default class Previous extends Expression {
             new Token(PREVIOUS_SYMBOL, Sym.Previous),
             range ? new Token(PREVIOUS_SYMBOL, Sym.Previous) : undefined,
             index,
-            stream
+            stream,
         );
     }
 
@@ -66,14 +65,18 @@ export default class Previous extends Expression {
         return [
             Previous.make(
                 ExpressionPlaceholder.make(StreamType.make()),
-                ExpressionPlaceholder.make(NumberType.make())
+                ExpressionPlaceholder.make(NumberType.make()),
             ),
             Previous.make(
                 ExpressionPlaceholder.make(StreamType.make()),
                 ExpressionPlaceholder.make(NumberType.make()),
-                true
+                true,
             ),
         ];
+    }
+
+    getDescriptor() {
+        return 'Previous';
     }
 
     getGrammar(): Grammar {
@@ -86,7 +89,7 @@ export default class Previous extends Expression {
             {
                 name: 'number',
                 kind: node(Expression),
-                label: (translation: Locale) => translation.term.index,
+                label: (locales: Locales) => locales.get((l) => l.term.index),
                 // Must be a number
                 getType: () => NumberType.make(),
                 space: true,
@@ -94,7 +97,7 @@ export default class Previous extends Expression {
             {
                 name: 'stream',
                 kind: node(Expression),
-                label: (translation: Locale) => translation.term.stream,
+                label: (locales: Locales) => locales.get((l) => l.term.stream),
                 // Must be a stream
                 getType: () => StreamType.make(new AnyType()),
                 space: true,
@@ -111,7 +114,7 @@ export default class Previous extends Expression {
             this.replaceChild('previous', this.previous, replace),
             this.replaceChild('range', this.range, replace),
             this.replaceChild('number', this.number, replace),
-            this.replaceChild('stream', this.stream, replace)
+            this.replaceChild('stream', this.stream, replace),
         ) as this;
     }
 
@@ -134,7 +137,7 @@ export default class Previous extends Expression {
                 new IncompatibleInput(
                     this.number,
                     indexType,
-                    NumberType.make()
+                    NumberType.make(),
                 ),
             ];
 
@@ -182,7 +185,7 @@ export default class Previous extends Expression {
                 this,
                 evaluator,
                 StreamType.make(new AnyType()),
-                value
+                value,
             );
 
         return this.range === undefined
@@ -190,16 +193,11 @@ export default class Previous extends Expression {
             : stream.range(this, num);
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
         if (this.stream instanceof Expression)
-            this.stream.evaluateTypeSet(bind, original, current, context);
+            this.stream.evaluateTypeGuards(current, guard);
         if (this.number instanceof Expression)
-            this.number.evaluateTypeSet(bind, original, current, context);
+            this.number.evaluateTypeGuards(current, guard);
         return current;
     }
 
@@ -210,27 +208,27 @@ export default class Previous extends Expression {
         return this.previous;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Previous;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Previous);
     }
 
-    getStartExplanations(locale: Locale, context: Context) {
+    getStartExplanations(locales: Locales, context: Context) {
         return concretize(
-            locale,
-            locale.node.Previous.start,
-            new NodeRef(this.stream, locale, context)
+            locales,
+            locales.get((l) => l.node.Previous.start),
+            new NodeRef(this.stream, locales, context),
         );
     }
 
     getFinishExplanations(
-        locale: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         return concretize(
-            locale,
-            locale.node.Previous.finish,
-            this.getValueIfDefined(locale, context, evaluator)
+            locales,
+            locales.get((l) => l.node.Previous.finish),
+            this.getValueIfDefined(locales, context, evaluator),
         );
     }
 

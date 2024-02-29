@@ -25,40 +25,40 @@ import type Locale from '../locale/Locale';
 import { getBestSupportedLocales, toLocaleString } from '../locale/Locale';
 import { toTokens } from '../parser/toTokens';
 import type LocalesDatabase from '../db/LocalesDatabase';
-import { cloneFlags, moderatedFlags, type Moderation } from './Moderation';
+import { moderatedFlags, type Moderation } from './Moderation';
+import DefaultLocale from '../locale/DefaultLocale';
+import Locales from '../locale/Locales';
+import {
+    ProjectSchemaLatestVersion,
+    type SerializedCaret,
+    type SerializedProject,
+    type SerializedProjectUnknownVersion,
+    type SerializedSource,
+    upgradeProject,
+} from './ProjectSchemas';
+import {
+    PROJECT_PARAM_EDIT,
+    PROJECT_PARAM_PLAY,
+} from '../routes/project/constants';
 
-export type SerializedSource = {
-    names: string;
-    code: string;
-    caret: SerializedCaret;
-};
-export type SerializedProject = {
-    /** A very likely unique uuid4 string */
-    id: string;
-    /** A single Translation, serialized */
-    name: string;
-    /** The source files in the project */
-    sources: SerializedSource[];
-    /** A list of locales on which this project is dependent. All ISO 639-1 languaage codes, followed by a -, followed by ISO 3166-2 region code: https://en.wikipedia.org/wiki/ISO_3166-2 */
-    locales: string[];
-    /** The Firestore user ID owner of this project */
-    owner: string | null;
-    /** A list of Firestore user IDs that have privileges to edit this project */
-    collaborators: string[];
-    /** Whether this project can be viewed by anyone */
-    public: boolean;
-    /** True if the project is listed in a creator's list of projects */
-    listed: boolean;
-    /** True if the project is archived */
-    archived: boolean;
-    /** When this was lasted edited, as a unix time in milliseconds */
-    timestamp: number;
-    /** Whether this project has ever been saved to the cloud. Needed for syncing. */
-    persisted: boolean;
-    /** An optional gallery ID, indicating which gallery this project is in. */
-    gallery: string | null;
-    /** Moderation state */
-    flags: Moderation;
+/**
+ * How we store projects in memory, mirroring the data in the deserialized form.
+ * We store them in an object literal like this for less error prone immutable modifications.
+ * Without this we'd have to pass all fields into a constructor for every kind of change,
+ * which means every time we add or change a field, it requires modification everywhere.
+ * This pattern allows us to do a simple object spread with a new value.
+ */
+export type ProjectData = Omit<SerializedProject, 'sources' | 'locales'> & {
+    /** The main source file that starts evaluation */
+    main: Source;
+    /** All source files in the project, and their evaluators */
+    supplements: Source[];
+    /**
+     * The locales on which this project relies.
+     * Not an indicator of what locales are currently selected; a locale may be selected that this project does not use. */
+    locales: Locale[];
+    /** Serialized caret positions for each source file */
+    carets: SerializedCarets;
 };
 
 type Analysis = {
@@ -75,7 +75,6 @@ type Analysis = {
     dependencies: Map<Expression, Set<Expression>>;
 };
 
-type SerializedCaret = number | Path;
 type SerializedSourceCaret = { source: Source; caret: SerializedCaret };
 type SerializedCarets = SerializedSourceCaret[];
 
@@ -83,35 +82,8 @@ type SerializedCarets = SerializedSourceCaret[];
  * A project with a name, some source files, and evaluators for each source file.
  **/
 export default class Project {
-    /** The unique ID of the project */
-    readonly id: string;
-
-    /** The name of the project */
-    readonly name: string;
-
-    /** The main source file that starts evaluation */
-    readonly main: Source;
-
-    /** All source files in the project, and their evaluators */
-    readonly supplements: Source[];
-
-    /** Serialized caret positions for each source file */
-    readonly carets: SerializedCarets;
-
-    /** The Firestore user ID that owns this project */
-    readonly owner: string | null;
-
-    /** A list of uids that have write access to this project. */
-    readonly collaborators: string[];
-
-    /** True if it should be listed in the projects list. Allows tutorial projects not to be listed. */
-    readonly listed: boolean;
-
-    /** True if this project should be viewable by anyone */
-    readonly public: boolean;
-
-    /** True if has been archived */
-    readonly archived: boolean;
+    /** The immutable data for the project */
+    private readonly data: ProjectData;
 
     /** A cache of source contexts */
     readonly sourceContext: Map<Source, Context> = new Map();
@@ -125,25 +97,8 @@ export default class Project {
     /** Default shares */
     readonly shares: ReturnType<typeof createDefaultShares>;
 
-    /** Gallery */
-    readonly gallery: string | null;
-
-    /**
-     * The locales on which this project relies.
-     * Not an indicator of what locales are currently selected; a locale may be selected that this project does not use. */
-    private locales: Locale[];
-
     /** The localized basis bindings */
     readonly basis: Basis;
-
-    /** The moderation state of the project */
-    readonly flags: Moderation;
-
-    /** The time when this project version created. */
-    readonly timestamp: number;
-
-    /** Whether this project has ever been saved in the cloud */
-    readonly persisted: boolean;
 
     /** Conflicts. */
     analyzed: 'unanalyzed' | 'analyzing' | 'analyzed' = 'unanalyzed';
@@ -155,7 +110,27 @@ export default class Project {
         dependencies: new Map(),
     };
 
-    constructor(
+    constructor(data: ProjectData) {
+        // Copy to prevent external modification
+        this.data = { ...data };
+
+        // Get a Basis for the requested locales.
+        this.basis = Basis.getLocalizedBasis(
+            new Locales(this.data.locales, DefaultLocale),
+        );
+
+        // Initialize default shares
+        this.shares = this.basis.shares;
+
+        // Initialize roots for all definitions that can be referenced.
+        this.roots = [
+            ...this.getSources().map((source) => source.root),
+            ...this.basis.roots,
+            ...this.shares.all.map((share) => new Root(share)),
+        ];
+    }
+
+    static make(
         id: string | null,
         name: string,
         main: Source,
@@ -169,87 +144,59 @@ export default class Project {
         archived = false,
         persisted = false,
         gallery: string | null = null,
-        moderation: Moderation = moderatedFlags(),
+        flags: Moderation = moderatedFlags(),
         // This is last; omitting it updates the time.
-        timestamp: number | undefined = undefined
+        timestamp: number | undefined = undefined,
     ) {
-        this.id = id ?? uuidv4();
-        this.owner = owner;
-        this.collaborators = Array.from(
-            new Set(collaborators.filter((uid) => uid.length > 0))
-        );
-        this.public = pub;
-        this.timestamp = timestamp ?? Date.now();
-        this.persisted = persisted;
-        this.gallery = gallery;
-
-        this.flags = moderation;
-
-        // Remember the name and source.
-        this.name = name;
-        this.main = main;
-        this.supplements = supplements.slice();
-
-        // Remember the locale dependencies
-        this.locales = Array.isArray(locales) ? locales : [locales];
-
-        // Get a Basis for the requested locales.
-        this.basis = Basis.getLocalizedBasis(this.locales);
-
-        // Initialize default shares
-        this.shares = this.basis.shares;
-
-        // Remember the carets
-        this.carets =
-            carets === undefined
-                ? this.getSources().map((source) => {
-                      return { source, caret: 0 };
-                  })
-                : carets;
-
-        // Remember whether this project should be listed as a project. (Used to not list tutorial projects).
-        this.listed = listed;
-
-        // Remember whether this is archived.
-        this.archived = archived;
-
-        // Initialize roots for all definitions that can be referenced.
-        this.roots = [
-            ...this.getSources().map((source) => source.root),
-            ...this.basis.roots,
-            ...this.shares.all.map((share) => new Root(share)),
-        ];
+        return new Project({
+            v: ProjectSchemaLatestVersion,
+            id: id ?? uuidv4(),
+            name,
+            main,
+            supplements,
+            locales: Array.isArray(locales) ? locales : [locales],
+            owner,
+            collaborators,
+            public: pub,
+            carets:
+                carets ??
+                [main, ...supplements].map((source) => {
+                    return { source, caret: 0 };
+                }),
+            listed,
+            archived,
+            persisted,
+            gallery,
+            flags,
+            timestamp: timestamp ?? Date.now(),
+            nonPII: [],
+        });
     }
 
     copy() {
-        return new Project(
-            null,
-            this.name,
-            this.main,
-            this.supplements.slice(),
-            this.locales.slice(),
-            this.owner,
-            this.collaborators.slice(),
-            this.public,
-            this.carets.slice(),
-            this.listed,
-            this.archived,
-            this.persisted,
-            this.gallery,
-            cloneFlags(this.flags)
-        );
+        return new Project({ ...this.data, id: uuidv4() });
     }
 
     equals(project: Project) {
         return (
-            this.id === project.id &&
-            this.name === project.name &&
+            this.getID() === project.getID() &&
+            this.getName() === project.getName() &&
             this.getSources().every((source1) =>
                 project
                     .getSources()
-                    .some((source2) => source1.isEqualTo(source2))
+                    .some((source2) => source1.isEqualTo(source2)),
             )
         );
+    }
+
+    getID() {
+        return this.data.id;
+    }
+
+    getLink(fullscreen: boolean) {
+        return `/project/${encodeURI(this.getID())}${
+            fullscreen ? `?${PROJECT_PARAM_PLAY}` : `?${PROJECT_PARAM_EDIT}`
+        }`;
     }
 
     getNodeByID(id: number): Node | undefined {
@@ -265,14 +212,10 @@ export default class Project {
     }
 
     /** Given a path, try to resolve a corresponding node in one of the sources. */
-    resolvePath(path: Path) {
-        // Resolve the node from the path.
-        let evaluate: Node | undefined = undefined;
-        for (const root of this.roots) {
-            evaluate = root.resolvePath(path);
-            if (evaluate !== undefined) break;
-        }
-        return evaluate;
+    resolvePath(sourceNumber: number, path: Path) {
+        const source = this.getSources()[sourceNumber];
+        if (source === undefined) return undefined;
+        else return source.root.resolvePath(path);
     }
 
     /** True if one of the project's contains the given node. */
@@ -281,7 +224,7 @@ export default class Project {
     }
 
     getSources() {
-        return [this.main, ...this.supplements];
+        return [this.getMain(), ...this.data.supplements];
     }
 
     getSourceWithName(name: string) {
@@ -311,7 +254,7 @@ export default class Project {
 
     getNodeContext(node: Node) {
         const source = this.getSourceOf(node);
-        return this.getContext(source ?? this.main);
+        return this.getContext(source ?? this.getMain());
     }
 
     getSourceOf(node: Node) {
@@ -319,16 +262,16 @@ export default class Project {
     }
 
     getSourcesExcept(source: Source) {
-        return [this.main, ...this.supplements].filter((s) => s !== source);
+        return this.getSources().filter((s) => s !== source);
     }
 
     getName() {
-        return this.name;
+        return this.data.name;
     }
 
     getSourceWithProgram(program: Program) {
         return this.getSources().find(
-            (source) => source.expression === program
+            (source) => source.expression === program,
         );
     }
     getBasis() {
@@ -360,7 +303,7 @@ export default class Project {
 
             // Compute all of the conflicts in the program.
             this.analysis.conflicts = this.analysis.conflicts.concat(
-                source.expression.getAllConflicts(context)
+                source.expression.getAllConflicts(context),
             );
 
             // Build conflict indices by going through each conflict, asking for the conflicting nodes
@@ -369,14 +312,14 @@ export default class Project {
                 const complicitNodes = conflict.getConflictingNodes();
                 this.analysis.primary.set(complicitNodes.primary.node, [
                     ...(this.analysis.primary.get(
-                        complicitNodes.primary.node
+                        complicitNodes.primary.node,
                     ) ?? []),
                     conflict,
                 ]);
                 if (complicitNodes.secondary) {
                     const nodeConflicts =
                         this.analysis.secondary.get(
-                            complicitNodes.secondary.node
+                            complicitNodes.secondary.node,
                         ) ?? [];
                     this.analysis.secondary.set(complicitNodes.secondary.node, [
                         ...nodeConflicts,
@@ -409,12 +352,12 @@ export default class Project {
                                 ) {
                                     const hofEvaluates =
                                         this.analysis.evaluations.get(
-                                            type.definition
+                                            type.definition,
                                         ) ?? new Set();
                                     hofEvaluates.add(node);
                                     this.analysis.evaluations.set(
                                         type.definition,
-                                        hofEvaluates
+                                        hofEvaluates,
                                     );
                                 }
                             }
@@ -432,7 +375,7 @@ export default class Project {
                         else
                             this.analysis.dependencies.set(
                                 dependency,
-                                new Set([node])
+                                new Set([node]),
                             );
                     }
                 }
@@ -473,7 +416,7 @@ export default class Project {
     }
 
     getEvaluationsOf(
-        fun: FunctionDefinition | StructureDefinition
+        fun: FunctionDefinition | StructureDefinition,
     ): Evaluate[] {
         return Array.from(this.getAnalysis().evaluations.get(fun) ?? []);
     }
@@ -500,22 +443,22 @@ export default class Project {
     /** Get supplements not referenced by main */
     getUnusedSupplements(): Source[] {
         // Return all supplements for which no source's borrows borrow it.
-        return this.supplements.filter(
+        return this.data.supplements.filter(
             (supplement) =>
                 !this.getSources().some((source) =>
                     source.expression.borrows.some(
                         (borrow) =>
                             (borrow.getShare(this.getContext(source)) ??
-                                [])[0] === supplement
-                    )
-                )
+                                [])[0] === supplement,
+                    ),
+                ),
         );
     }
 
     /** Searches source other than the given borrow for top-level binds matching the given name. */
     getShare(
         source: string,
-        name: string | undefined
+        name: string | undefined,
     ): [Source | undefined, SharedDefinition] | undefined {
         // Do any of the sources match the requested source, or have a share that matches, or a shared bind that matches?
         const match = this.getSources().find((s) => s.hasName(source));
@@ -539,7 +482,7 @@ export default class Project {
             (definitions: SharedDefinition[], source) => {
                 return [...definitions, ...source.getShares()];
             },
-            []
+            [],
         );
     }
 
@@ -549,7 +492,7 @@ export default class Project {
             const context = this.getContext(source);
             for (const ref of source.nodes(
                 (n): n is Reference | PropertyReference =>
-                    n instanceof Reference || n instanceof PropertyReference
+                    n instanceof Reference || n instanceof PropertyReference,
             ) as (Reference | PropertyReference)[]) {
                 if (ref.resolve(context) === bind) refs.push(ref);
             }
@@ -557,42 +500,16 @@ export default class Project {
         return refs;
     }
 
-    clone() {
-        return new Project(
-            this.id,
-            this.name,
-            this.main,
-            this.supplements,
-            this.locales,
-            this.owner,
-            this.collaborators,
-            this.public,
-            this.carets,
-            this.listed,
-            this.archived,
-            this.persisted,
-            this.gallery,
-            cloneFlags(this.flags)
-        );
+    withName(name: string) {
+        return new Project({ ...this.data, name });
     }
 
-    withName(name: string) {
-        return new Project(
-            this.id,
-            name,
-            this.main,
-            this.supplements,
-            this.locales,
-            this.owner,
-            this.collaborators,
-            this.public,
-            this.carets,
-            this.listed,
-            this.archived,
-            this.persisted,
-            this.gallery,
-            cloneFlags(this.flags)
-        );
+    getMain() {
+        return this.data.main;
+    }
+
+    getSupplements() {
+        return [...this.data.supplements];
     }
 
     withSource(oldSource: Source, newSource: Source) {
@@ -601,35 +518,16 @@ export default class Project {
 
     /** Copies this project, but with the new locale added if it's not already included. */
     withLocales(locales: Locale[]) {
-        return new Project(
-            this.id,
-            this.name,
-            this.main,
-            this.supplements,
-            Array.from(new Set([...this.locales, ...locales])),
-            this.owner,
-            this.collaborators,
-            this.public,
-            this.carets,
-            this.listed,
-            this.archived,
-            this.persisted,
-            this.gallery,
-            cloneFlags(this.flags)
-        );
+        return new Project({
+            ...this.data,
+            locales: Array.from(new Set([...this.data.locales, ...locales])),
+        });
     }
 
     withCaret(source: Source, caret: CaretPosition) {
-        return new Project(
-            this.id,
-            this.name,
-            this.main,
-            this.supplements,
-            this.locales,
-            this.owner,
-            this.collaborators,
-            this.public,
-            this.carets.map((sourceCaret) =>
+        return new Project({
+            ...this.data,
+            carets: this.data.carets.map((sourceCaret) =>
                 sourceCaret.source === source
                     ? {
                           source,
@@ -638,72 +536,49 @@ export default class Project {
                                   ? source.root.getPath(caret)
                                   : caret,
                       }
-                    : sourceCaret
+                    : sourceCaret,
             ),
-            this.listed,
-            this.archived,
-            this.persisted,
-            this.gallery,
-            cloneFlags(this.flags)
-        );
+        });
     }
 
     withoutSource(source: Source) {
-        return new Project(
-            this.id,
-            this.name,
-            this.main,
-            this.supplements.filter((s) => s !== source),
-            this.locales,
-            this.owner,
-            this.collaborators,
-            this.public,
-            this.carets.filter((c) => c.source !== source),
-            this.listed,
-            this.archived,
-            this.persisted,
-            this.gallery,
-            cloneFlags(this.flags)
-        );
+        return new Project({
+            ...this.data,
+            supplements: this.data.supplements.filter((s) => s !== source),
+            carets: this.data.carets.filter((c) => c.source !== source),
+        });
     }
 
     withSources(replacements: [Source, Source][]) {
         const mainReplacement = replacements.find(
-            (replacement) => replacement[0] === this.main
+            (replacement) => replacement[0] === this.getMain(),
         );
-        const newMain = mainReplacement ? mainReplacement[1] : this.main;
-        const newSupplements = this.supplements.map((supplement) => {
+        const newMain = mainReplacement ? mainReplacement[1] : this.getMain();
+        const newSupplements = this.data.supplements.map((supplement) => {
             const supplementReplacement = replacements.find(
-                (replacement) => replacement[0] === supplement
+                (replacement) => replacement[0] === supplement,
             );
             return supplementReplacement
                 ? supplementReplacement[1]
                 : supplement;
         });
-        return new Project(
-            this.id,
-            this.name,
-            newMain,
-            newSupplements,
-            this.locales,
-            this.owner,
-            this.collaborators,
-            this.public,
-            this.carets.map((caret) => {
-                // See if the caret's source was replaced.
-                const replacement = replacements.find(
-                    ([original]) => original === caret.source
-                );
-                return replacement !== undefined
-                    ? { source: replacement[1], caret: caret.caret }
-                    : caret;
-            }),
-            this.listed,
-            this.archived,
-            this.persisted,
-            this.gallery,
-            cloneFlags(this.flags)
-        );
+
+        const newCarets = this.data.carets.map((caret) => {
+            // See if the caret's source was replaced.
+            const replacement = replacements.find(
+                ([original]) => original === caret.source,
+            );
+            return replacement !== undefined
+                ? { source: replacement[1], caret: caret.caret }
+                : caret;
+        });
+
+        return new Project({
+            ...this.data,
+            main: newMain,
+            supplements: newSupplements,
+            carets: newCarets,
+        });
     }
 
     withRevisedNodes(nodes: [Node, Node | undefined][]) {
@@ -718,7 +593,7 @@ export default class Project {
             }
             // Check if we made a new source already.
             const sources = replacementSources.find(
-                ([original]) => original === source
+                ([original]) => original === source,
             );
             // If not, create a new one, mapping the original to the new source.
             if (sources === undefined)
@@ -744,7 +619,7 @@ export default class Project {
             replacementSources.map(([oldSource, newSource]) => [
                 oldSource,
                 newSource,
-            ])
+            ]),
         );
 
         // Replace the carets
@@ -755,118 +630,71 @@ export default class Project {
         return newProject;
     }
 
-    withNewSource(name: string) {
-        const newSource = new Source(name, '');
-        return new Project(
-            this.id,
-            this.name,
-            this.main,
-            [...this.supplements, newSource],
-            this.locales,
-            this.owner,
-            this.collaborators,
-            this.public,
-            [...this.carets, { source: newSource, caret: 0 }],
-            this.listed,
-            this.archived,
-            this.persisted,
-            this.gallery,
-            cloneFlags(this.flags)
-        );
+    withNewSource(name: string, code?: string | undefined) {
+        const newSource = new Source(name, code ?? '');
+        return new Project({
+            ...this.data,
+            supplements: [...this.data.supplements, newSource],
+            carets: [...this.data.carets, { source: newSource, caret: 0 }],
+        });
+    }
+
+    hasOwner() {
+        return this.data.owner !== null;
+    }
+
+    getOwner() {
+        return this.data.owner;
     }
 
     withOwner(owner: string) {
-        return new Project(
-            this.id,
-            this.name,
-            this.main,
-            this.supplements,
-            this.locales,
-            owner,
-            this.collaborators,
-            this.public,
-            this.carets,
-            this.listed,
-            this.archived,
-            this.persisted,
-            this.gallery,
-            cloneFlags(this.flags)
-        );
+        return new Project({ ...this.data, owner });
+    }
+
+    getCollaborators() {
+        return [...this.data.collaborators];
     }
 
     hasCollaborator(uid: string) {
-        return this.collaborators.includes(uid);
-    }
-
-    withCollaborator(uid: string) {
-        return this.collaborators.some((user) => user === uid)
-            ? this
-            : new Project(
-                  this.id,
-                  this.name,
-                  this.main,
-                  this.supplements,
-                  this.locales,
-                  this.owner,
-                  [...this.collaborators, uid],
-                  this.public,
-                  this.carets,
-                  this.listed,
-                  this.archived,
-                  this.persisted,
-                  this.gallery,
-                  cloneFlags(this.flags)
-              );
-    }
-
-    withoutCollaborator(uid: string) {
-        return !this.collaborators.some((user) => user === uid)
-            ? this
-            : new Project(
-                  this.id,
-                  this.name,
-                  this.main,
-                  this.supplements,
-                  this.locales,
-                  this.owner,
-                  this.collaborators.filter((id) => id !== uid),
-                  this.public,
-                  this.carets,
-                  this.listed,
-                  this.archived,
-                  this.persisted,
-                  this.gallery,
-                  cloneFlags(this.flags)
-              );
-    }
-
-    asPublic(pub = true) {
-        return new Project(
-            this.id,
-            this.name,
-            this.main,
-            this.supplements,
-            this.locales,
-            this.owner,
-            this.collaborators,
-            pub,
-            this.carets,
-            this.listed,
-            this.archived,
-            this.persisted,
-            this.gallery,
-            cloneFlags(this.flags)
-        );
+        return this.data.collaborators.includes(uid);
     }
 
     isReadOnly(uid: string) {
-        return !this.collaborators.includes(uid);
+        return !this.data.collaborators.includes(uid);
+    }
+
+    withCollaborator(uid: string) {
+        return this.data.collaborators.some((user) => user === uid)
+            ? this
+            : new Project({
+                  ...this.data,
+                  collaborators: [...this.data.collaborators, uid],
+              });
+    }
+
+    withoutCollaborator(uid: string) {
+        return !this.data.collaborators.some((user) => user === uid)
+            ? this
+            : new Project({
+                  ...this.data,
+                  collaborators: this.data.collaborators.filter(
+                      (id) => id !== uid,
+                  ),
+              });
+    }
+
+    isPublic() {
+        return this.data.public;
+    }
+
+    asPublic(pub = true) {
+        return new Project({ ...this.data, public: pub });
     }
 
     getBindReplacements(
         evaluates: Evaluate[],
         name: string,
-        value: Expression | undefined
+        value: Expression | undefined,
     ): [Evaluate, Evaluate | undefined][] {
         return evaluates.map((evaluate) => {
             // Find the bind corresponding to the name.
@@ -879,7 +707,7 @@ export default class Project {
                       evaluate.withBindAs(
                           bind,
                           value?.clone(),
-                          this.getNodeContext(evaluate)
+                          this.getNodeContext(evaluate),
                       ),
                   ]
                 : [evaluate, evaluate];
@@ -893,41 +721,41 @@ export default class Project {
                 this.getSources().reduce(
                     (list: LanguageCode[], source: Source) =>
                         list.concat(source.expression.getLanguagesUsed()),
-                    []
-                )
-            )
+                    [],
+                ),
+            ),
         );
     }
 
     getOutput() {
-        const evaluates = this.main
+        const evaluates = this.getMain()
             .nodes()
             .filter((node): node is Evaluate => node instanceof Evaluate);
         return [
             ...evaluates.filter((evaluate) =>
                 evaluate.is(
                     this.shares.output.Stage,
-                    this.getNodeContext(evaluate)
-                )
+                    this.getNodeContext(evaluate),
+                ),
             ),
             ...evaluates.filter((evaluate) =>
                 evaluate.is(
                     this.shares.output.Group,
-                    this.getNodeContext(evaluate)
-                )
+                    this.getNodeContext(evaluate),
+                ),
             ),
             ...evaluates.filter((evaluate) =>
                 evaluate.is(
                     this.shares.output.Phrase,
-                    this.getNodeContext(evaluate)
-                )
+                    this.getNodeContext(evaluate),
+                ),
             ),
         ];
     }
 
     getCaretPosition(source: Source): CaretPosition | undefined {
-        const position: SerializedCaret | undefined = this.carets.find(
-            (c) => c.source === source
+        const position: SerializedCaret | undefined = this.data.carets.find(
+            (c) => c.source === source,
         )?.caret;
 
         return position !== undefined
@@ -943,40 +771,45 @@ export default class Project {
 
     static async deserializeProject(
         localesDB: LocalesDatabase,
-        project: SerializedProject
+        project: SerializedProjectUnknownVersion,
     ): Promise<Project> {
+        // Upgrade the project just in case.
+        project = upgradeProject(project);
+
         const sources = project.sources.map((source) =>
-            Project.deserializeSource(source)
+            Project.deserializeSource(source),
         );
 
         // Get all of the locales on which the project depends.
         const dependentLocales = await localesDB.loadLocales(
-            getBestSupportedLocales(project.locales)
+            getBestSupportedLocales(project.locales),
         );
 
         const locales = Array.from(
-            new Set([...dependentLocales, ...localesDB.getLocales()])
+            new Set([...dependentLocales, ...localesDB.getLocales()]),
         );
 
-        return new Project(
-            project.id,
-            project.name,
-            sources[0],
-            sources.slice(1),
+        return new Project({
+            v: ProjectSchemaLatestVersion,
+            id: project.id,
+            name: project.name,
+            main: sources[0],
+            supplements: sources.slice(1),
             locales,
-            project.owner,
-            project.collaborators,
-            project.public,
-            project.sources.map((s, index) => {
+            owner: project.owner,
+            collaborators: project.collaborators,
+            public: project.public,
+            carets: project.sources.map((s, index) => {
                 return { source: sources[index], caret: s.caret };
             }),
-            project.listed,
-            project.archived,
-            project.persisted,
-            project.gallery,
-            cloneFlags(project.flags),
-            project.timestamp
-        );
+            listed: project.listed,
+            archived: project.archived,
+            persisted: project.persisted,
+            gallery: project.gallery,
+            flags: { ...project.flags },
+            timestamp: project.timestamp,
+            nonPII: project.nonPII,
+        });
     }
 
     getLanguagesUsed(): LanguageCode[] {
@@ -985,135 +818,136 @@ export default class Project {
                 ...languages,
                 ...source.expression.getLanguagesUsed(),
             ],
-            []
+            [],
         );
 
         return Array.from(
-            new Set([...this.locales.map((l) => l.language), ...used])
+            new Set([...this.data.locales.map((l) => l.language), ...used]),
         );
     }
 
     isListed() {
-        return this.listed;
+        return this.data.listed;
     }
 
     isArchived() {
-        return this.archived;
+        return this.data.archived;
     }
 
     asArchived(archived: boolean) {
-        return new Project(
-            this.id,
-            this.name,
-            this.main,
-            this.supplements,
-            this.locales,
-            this.owner,
-            this.collaborators,
-            this.public,
-            this.carets,
-            this.listed,
-            this.persisted,
-            archived,
-            this.gallery,
-            cloneFlags(this.flags)
-        );
+        return new Project({ ...this.data, archived });
     }
 
     asPersisted() {
-        return new Project(
-            this.id,
-            this.name,
-            this.main,
-            this.supplements,
-            this.locales,
-            this.owner,
-            this.collaborators,
-            this.public,
-            this.carets,
-            this.listed,
-            this.persisted,
-            true,
-            this.gallery,
-            cloneFlags(this.flags)
-        );
+        return new Project({ ...this.data, persisted: true });
+    }
+
+    isPersisted() {
+        return this.data.persisted;
+    }
+
+    getGallery() {
+        return this.data.gallery;
     }
 
     withGallery(id: string | null) {
-        return new Project(
-            this.id,
-            this.name,
-            this.main,
-            this.supplements,
-            this.locales,
-            this.owner,
-            this.collaborators,
-            this.public,
-            this.carets,
-            this.listed,
-            this.archived,
-            this.persisted,
-            id,
-            cloneFlags(this.flags)
-        );
+        return new Project({ ...this.data, gallery: id });
+    }
+
+    getFlags() {
+        return { ...this.data.flags };
     }
 
     withFlags(flags: Moderation) {
-        return new Project(
-            this.id,
-            this.name,
-            this.main,
-            this.supplements,
-            this.locales,
-            this.owner,
-            this.collaborators,
-            this.public,
-            this.carets,
-            this.listed,
-            this.archived,
-            this.persisted,
-            this.gallery,
-            cloneFlags(flags)
-        );
+        return new Project({ ...this.data, flags: { ...flags } });
+    }
+
+    withNewTime() {
+        return new Project({ ...this.data, timestamp: Date.now() });
+    }
+
+    getTimestamp() {
+        return this.data.timestamp;
+    }
+
+    getNonPII() {
+        return this.data.nonPII;
+    }
+
+    withNonPII(text: string) {
+        return new Project({
+            ...this.data,
+            // Add to the set of text
+            nonPII: Array.from(new Set([...this.data.nonPII, text])),
+        });
+    }
+
+    withPII(text: string) {
+        // Remove from the set of text
+        const withPII = this.data.nonPII.filter((piiText) => {
+            return piiText != text;
+        });
+        return new Project({
+            ...this.data,
+            nonPII: withPII,
+        })
+    }
+
+    isNotPII(text: string) {
+        return this.data.nonPII.includes(text);
     }
 
     serialize(): SerializedProject {
         return {
-            id: this.id,
-            name: this.name,
+            v: ProjectSchemaLatestVersion,
+            id: this.getID(),
+            name: this.getName(),
             sources: this.getSources().map((source) => {
                 return {
                     names: source.names.toWordplay(),
                     code: source.code.toString(),
                     caret:
-                        this.carets.find((c) => c.source === source)?.caret ??
-                        0,
+                        this.data.carets.find((c) => c.source === source)
+                            ?.caret ?? 0,
                 };
             }),
-            locales: this.locales.map((l) => toLocaleString(l)),
-            owner: this.owner,
-            collaborators: this.collaborators,
-            listed: this.listed,
-            public: this.public,
-            archived: this.archived,
-            persisted: this.persisted,
-            timestamp: this.timestamp,
-            gallery: this.gallery,
-            flags: cloneFlags(this.flags),
+            locales: this.getLocales()
+                .getLocales()
+                .map((l) => toLocaleString(l)),
+            owner: this.data.owner,
+            collaborators: this.data.collaborators,
+            listed: this.isListed(),
+            public: this.data.public,
+            archived: this.isArchived(),
+            persisted: this.isPersisted(),
+            timestamp: this.data.timestamp,
+            gallery: this.data.gallery,
+            flags: { ...this.data.flags },
+            nonPII: this.data.nonPII,
         };
     }
 
     isTutorial() {
-        return this.id.startsWith('tutorial-');
+        return this.getID().startsWith('tutorial-');
+    }
+
+    getSourceByteSize() {
+        // Estimate rather than getting exact size.
+        return this.getSources().reduce(
+            (sum, source) => sum + source.getCode().toString().length,
+            0,
+        );
     }
 
     toWordplay() {
         return (
-            `${this.name}\n` +
+            `${this.getName()}\n` +
             this.getSources()
                 .map(
                     (source) =>
-                        `=== ${source.names.toWordplay()}\n${source.code.toString()}`
+                        `=== ${source.names.toWordplay()}\n${source
+                            .withPreferredSpace()
+                            .code.toString()}`,
                 )
                 .join('\n')
         );

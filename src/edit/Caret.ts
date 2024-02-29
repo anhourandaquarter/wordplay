@@ -71,7 +71,7 @@ export default class Caret {
         position: CaretPosition,
         column: number | undefined,
         entry: Entry,
-        addition: Node | undefined
+        addition: Node | undefined,
     ) {
         this.source = source;
         this.position = position;
@@ -102,6 +102,17 @@ export default class Caret {
             typeof this.position === 'number'
                 ? this.source.getTokenAt(this.position, false)
                 : undefined;
+    }
+
+    getExpressionAt() {
+        const start =
+            this.position instanceof Node
+                ? this.position
+                : this.tokenExcludingSpace;
+        if (start === undefined) return undefined;
+        return this.source.root
+            .getAncestors(start)
+            .find((n): n is Expression => n instanceof Expression);
     }
 
     getNodeInside() {
@@ -141,7 +152,7 @@ export default class Caret {
         )
             return false;
         const start = this.source.getTokenTextPosition(
-            this.tokenExcludingSpace
+            this.tokenExcludingSpace,
         );
         const end = this.source.getTokenLastPosition(this.tokenExcludingSpace);
         return (
@@ -172,7 +183,7 @@ export default class Caret {
                         (literal instanceof Translation &&
                             literal.getText().length === 1) ||
                         literal instanceof NumberLiteral ||
-                        literal instanceof BooleanLiteral
+                        literal instanceof BooleanLiteral,
                 );
         }
         return undefined;
@@ -226,7 +237,7 @@ export default class Caret {
             : this.source.getTokenAfterNode(
                   this.position instanceof Node
                       ? this.position
-                      : this.tokenIncludingSpace
+                      : this.tokenIncludingSpace,
               );
         if (next === undefined) return false;
         return this.source.spaces.getSpace(next).length > 0;
@@ -346,7 +357,7 @@ export default class Caret {
                     (parent instanceof Block && emptyLine)
                 ) {
                     const nodesTokens = node.nodes(
-                        (t): t is Token => t instanceof Token
+                        (t): t is Token => t instanceof Token,
                     );
                     if (
                         parent &&
@@ -373,6 +384,7 @@ export default class Caret {
         return typeof this.position === 'number';
     }
 
+    /** If the position is an index, return it, undefined otherwise. */
     getIndex() {
         return this.isIndex() ? (this.position as number) : undefined;
     }
@@ -412,7 +424,7 @@ export default class Caret {
         );
     }
 
-    // Get the code position corresponding to the beginning of the given row.
+    /** Get the code position corresponding to the beginning of the given row.  */
     rowPosition(row: number): number | undefined {
         const lines = this.source.getCode().getLines();
         if (row < 0 || row >= lines.length) return undefined;
@@ -436,7 +448,7 @@ export default class Caret {
             if (this.source.getCode().at(pos) === '\n') break;
         }
         return this.withPosition(
-            Math.min(Math.max(0, pos), this.source.getCode().getLength())
+            Math.min(Math.max(0, pos), this.source.getCode().getLength()),
         );
     }
 
@@ -502,8 +514,10 @@ export default class Caret {
             const token = this.source.getTokenAt(this.position, false);
             const tokenBefore = this.source.getTokenAt(
                 this.position - 1,
-                false
+                false,
             );
+
+            // If we found a token and we're moving next and we're at the token's start, choose the token or its parent if it's an only child or a child of a placeholder
             if (
                 token &&
                 direction > 0 &&
@@ -512,8 +526,9 @@ export default class Caret {
                 return this.withPosition(
                     this.getParentOfOnlyChild(token),
                     this.column,
-                    entry
+                    entry,
                 );
+            // If we found a token before and we're moving before and we're at the token's end, choose the token or its parent if it's an only child or a child of a placeholder
             else if (
                 tokenBefore &&
                 direction < 0 &&
@@ -522,13 +537,13 @@ export default class Caret {
                 return this.withPosition(
                     this.getParentOfOnlyChild(tokenBefore),
                     this.column,
-                    entry
+                    entry,
                 );
 
             return this.withPosition(
                 this.position + direction,
                 this.source.getColumn(this.position + direction),
-                entry
+                entry,
             );
         }
     }
@@ -554,8 +569,16 @@ export default class Caret {
                 if (this.source.code.at(position) === '\n')
                     return this.withPosition(position);
             } while (position < this.source.code.getLength());
-            return this.withPosition(this.source.code.getLength() - 1);
+            return this.withPosition(this.source.code.getLength());
         }
+    }
+
+    atStart(): Caret {
+        return this.withPosition(0);
+    }
+
+    atEnd(): Caret {
+        return this.withPosition(this.source.code.getLength());
     }
 
     getParentOfOnlyChild(token: Token): Node {
@@ -570,7 +593,7 @@ export default class Caret {
         if (this.position instanceof Node) {
             // Get the first or last token of the given node.
             const tokens = this.position.nodes(
-                (n): n is Token => n instanceof Token
+                (n): n is Token => n instanceof Token,
             ) as Token[];
             const first = tokens[0];
             const last = tokens[tokens.length - 1];
@@ -583,7 +606,7 @@ export default class Caret {
                     return index + last.getTextLength() + offset;
             }
             return undefined;
-        } else return undefined;
+        } else return this.position;
     }
 
     getPlaceholderAtPosition(position: number): Node | undefined {
@@ -601,7 +624,7 @@ export default class Caret {
     withPosition(
         position: number | Node,
         column?: number,
-        entry?: Entry
+        entry?: Entry,
     ): Caret {
         if (typeof position === 'number' && isNaN(position))
             throw Error('NaN on caret set!');
@@ -610,13 +633,13 @@ export default class Caret {
             typeof position === 'number'
                 ? Math.max(
                       0,
-                      Math.min(position, this.source.getCode().getLength())
+                      Math.min(position, this.source.getCode().getLength()),
                   )
                 : position,
             // If given a column set it, otherwise keep the old one.
             column ?? this.column,
             entry ?? this.entry,
-            this.addition
+            this.addition,
         );
     }
 
@@ -626,7 +649,7 @@ export default class Caret {
             this.position,
             this.column,
             this.entry,
-            this.addition
+            this.addition,
         );
     }
 
@@ -636,7 +659,7 @@ export default class Caret {
             this.position,
             this.column,
             entry,
-            this.addition
+            this.addition,
         );
     }
 
@@ -646,7 +669,7 @@ export default class Caret {
             this.position,
             this.column,
             this.entry,
-            addition
+            addition,
         );
     }
 
@@ -656,7 +679,7 @@ export default class Caret {
             this.position,
             this.column,
             this.entry,
-            undefined
+            undefined,
         );
     }
 
@@ -673,7 +696,7 @@ export default class Caret {
                     position + offset,
                     this.column,
                     undefined,
-                    node
+                    node,
                 ),
             ];
         } else {
@@ -681,7 +704,7 @@ export default class Caret {
             if (position === undefined) return;
             const newSource = this.source.withGraphemesAt(
                 node.toWordplay(),
-                position
+                position,
             );
             if (newSource === undefined) return undefined;
 
@@ -692,7 +715,7 @@ export default class Caret {
                     position + offset,
                     this.column,
                     undefined,
-                    newSource.getTokenAt(position)
+                    newSource.getTokenAt(position),
                 ),
             ];
         }
@@ -702,7 +725,7 @@ export default class Caret {
     insert(
         text: string,
         project?: Project,
-        complete = true
+        complete = true,
     ): Edit | ProjectRevision | undefined {
         // Normalize the mystery string, ensuring it follows Unicode normalization form.
         text = text.normalize();
@@ -713,8 +736,8 @@ export default class Caret {
             const rename = this.tokenExcludingSpace?.isSymbol(Sym.Name)
                 ? this.tokenExcludingSpace
                 : this.tokenPrior?.isSymbol(Sym.Name) && this.atTokenEnd()
-                ? this.tokenPrior
-                : undefined;
+                  ? this.tokenPrior
+                  : undefined;
             const renameParent = rename
                 ? this.source.root.getParent(rename)
                 : undefined;
@@ -731,7 +754,7 @@ export default class Caret {
                     this.tokenExcludingSpace
                 ) {
                     start = this.source.getTokenTextPosition(
-                        this.tokenExcludingSpace
+                        this.tokenExcludingSpace,
                     );
                     newName =
                         start === undefined
@@ -755,7 +778,7 @@ export default class Caret {
                         project,
                         this.position -
                             start +
-                            new UnicodeString(text).getLength()
+                            new UnicodeString(text).getLength(),
                     );
                     if (edit) return edit;
                 }
@@ -814,7 +837,7 @@ export default class Caret {
                 // Is what's being typed a closing delimiter of an open delimiter?
                 (this.tokenIncludingSpace.getText() in DelimiterOpenByClose &&
                     this.source.getMatchedDelimiter(
-                        this.tokenIncludingSpace
+                        this.tokenIncludingSpace,
                     ) !== undefined))
         )
             return [
@@ -824,7 +847,7 @@ export default class Caret {
                     newPosition + 1,
                     undefined,
                     undefined,
-                    undefined
+                    undefined,
                 ),
             ];
         // Otherwise, if the text to insert is an opening delimiter and this isn't an unclosed text delimiter, automatically insert its closing counterpart.
@@ -903,13 +926,6 @@ export default class Caret {
         return this.position instanceof Node && this.position.isPlaceholder();
     }
 
-    isPlaceholderToken() {
-        return (
-            this.position instanceof Token &&
-            this.position.isSymbol(Sym.Placeholder)
-        );
-    }
-
     /** If the caret is a node, set the position to its first index */
     enter() {
         if (this.position instanceof Node) {
@@ -933,7 +949,7 @@ export default class Caret {
                         : this;
                 } else
                     return this.withPosition(
-                        this.position.getChildren()[0] ?? this.position
+                        this.position.getChildren()[0] ?? this.position,
                     );
             }
         } else return this;
@@ -970,7 +986,7 @@ export default class Caret {
                 newPosition,
                 undefined,
                 undefined,
-                newSource.getTokenAt(newPosition)
+                newSource.getTokenAt(newPosition),
             ),
         ];
     }
@@ -987,7 +1003,7 @@ export default class Caret {
         edited: Reference | Name,
         newName: string,
         project: Project,
-        offset: number
+        offset: number,
     ): ProjectRevision | undefined {
         let name: Name | undefined;
         let definition: Definition | undefined;
@@ -995,7 +1011,7 @@ export default class Caret {
         if (edited instanceof Reference) {
             definition = edited.resolve(project.getContext(this.source));
             name = definition?.names.names.find(
-                (n) => n.getName() === edited.getName()
+                (n) => n.getName() === edited.getName(),
             );
         }
         // If it was a name, find the definition that the name is naming
@@ -1007,7 +1023,7 @@ export default class Caret {
                     (node): node is Definition =>
                         node instanceof DefinitionExpression ||
                         node instanceof Bind ||
-                        node instanceof TypeVariable
+                        node instanceof TypeVariable,
                 );
             // Rename
         }
@@ -1025,8 +1041,8 @@ export default class Caret {
                                     node instanceof NameType) &&
                                 node.resolve(project.getContext(source)) ===
                                     definition &&
-                                node.getName() === name?.getName()
-                        )
+                                node.getName() === name?.getName(),
+                        ),
                 )
                 .flat();
 
@@ -1045,12 +1061,14 @@ export default class Caret {
 
             // Find the new source position of the edited name so we can find the new position of the caret.
             const editedRevision = revisions.find(
-                (revision) => revision[0] === edited
+                (revision) => revision[0] === edited,
             );
             // Bail if we couldn't find it for some reason.
             if (editedRevision === undefined) return undefined;
             const start = revisedSource.getTokenTextPosition(
-                editedRevision[1].getFirstLeaf() as Token
+                editedRevision[1]
+                    .leaves()
+                    .find((t) => t.isSymbol(Sym.Name)) as Token,
             );
             // Bail if we couldn't find the start position for some reason.
             if (start === undefined) return undefined;
@@ -1063,15 +1081,25 @@ export default class Caret {
         }
     }
 
-    backspace(project: Project): Edit | ProjectRevision | undefined {
+    /** Remove content in the specified direction at the current position */
+    delete(
+        project: Project,
+        forward: boolean,
+    ): Edit | ProjectRevision | undefined {
+        const offset = forward ? 0 : -1;
+
         // If the position is a number, see if this is a rename
         if (typeof this.position === 'number') {
             // Are we in the middle of a name or at it's end?
-            const rename =
-                this.tokenExcludingSpace?.isSymbol(Sym.Name) &&
-                !this.atTokenStart()
+            const rename = forward
+                ? this.tokenExcludingSpace?.isSymbol(Sym.Name) &&
+                  !this.atTokenEnd()
                     ? this.tokenExcludingSpace
-                    : this.tokenPrior?.isSymbol(Sym.Name) && this.atTokenEnd()
+                    : undefined
+                : this.tokenExcludingSpace?.isSymbol(Sym.Name) &&
+                    !this.atTokenStart()
+                  ? this.tokenExcludingSpace
+                  : this.tokenPrior?.isSymbol(Sym.Name) && this.atTokenEnd()
                     ? this.tokenPrior
                     : undefined;
             const renameParent = rename
@@ -1089,23 +1117,30 @@ export default class Caret {
                 let start: number | undefined;
                 let newName: string | undefined;
 
-                // Are we backspacing in the middle of the name?
+                // Are we deleting in the the middle of the name?
                 if (
                     rename === this.tokenExcludingSpace &&
                     this.tokenExcludingSpace
                 ) {
                     // Remember the offset of the caret
                     start = this.source.getTokenTextPosition(
-                        this.tokenExcludingSpace
+                        this.tokenExcludingSpace,
                     );
                     newName =
                         start !== undefined
                             ? this.tokenExcludingSpace
                                   .getText()
-                                  .substring(0, this.position - start - 1) +
+                                  .substring(
+                                      0,
+                                      this.position -
+                                          start +
+                                          (forward ? 0 : -1),
+                                  ) +
                               this.tokenExcludingSpace
                                   .getText()
-                                  .substring(this.position - start)
+                                  .substring(
+                                      this.position - start + (forward ? 1 : 0),
+                                  )
                             : undefined;
                 }
                 // If we're backspacing the end of the name...
@@ -1124,7 +1159,7 @@ export default class Caret {
                         renameParent,
                         newName,
                         project,
-                        this.position - start - 1
+                        this.position - start + offset,
                     );
                     // If we succeeded, return the edit.
                     if (edit) return edit;
@@ -1133,12 +1168,16 @@ export default class Caret {
         }
 
         if (typeof this.position === 'number') {
-            const before = this.source.getCode().at(this.position - 1);
-            const after = this.source.getCode().at(this.position);
+            const before = this.source
+                .getCode()
+                .at(forward ? this.position : this.position - 1);
+            const after = this.source
+                .getCode()
+                .at(forward ? this.position + 1 : this.position);
 
             // Is this just after a placeholder? Delete the whole placeholder.
             const placeholder = this.getPlaceholderAtPosition(
-                this.position - 1
+                this.position + offset,
             );
             if (placeholder) return this.deleteNode(placeholder);
 
@@ -1146,22 +1185,24 @@ export default class Caret {
                 // If there's an adjacent pair of delimiters, delete them both.
                 let newSource = this.source.withoutGraphemeAt(this.position);
                 if (newSource)
-                    newSource = newSource.withoutGraphemeAt(this.position - 1);
+                    newSource = newSource.withoutGraphemeAt(
+                        this.position + offset,
+                    );
                 return newSource === undefined
                     ? undefined
                     : [
                           newSource,
                           new Caret(
                               newSource,
-                              Math.max(0, this.position - 1),
+                              Math.max(0, this.position + offset),
                               undefined,
                               undefined,
-                              undefined
+                              undefined,
                           ),
                       ];
             } else {
                 const newSource = this.source.withoutGraphemeAt(
-                    this.position - 1
+                    this.position + offset,
                 );
                 return newSource === undefined
                     ? undefined
@@ -1169,10 +1210,10 @@ export default class Caret {
                           newSource,
                           new Caret(
                               newSource,
-                              Math.max(0, this.position - 1),
+                              Math.max(0, this.position + offset),
                               undefined,
                               undefined,
-                              undefined
+                              undefined,
                           ),
                       ];
             }
@@ -1240,10 +1281,10 @@ export default class Caret {
                         return [
                             this.source.replace(
                                 parent,
-                                ExpressionPlaceholder.make()
+                                ExpressionPlaceholder.make(),
                             ),
                             this.withPosition(placeholder).withAddition(
-                                undefined
+                                undefined,
                             ),
                         ];
                     }
@@ -1256,7 +1297,7 @@ export default class Caret {
                         return [
                             this.source.replace(node, placeholder),
                             this.withPosition(placeholder).withAddition(
-                                undefined
+                                undefined,
                             ),
                         ];
                     }
@@ -1264,7 +1305,7 @@ export default class Caret {
                     else if (last !== undefined) {
                         const newSource = this.source.withoutGraphemesBetween(
                             index,
-                            last
+                            last,
                         );
                         return newSource === undefined
                             ? undefined
@@ -1275,7 +1316,7 @@ export default class Caret {
                                       index,
                                       undefined,
                                       undefined,
-                                      undefined
+                                      undefined,
                                   ),
                               ];
                     }
@@ -1290,7 +1331,7 @@ export default class Caret {
         if (range === undefined) return;
         const newSource = this.source.withoutGraphemesBetween(
             range[0],
-            range[1]
+            range[1],
         );
         return newSource === undefined
             ? undefined
@@ -1301,7 +1342,7 @@ export default class Caret {
                       range[0],
                       undefined,
                       undefined,
-                      undefined
+                      undefined,
                   ),
               ];
     }
@@ -1325,7 +1366,7 @@ export default class Caret {
 
         const newPosition = this.source.getPhysicalPositionFromLineAndColumn(
             newLine,
-            this.column
+            this.column,
         );
 
         return newPosition !== undefined
@@ -1343,10 +1384,10 @@ export default class Caret {
             node === undefined
                 ? undefined
                 : key === '('
-                ? Block.make([node])
-                : key === '['
-                ? ListLiteral.make([node])
-                : undefined;
+                  ? Block.make([node])
+                  : key === '['
+                    ? ListLiteral.make([node])
+                    : undefined;
         if (wrapper === undefined) return undefined;
 
         const newSource = this.source.replace(node, wrapper);
@@ -1358,8 +1399,8 @@ export default class Caret {
         const token = node
             ? node
             : typeof this.position === 'number'
-            ? this.tokenExcludingSpace ?? this.tokenPrior
-            : this.position;
+              ? this.tokenExcludingSpace ?? this.tokenPrior
+              : this.position;
 
         if (token === undefined) return;
 
@@ -1381,17 +1422,17 @@ export default class Caret {
     getDescription(
         type: Type | undefined,
         conflicts: Conflict[],
-        context: Context
+        context: Context,
     ): string {
-        const locale = context.getBasis().locales[0];
+        const locales = context.getBasis().locales;
 
         /** Get description of conflicts */
         const conflictDescription =
             conflicts.length > 0
                 ? concretize(
-                      locale,
-                      locale.ui.edit.conflicts,
-                      conflicts.length
+                      locales,
+                      locales.get((l) => l.ui.edit.conflicts),
+                      conflicts.length,
                   ).toText()
                 : undefined;
 
@@ -1401,15 +1442,15 @@ export default class Caret {
     }
 
     getPositionDescription(type: Type | undefined, context: Context) {
-        const locale = context.getBasis().locales[0];
+        const locales = context.getBasis().locales;
 
         /** If the caret is a node, describe the node. */
         if (this.position instanceof Node) {
             return concretize(
-                locale,
-                locale.ui.edit.node,
-                new NodeRef(this.position, locale, context),
-                type ? new NodeRef(type, locale, context) : undefined
+                locales,
+                locales.get((l) => l.ui.edit.node),
+                new NodeRef(this.position, locales, context),
+                type ? new NodeRef(type, locales, context) : undefined,
             ).toText();
         }
 
@@ -1417,40 +1458,63 @@ export default class Caret {
         const beforeNode = before[0];
         const afterNode = after[0];
 
-        if (this.tokenExcludingSpace && this.isInsideText()) {
+        // Inside a token? Say what text we're in and what characters we're between.
+        if (this.tokenExcludingSpace) {
+            // Where is the cursor in the token, relative to the token's start?
+            const tokenPosition = this.source.getTokenTextPosition(
+                this.tokenExcludingSpace,
+            );
+            const relativeIndex =
+                tokenPosition === undefined
+                    ? undefined
+                    : this.position - tokenPosition;
             return concretize(
-                locale,
-                locale.ui.edit.inside,
-                new NodeRef(this.tokenExcludingSpace, locale, context)
-            ).toText();
-        } else if (this.isEmptyLine()) {
-            return concretize(
-                locale,
-                locale.ui.edit.line,
-                beforeNode
-                    ? new NodeRef(beforeNode, locale, context)
+                locales,
+                locales.get((l) => l.ui.edit.inside),
+                new NodeRef(this.tokenExcludingSpace, locales, context),
+                // Character before cursor, if there is one
+                relativeIndex
+                    ? this.tokenExcludingSpace.text.at(relativeIndex - 1)
                     : undefined,
-                afterNode ? new NodeRef(afterNode, locale, context) : undefined
+                // Character after cursor, if there is one
+                relativeIndex
+                    ? this.tokenExcludingSpace.text.at(relativeIndex)
+                    : undefined,
             ).toText();
-        } else if (this.tokenIncludingSpace) {
+        }
+        // Describe the empty line
+        else if (this.isEmptyLine()) {
+            return concretize(
+                locales,
+                locales.get((l) => l.ui.edit.line),
+                beforeNode
+                    ? new NodeRef(beforeNode, locales, context)
+                    : undefined,
+                afterNode
+                    ? new NodeRef(afterNode, locales, context)
+                    : undefined,
+            ).toText();
+        }
+        // Describe the tokens we're between or before.
+        else if (this.tokenIncludingSpace) {
             if (this.tokenPrior && this.tokenPrior !== this.tokenIncludingSpace)
                 return concretize(
-                    locale,
-                    locale.ui.edit.between,
+                    locales,
+                    locales.get((l) => l.ui.edit.between),
                     beforeNode
-                        ? new NodeRef(beforeNode, locale, context)
+                        ? new NodeRef(beforeNode, locales, context)
                         : undefined,
                     afterNode
-                        ? new NodeRef(afterNode, locale, context)
-                        : undefined
+                        ? new NodeRef(afterNode, locales, context)
+                        : undefined,
                 ).toText();
             else
                 return concretize(
-                    locale,
-                    locale.ui.edit.before,
+                    locales,
+                    locales.get((l) => l.ui.edit.before),
                     afterNode
-                        ? new NodeRef(afterNode, locale, context)
-                        : undefined
+                        ? new NodeRef(afterNode, locales, context)
+                        : undefined,
                 ).toText();
         }
     }
@@ -1463,7 +1527,7 @@ export default class Caret {
         if (token === undefined) return undefined;
         const ancestors = this.source.root.getAncestors(token);
         const text = ancestors.find(
-            (a): a is LanguageTagged => a instanceof LanguageTagged
+            (a): a is LanguageTagged => a instanceof LanguageTagged,
         );
         return text?.language?.getLanguageCode();
     }

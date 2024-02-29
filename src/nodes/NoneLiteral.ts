@@ -2,17 +2,16 @@ import Token from './Token';
 import NoneType from './NoneType';
 import type Type from './Type';
 import NoneValue from '@values/NoneValue';
-import type Bind from './Bind';
 import type Context from './Context';
 import type TypeSet from './TypeSet';
 import { NONE_SYMBOL } from '@parser/Symbols';
 import Sym from './Sym';
 import Node, { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import Literal from './Literal';
 import Glyphs from '../lore/Glyphs';
 import type { BasisTypeName } from '../basis/BasisConstants';
 import concretize from '../locale/concretize';
+import type Locales from '../locale/Locales';
 
 export default class NoneLiteral extends Literal {
     readonly none: Token;
@@ -23,6 +22,10 @@ export default class NoneLiteral extends Literal {
         this.none = none;
 
         this.computeChildren();
+    }
+
+    getDescriptor() {
+        return 'NoneLiteral';
     }
 
     getGrammar(): Grammar {
@@ -43,7 +46,7 @@ export default class NoneLiteral extends Literal {
         type: Type | undefined,
         _: Node,
         __: boolean,
-        context: Context
+        context: Context,
     ) {
         return type === undefined ||
             type.getPossibleTypes(context).some((t) => t instanceof NoneType)
@@ -53,7 +56,7 @@ export default class NoneLiteral extends Literal {
 
     clone(replace?: Replacement) {
         return new NoneLiteral(
-            this.replaceChild('none', this.none, replace)
+            this.replaceChild('none', this.none, replace),
         ) as this;
     }
 
@@ -80,24 +83,19 @@ export default class NoneLiteral extends Literal {
         return this.none;
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
-        bind;
-        original;
-        context;
+    evaluateTypeGuards(current: TypeSet) {
         return current;
     }
 
-    getNodeLocale(locale: Locale) {
-        return locale.node.NoneLiteral;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.NoneLiteral);
     }
 
-    getStartExplanations(locale: Locale) {
-        return concretize(locale, locale.node.NoneLiteral.start);
+    getStartExplanations(locales: Locales) {
+        return concretize(
+            locales,
+            locales.get((l) => l.node.NoneLiteral.start),
+        );
     }
 
     getGlyphs() {

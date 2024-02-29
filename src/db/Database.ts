@@ -12,12 +12,13 @@ import type Locale from '../locale/Locale';
 import {
     type SupportedLocale,
     getBestSupportedLocales,
+    type Template,
 } from '../locale/Locale';
 import ProjectsDatabase from './ProjectsDatabase';
 import LocalesDatabase from './LocalesDatabase';
 import SettingsDatabase from './SettingsDatabase';
 import GalleryDatabase from './GalleryDatabase';
-import CreatorDatabase from './CreatorDatabase';
+import CreatorDatabase, { CreatorCollection } from './CreatorDatabase';
 import DefaultLocale from '../locale/DefaultLocale';
 
 export enum SaveStatus {
@@ -43,7 +44,13 @@ export class Database {
     readonly Creators: CreatorDatabase;
 
     /** The status of persisting the projects. */
-    readonly Status: Writable<SaveStatus> = writable(SaveStatus.Saved);
+    readonly Status: Writable<{
+        status: SaveStatus;
+        message: undefined | ((locale: Locale) => Template);
+    }> = writable({
+        status: SaveStatus.Saved,
+        message: undefined,
+    });
 
     /** The current Firestore user ID */
     private user: User | null = null;
@@ -59,7 +66,7 @@ export class Database {
             this,
             locales,
             defaultLocale,
-            this.Settings.settings.locales
+            this.Settings.settings.locales,
         );
         this.Projects = new ProjectsDatabase(this);
         this.Galleries = new GalleryDatabase(this);
@@ -79,8 +86,11 @@ export class Database {
     }
 
     /** Update the saving status and broadcast via the store. */
-    setStatus(status: SaveStatus) {
-        this.Status.set(status);
+    setStatus(
+        status: SaveStatus,
+        message: undefined | ((locale: Locale) => Template),
+    ) {
+        this.Status.set({ status, message });
     }
 
     getLocales(): Locale[] {
@@ -89,20 +99,23 @@ export class Database {
 
     /** Saves settings to user's firestore record, if available. */
     uploadSettings() {
-        this.setStatus(SaveStatus.Saving);
+        this.setStatus(SaveStatus.Saving, undefined);
         try {
             // Try to save settings in the cloud.
             if (firestore && this.user) {
                 // Save in firestore
                 setDoc(
-                    doc(firestore, 'users', this.user.uid),
-                    this.Settings.toObject()
+                    doc(firestore, CreatorCollection, this.user.uid),
+                    this.Settings.toObject(),
                 );
             }
 
-            this.setStatus(SaveStatus.Saved);
+            this.setStatus(SaveStatus.Saved, undefined);
         } catch (_) {
-            this.setStatus(SaveStatus.Error);
+            this.setStatus(
+                SaveStatus.Error,
+                (l) => l.ui.project.save.settingsUnsaved,
+            );
         }
     }
 
@@ -122,7 +135,7 @@ export class Database {
             auth,
             async (newUser) => {
                 callback(newUser);
-            }
+            },
         );
     }
 
@@ -139,6 +152,9 @@ export class Database {
 
         // Tell the projects cache.
         this.Projects.syncUser(remove);
+
+        // Tell the gallery about the new user
+        this.Galleries.clean();
 
         // Tell the settings cache.
         this.Settings.syncUser();
@@ -170,7 +186,7 @@ export class Database {
 
         // Archiving was successful, delete the user's settings and then the user.
         try {
-            await deleteDoc(doc(firestore, 'users', user.uid));
+            await deleteDoc(doc(firestore, CreatorCollection, user.uid));
             await deleteUser(user);
         } catch (err) {
             console.error(err);
@@ -187,7 +203,7 @@ export class Database {
             return await fetch(
                 `${
                     import.meta.hot ? 'http://127.0.0.1:5002' : ''
-                }/function/getWebpage?url=${encodeURI(url)}`
+                }/function/getWebpage?url=${encodeURI(url)}`,
             );
         } catch (_) {
             return undefined;
@@ -200,7 +216,7 @@ const BrowserLanguages =
 
 export const DB = new Database(
     getBestSupportedLocales(BrowserLanguages.slice()),
-    DefaultLocale
+    DefaultLocale,
 );
 
 export const Settings = DB.Settings;
@@ -213,15 +229,13 @@ export const animationFactor = Settings.settings.animationFactor.value;
 export const animationDuration = Settings.animationDuration;
 export const tutorialProgress = Settings.settings.tutorial.value;
 export const arrangement = Settings.settings.arrangement.value;
-export const locale = DB.Locales.locale;
 export const locales = DB.Locales.locales;
-export const languages = DB.Locales.languages;
-export const writingDirection = DB.Locales.writingDirection;
 export const writingLayout = Settings.settings.writingLayout.value;
 export const camera = Settings.settings.camera.value;
 export const dark = Settings.settings.dark.value;
 export const mic = Settings.settings.mic.value;
 export const blocks = Settings.settings.blocks.value;
+export const localized = Settings.settings.localized.value;
 export const status = DB.Status;
 export const editableProjects = Projects.allEditableProjects;
 export const archivedProjects = Projects.allArchivedProjects;

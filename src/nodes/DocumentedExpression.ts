@@ -1,18 +1,17 @@
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import type Type from './Type';
 import type Value from '@values/Value';
 import type Step from '@runtime/Step';
-import type Bind from './Bind';
 import type Context from './Context';
 import type TypeSet from './TypeSet';
 import type Evaluator from '@runtime/Evaluator';
 import Docs from './Docs';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import SimpleExpression from './SimpleExpression';
 import Glyphs from '../lore/Glyphs';
 import concretize from '../locale/concretize';
 import Purpose from '../concepts/Purpose';
+import type Locales from '../locale/Locales';
 
 export default class DocumentedExpression extends SimpleExpression {
     readonly docs: Docs;
@@ -25,6 +24,10 @@ export default class DocumentedExpression extends SimpleExpression {
         this.expression = expression;
 
         this.computeChildren();
+    }
+
+    getDescriptor() {
+        return 'DocumentedExpression';
     }
 
     getGrammar(): Grammar {
@@ -61,20 +64,12 @@ export default class DocumentedExpression extends SimpleExpression {
     clone(replace?: Replacement) {
         return new DocumentedExpression(
             this.replaceChild('docs', this.docs, replace),
-            this.replaceChild('expression', this.expression, replace)
+            this.replaceChild('expression', this.expression, replace),
         ) as this;
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
-        bind;
-        original;
-        context;
-        return current;
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
+        return this.expression.evaluateTypeGuards(current, guard);
     }
 
     getStart() {
@@ -85,12 +80,15 @@ export default class DocumentedExpression extends SimpleExpression {
         return this.expression;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.DocumentedExpression;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.DocumentedExpression);
     }
 
-    getStartExplanations(locale: Locale) {
-        return concretize(locale, locale.node.DocumentedExpression.start);
+    getStartExplanations(locales: Locales) {
+        return concretize(
+            locales,
+            locales.get((l) => l.node.DocumentedExpression.start),
+        );
     }
 
     getGlyphs() {

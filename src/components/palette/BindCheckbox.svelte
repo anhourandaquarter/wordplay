@@ -22,10 +22,16 @@
                 property.getName(),
                 newValue !== undefined
                     ? BooleanLiteral.make(newValue)
-                    : undefined
-            )
+                    : undefined,
+            ),
         );
     }
 </script>
 
-<Checkbox on={values.getBool()} changed={handleChange} {editable} />
+<Checkbox
+    label={property.getName()}
+    on={values.getBool()}
+    changed={handleChange}
+    {editable}
+    id={property.getName()}
+/>

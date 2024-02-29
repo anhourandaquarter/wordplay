@@ -6,7 +6,11 @@ import StructureDefinition from '@nodes/StructureDefinition';
 import ListValue from '@values/ListValue';
 import TextValue from '@values/TextValue';
 import SetValue from '@values/SetValue';
-import { createBasisConversion, createBasisFunction } from './Basis';
+import {
+    createBasisConversion,
+    createBasisFunction,
+    createEqualsFunction,
+} from './Basis';
 import BoolValue from '@values/BoolValue';
 import type Value from '@values/Value';
 import type Evaluation from '@runtime/Evaluation';
@@ -15,16 +19,15 @@ import { getDocLocales } from '@locale/getDocLocales';
 import { getNameLocales } from '@locale/getNameLocales';
 import TypeVariable from '@nodes/TypeVariable';
 import type Expression from '../nodes/Expression';
-import type Locale from '../locale/Locale';
 import { createBind, createFunction, createInputs } from '../locale/Locale';
 import { Iteration } from './Iteration';
 import NumberType from '../nodes/NumberType';
 import NumberValue from '@values/NumberValue';
 import ListType from '../nodes/ListType';
 import TextType from '../nodes/TextType';
-import AnyType from '../nodes/AnyType';
+import type Locales from '../locale/Locales';
 
-export default function bootstrapSet(locales: Locale[]) {
+export default function bootstrapSet(locales: Locales) {
     const SetTypeVariableNames = getNameLocales(
         locales,
         (locale) => locale.basis.Set.kind
@@ -67,45 +70,15 @@ export default function bootstrapSet(locales: Locale[]) {
                               );
                     }
                 ),
-                createBasisFunction(
+                createEqualsFunction(
                     locales,
                     (locale) => locale.basis.Set.function.equals,
-                    undefined,
-                    [new AnyType()],
-                    BooleanType.make(),
-                    (requestor, evaluation) => {
-                        const set = evaluation?.getClosure();
-                        const other = evaluation.getInput(0);
-                        return !(
-                            set instanceof SetValue && other instanceof SetValue
-                        )
-                            ? evaluation.getValueOrTypeException(
-                                  requestor,
-                                  SetType.make(),
-                                  other
-                              )
-                            : new BoolValue(requestor, set.isEqualTo(other));
-                    }
+                    true
                 ),
-                createBasisFunction(
+                createEqualsFunction(
                     locales,
                     (locale) => locale.basis.Set.function.notequals,
-                    undefined,
-                    [new AnyType()],
-                    BooleanType.make(),
-                    (requestor, evaluation) => {
-                        const set = evaluation?.getClosure();
-                        const other = evaluation.getInput(0);
-                        return !(
-                            set instanceof SetValue && other instanceof SetValue
-                        )
-                            ? evaluation.getValueOrTypeException(
-                                  requestor,
-                                  SetType.make(),
-                                  other
-                              )
-                            : new BoolValue(requestor, !set.isEqualTo(other));
-                    }
+                    false
                 ),
                 createBasisFunction(
                     locales,

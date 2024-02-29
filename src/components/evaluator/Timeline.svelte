@@ -9,7 +9,7 @@
     import ExceptionValue from '@values/ExceptionValue';
     import { getEvaluation } from '../project/Contexts';
     import Controls from './Controls.svelte';
-    import { animationDuration, locale } from '../../db/Database';
+    import { animationDuration, locales } from '../../db/Database';
     import StructureValue from '@values/StructureValue';
 
     export let evaluator: Evaluator;
@@ -111,12 +111,13 @@
         return 0;
     }
 
-    function stepToMouse(event: MouseEvent) {
+    function stepToMouse(event: PointerEvent) {
         if ($evaluation.streams === undefined) return;
+        if (timeline === null) return;
 
-        // Map the mouse position onto a change.
+        // Map the pointer's x position to the closest event.
         const view = document
-            .elementFromPoint(event.clientX, event.clientY)
+            .elementFromPoint(event.clientX, timeline.offsetTop)
             ?.closest('.event');
         if (view instanceof HTMLElement) {
             // Is this a stream input? Get it's index and step to it.
@@ -139,7 +140,8 @@
             ) {
                 const start = parseInt(view.dataset.startindex);
                 const end = parseInt(view.dataset.endindex);
-                const percent = event.offsetX / view.offsetWidth;
+                const percent =
+                    (event.offsetX - view.offsetLeft) / view.offsetWidth;
                 const step = Math.min(
                     end,
                     Math.max(0, Math.round(percent * (end - start) + start))
@@ -174,7 +176,7 @@
 
 <section
     class="evaluation"
-    aria-label={$locale.ui.timeline.label}
+    aria-label={$locales.get((l) => l.ui.timeline.label)}
     class:stepping={$evaluation?.playing === false}
 >
     <Controls {evaluator} />
@@ -184,20 +186,28 @@
         class="timeline"
         tabindex={0}
         data-uiid="timeline"
-        aria-label={$locale.ui.timeline.slider}
+        aria-label={$locales.get((l) => l.ui.timeline.slider)}
         aria-valuemin={0}
         aria-valuemax={$evaluation.evaluator.getStepCount()}
         aria-valuenow={$evaluation.stepIndex}
         aria-valuetext={$evaluation.step
-            ? $evaluation.step.getExplanations($locale, evaluator).toText()
+            ? $evaluation.step.getExplanations($locales, evaluator).toText()
             : $evaluation.stepIndex + ''}
         aria-orientation="horizontal"
         class:stepping={$evaluation.playing === false}
-        on:pointerdown={(event) => stepToMouse(event)}
+        on:pointerdown={(event) => {
+            stepToMouse(event);
+            timeline?.setPointerCapture(event.pointerId);
+        }}
         on:pointermove={(event) =>
-            (event.buttons & 1) === 1 ? stepToMouse(event) : undefined}
+            dragging && (event.buttons & 1) === 1
+                ? stepToMouse(event)
+                : undefined}
         on:pointerleave={() => (dragging = false)}
-        on:pointerup={() => (dragging = false)}
+        on:pointerup={(event) => {
+            dragging = false;
+            timeline?.releasePointerCapture(event.pointerId);
+        }}
         on:keydown={handleKey}
         bind:this={timeline}
     >

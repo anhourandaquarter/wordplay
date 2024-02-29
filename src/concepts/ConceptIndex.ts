@@ -2,7 +2,6 @@ import type Concept from './Concept';
 import type Node from '@nodes/Node';
 import type Type from '@nodes/Type';
 import StructureConcept from './StructureConcept';
-import type Locale from '@locale/Locale';
 import Purpose from './Purpose';
 import type Project from '../models/Project';
 import StructureDefinition from '@nodes/StructureDefinition';
@@ -24,18 +23,19 @@ import BinaryEvaluate from '../nodes/BinaryEvaluate';
 import UnaryEvaluate from '../nodes/UnaryEvaluate';
 import Evaluate from '../nodes/Evaluate';
 import Reference from '../nodes/Reference';
+import type Locales from '../locale/Locales';
 
 export default class ConceptIndex {
     readonly project: Project;
     readonly concepts: Concept[];
     readonly primaryConcepts: Concept[];
     readonly subConcepts: Map<Concept, Set<Concept>> = new Map();
-    readonly locales: Locale[];
+    readonly locales: Locales;
 
     /** A mapping of node ids to nodes, registered by examples that are generated. */
     readonly examples: Map<number, Node> = new Map();
 
-    constructor(project: Project, concepts: Concept[], locales: Locale[]) {
+    constructor(project: Project, concepts: Concept[], locales: Locales) {
         this.project = project;
 
         // Store the primary concepts
@@ -57,8 +57,11 @@ export default class ConceptIndex {
     }
 
     // Make a concept index with a project and some preferreed languages.
-    static make(project: Project, locales: Locale[]) {
-        const projectStructures = [project.main, ...project.supplements]
+    static make(project: Project, locales: Locales) {
+        const main = project.getMain();
+        const sources = project.getSources();
+
+        const projectStructures = sources
             .map((source) =>
                 source.expression
                     .nodes(
@@ -80,7 +83,7 @@ export default class ConceptIndex {
             )
             .flat();
 
-        const projectFunctions = [project.main, ...project.supplements]
+        const projectFunctions = sources
             .map((source) =>
                 source.expression.expression.statements
                     .filter(
@@ -90,7 +93,7 @@ export default class ConceptIndex {
                     .map(
                         (def) =>
                             new FunctionConcept(
-                                Purpose.Evaluate,
+                                Purpose.Project,
                                 undefined,
                                 def,
                                 undefined,
@@ -101,14 +104,14 @@ export default class ConceptIndex {
             )
             .flat();
 
-        const projectBinds = [project.main, ...project.supplements]
+        const projectBinds = sources
             .map((source) =>
                 source.expression.expression.statements
                     .filter((n): n is Bind => n instanceof Bind)
                     .map(
                         (def) =>
                             new BindConcept(
-                                Purpose.Bind,
+                                Purpose.Project,
                                 def,
                                 locales,
                                 project.getContext(source)
@@ -118,11 +121,7 @@ export default class ConceptIndex {
             .flat();
 
         function makeStreamConcept(stream: StreamDefinition) {
-            return new StreamConcept(
-                stream,
-                locales,
-                project.getContext(project.main)
-            );
+            return new StreamConcept(stream, locales, project.getContext(main));
         }
 
         const streams = Object.values(project.shares.input).map((def) =>
@@ -134,22 +133,19 @@ export default class ConceptIndex {
                       def,
                       undefined,
                       locales,
-                      project.getContext(project.main)
+                      project.getContext(main)
                   )
         );
 
-        const constructs = getNodeConcepts(project.getContext(project.main));
+        const constructs = getNodeConcepts(project.getContext(main));
 
         const basis = getBasisConcepts(
             project.basis,
             locales,
-            project.getContext(project.main)
+            project.getContext(main)
         );
 
-        const output = getOutputConcepts(
-            locales,
-            project.getContext(project.main)
-        );
+        const output = getOutputConcepts(locales, project.getContext(main));
 
         return new ConceptIndex(
             project,
@@ -158,9 +154,10 @@ export default class ConceptIndex {
                 ...projectStructures,
                 ...projectFunctions,
                 ...projectBinds,
+                // Inputs have higher priority than language constructs so Previous appears last.
+                ...streams,
                 ...constructs,
                 ...output,
-                ...streams,
             ],
             locales
         );
@@ -272,7 +269,7 @@ export default class ConceptIndex {
         const subconcepts = this.getConceptByName(owner)?.getSubConcepts();
         return subconcepts
             ? Array.from(subconcepts).find((c) =>
-                  c.hasName(concept, this.locales[0])
+                  c.hasName(concept, this.locales)
               )
             : undefined;
     }
@@ -285,7 +282,7 @@ export default class ConceptIndex {
     }
 
     getConceptByName(name: string): Concept | undefined {
-        return this.concepts.find((c) => c.hasName(name, this.locales[0]));
+        return this.concepts.find((c) => c.hasName(name, this.locales));
     }
 
     addExample(node: Node) {
@@ -302,30 +299,39 @@ export default class ConceptIndex {
     }
 
     getQuery(
-        locales: Locale[],
+        locales: Locales,
         query: string
     ): [Concept, [string, number, number][]][] {
         // Find matching concepts for each locale and the string that matched.
-        const matches = locales.reduce(
-            (matches: [Concept, [string, number, number]][], locale) => {
-                const lowerQuery = query.toLocaleLowerCase(locale.language);
-                return [
-                    ...matches,
-                    ...this.concepts
-                        .map((c) => {
-                            const match = c.getTextMatching(locale, lowerQuery);
-                            return match !== undefined ? [c, match] : undefined;
-                        })
-                        .filter(
-                            (
-                                match
-                            ): match is [Concept, [string, number, number]] =>
-                                Array.isArray(match)
-                        ),
-                ];
-            },
-            []
-        );
+        const matches = locales
+            .getLocales()
+            .reduce(
+                (matches: [Concept, [string, number, number]][], locale) => {
+                    const lowerQuery = query.toLocaleLowerCase(locale.language);
+                    return [
+                        ...matches,
+                        ...this.concepts
+                            .map((c) => {
+                                const match = c.getTextMatching(
+                                    locales,
+                                    lowerQuery
+                                );
+                                return match !== undefined
+                                    ? [c, match]
+                                    : undefined;
+                            })
+                            .filter(
+                                (
+                                    match
+                                ): match is [
+                                    Concept,
+                                    [string, number, number]
+                                ] => Array.isArray(match)
+                            ),
+                    ];
+                },
+                []
+            );
         // Collapse matching text of equivalent concepts
         const map = new Map<Concept, [string, number, number][]>();
         for (const [concept, match] of matches) {

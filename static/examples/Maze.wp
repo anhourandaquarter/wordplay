@@ -3,7 +3,7 @@ Maze
 ``A maze is a 2D grid of emoji, with some functions for checking the state at particular grid postions.
 Mazes are generated randomly.``/en
 •Maze() (
-	grid: 
+	grid•[[''|ø]]: 
 		[
 			[ '🎬' '❤️' '❌'   ø    ø]
 			[ '❤️'   ø    ø    ø    ø]
@@ -40,7 +40,7 @@ state•State:  State(1 1 0) … ∆ direction …
 					((direction = "down") & allowed(state 1 0)) ? state.down()
 						state
 
-current: ( cell: maze.cell(state.row state.column) cell•ø ? ' ' cell)
+current: ( cell: maze.cell(state.row state.column) cell ?? ' ')
 up: maze.cell(state.row - 1 state.column)•''
 down: maze.cell(state.row + 1 state.column)•''
 left: maze.cell(state.row state.column - 1)•''

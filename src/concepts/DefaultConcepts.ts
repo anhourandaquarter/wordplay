@@ -74,7 +74,6 @@ import SetCloseToken from '../nodes/SetCloseToken';
 import SetOrMapAccess from '../nodes/SetOrMapAccess';
 import Source from '../nodes/Source';
 import NameType from '../nodes/NameType';
-import type Locale from '../locale/Locale';
 import FormattedLiteral from '../nodes/FormattedLiteral';
 import FormattedTranslation from '../nodes/FormattedTranslation';
 import IsLocale from '../nodes/IsLocale';
@@ -85,6 +84,9 @@ import Select from '../nodes/Select';
 import Update from '../nodes/Update';
 import Delete from '../nodes/Delete';
 import Translation from '../nodes/Translation';
+import type Locales from '../locale/Locales';
+import Borrow from '../nodes/Borrow';
+import Otherwise from '@nodes/Otherwise';
 
 /** These are ordered by appearance in the docs. */
 const templates: Node[] = [
@@ -104,6 +106,7 @@ const templates: Node[] = [
     ),
     new UnaryEvaluate(Reference.make('-'), ExpressionPlaceholder.make()),
     Block.make([ExpressionPlaceholder.make()]),
+    ExpressionPlaceholder.make(),
     Convert.make(ExpressionPlaceholder.make(), TypePlaceholder.make()),
     ConversionDefinition.make(
         undefined,
@@ -111,8 +114,14 @@ const templates: Node[] = [
         new TypePlaceholder(),
         ExpressionPlaceholder.make()
     ),
-    ExpressionPlaceholder.make(),
-    Convert.make(ExpressionPlaceholder.make(), TypePlaceholder.make()),
+    ListAccess.make(
+        ExpressionPlaceholder.make(ListType.make()),
+        ExpressionPlaceholder.make()
+    ),
+    SetOrMapAccess.make(
+        ExpressionPlaceholder.make(SetType.make()),
+        ExpressionPlaceholder.make()
+    ),
     Insert.make(ExpressionPlaceholder.make(TableType.make())),
     Select.make(
         ExpressionPlaceholder.make(TableType.make()),
@@ -130,6 +139,7 @@ const templates: Node[] = [
     // Project
     Program.make([ExpressionPlaceholder.make()]),
     new Source('?', '_'),
+    new Borrow(),
 
     // Decisions
     Conditional.make(
@@ -138,6 +148,7 @@ const templates: Node[] = [
         ExpressionPlaceholder.make()
     ),
     Is.make(ExpressionPlaceholder.make(), TypePlaceholder.make()),
+    Otherwise.make(ExpressionPlaceholder.make(), ExpressionPlaceholder.make()),
     IsLocale.make(Language.make(undefined)),
     Initial.make(),
     Changed.make(ExpressionPlaceholder.make(StreamType.make())),
@@ -158,6 +169,8 @@ const templates: Node[] = [
         undefined,
         ExpressionPlaceholder.make()
     ),
+    Name.make('a'),
+    Names.make(['a', 'b']),
     Reference.make('_'),
     StructureDefinition.make(
         undefined,
@@ -178,8 +191,7 @@ const templates: Node[] = [
         ),
         ExpressionPlaceholder.make()
     ),
-    Name.make('@'),
-    Names.make(['a', 'b']),
+    This.make(),
 
     // Types
     BooleanType.make(),
@@ -202,25 +214,18 @@ const templates: Node[] = [
     TableType.make(),
 
     // Values
-    BooleanLiteral.make(true),
-    NumberLiteral.make(0),
+    KeyValue.make(ExpressionPlaceholder.make(), ExpressionPlaceholder.make()),
+    new FormattedLiteral([FormattedTranslation.make([])]),
     TextLiteral.make(''),
+    NumberLiteral.make(0),
+    BooleanLiteral.make(true),
     NoneLiteral.make(),
+    ListLiteral.make(),
+    SetLiteral.make(),
+    MapLiteral.make(),
+    TableLiteral.make(),
     Translation.make(),
     FormattedTranslation.make([]),
-    new FormattedLiteral([FormattedTranslation.make([])]),
-    ListAccess.make(
-        ExpressionPlaceholder.make(ListType.make()),
-        ExpressionPlaceholder.make()
-    ),
-    KeyValue.make(ExpressionPlaceholder.make(), ExpressionPlaceholder.make()),
-    SetOrMapAccess.make(
-        ExpressionPlaceholder.make(SetType.make()),
-        ExpressionPlaceholder.make()
-    ),
-    TableLiteral.make(),
-
-    This.make(),
 
     // Documentation
     Doc.make([new Paragraph([Words.make()])]),
@@ -258,7 +263,7 @@ export function getNodeConcepts(context: Context): NodeConcept[] {
 
 export function getBasisConcepts(
     basis: Basis,
-    locales: Locale[],
+    locales: Locales,
     context: Context
 ): StructureConcept[] {
     return [
@@ -345,7 +350,7 @@ export function getStructureOrFunctionConcept(
     def: StructureDefinition | FunctionDefinition,
     purpose: Purpose,
     affiliation: StructureDefinition | undefined,
-    locales: Locale[],
+    locales: Locales,
     context: Context
 ) {
     return def instanceof StructureDefinition
@@ -369,7 +374,7 @@ export function getStructureOrFunctionConcept(
 }
 
 export function getOutputConcepts(
-    locales: Locale[],
+    locales: Locales,
     context: Context
 ): Concept[] {
     return [

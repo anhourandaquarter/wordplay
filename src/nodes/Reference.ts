@@ -1,7 +1,7 @@
 import type Conflict from '@conflicts/Conflict';
 import { UnexpectedTypeVariable } from '@conflicts/UnexpectedTypeVariable';
 import { UnknownName } from '@conflicts/UnknownName';
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import type Token from './Token';
 import Type from './Type';
 import TypeVariable from './TypeVariable';
@@ -13,15 +13,12 @@ import type Definition from './Definition';
 import Bind from './Bind';
 import ReferenceCycle from '@conflicts/ReferenceCycle';
 import Reaction from './Reaction';
-import Conditional from './Conditional';
 import UnionType from './UnionType';
 import type TypeSet from './TypeSet';
-import Is from './Is';
 import NameToken from './NameToken';
 import StartFinish from '@runtime/StartFinish';
 import UnknownNameType from './UnknownNameType';
 import { node, type Grammar, type Replacement, ListOf } from './Node';
-import type Locale from '@locale/Locale';
 import SimpleExpression from './SimpleExpression';
 import NameException from '@values/NameException';
 import NodeRef from '@locale/NodeRef';
@@ -35,6 +32,8 @@ import StructureDefinition from './StructureDefinition';
 import FunctionDefinition from './FunctionDefinition';
 import StreamDefinition from './StreamDefinition';
 import FunctionType from './FunctionType';
+import type Locales from '../locale/Locales';
+import getGuards from './getGuards';
 
 /**
  * A reference to some Definition. Can optionally take the definition which it refers,
@@ -63,7 +62,7 @@ export default class Reference extends SimpleExpression {
         expectedType: Type | undefined,
         anchor: Node,
         isBeingReplaced: boolean,
-        context: Context
+        context: Context,
     ): Refer[] {
         const match = (def: Definition, prefix: string, name: string) =>
             def.getNames().find((n) => n.startsWith(prefix)) ?? name;
@@ -82,8 +81,8 @@ export default class Reference extends SimpleExpression {
                 .filter((def) =>
                     def.getNames().some((name) =>
                         // Hello
-                        name.startsWith(prefix)
-                    )
+                        name.startsWith(prefix),
+                    ),
                 )
                 // Translate the definitions into References, or  to the definitions.
                 .map((definition) => {
@@ -95,19 +94,19 @@ export default class Reference extends SimpleExpression {
                                     definition
                                         .getType(context)
                                         .generalize(context),
-                                    context
+                                    context,
                                 ))) || // A function type that matches the function?
                         (expectedType instanceof FunctionType &&
                             definition instanceof FunctionDefinition &&
                             expectedType.accepts(
                                 definition.getType(context),
-                                context
+                                context,
                             ))
                     )
                         return new Refer(
                             (name) =>
                                 Reference.make(match(definition, prefix, name)),
-                            definition
+                            definition,
                         );
                     // If the anchor is in list field, and the anchor is not being replaced, offer (Binary/Unary)Evaluate in scope.
                     else if (
@@ -122,7 +121,7 @@ export default class Reference extends SimpleExpression {
                                 // A function that returns a type that matches the expected type?
                                 expectedType.accepts(
                                     definition.getOutputType(context),
-                                    context
+                                    context,
                                 ))
                         ) {
                             return new Refer(
@@ -130,9 +129,9 @@ export default class Reference extends SimpleExpression {
                                     definition.getEvaluateTemplate(
                                         match(definition, prefix, name),
                                         context,
-                                        undefined
+                                        undefined,
                                     ),
-                                definition
+                                definition,
                             );
                         }
                         // Structure definition or stream definition? Make an Evaluate.
@@ -142,15 +141,15 @@ export default class Reference extends SimpleExpression {
                             (expectedType === undefined ||
                                 expectedType.accepts(
                                     definition.getType(context),
-                                    context
+                                    context,
                                 ))
                         ) {
                             return new Refer(
                                 (name) =>
                                     definition.getEvaluateTemplate(
-                                        match(definition, prefix, name)
+                                        match(definition, prefix, name),
                                     ),
-                                definition
+                                definition,
                             );
                         }
                     } else return undefined;
@@ -160,17 +159,22 @@ export default class Reference extends SimpleExpression {
         );
     }
 
+    getDescriptor() {
+        return 'Reference';
+    }
+
     getGrammar(): Grammar {
         return [
             {
                 name: 'name',
                 kind: node(Sym.Name),
                 uncompletable: true,
-                label: (translation: Locale) => translation.node.Reference.name,
+                label: (locales: Locales) =>
+                    locales.get((l) => l.node.Reference.name),
                 // The valid definitions of the name are anything in scope, except for the current name.
                 getDefinitions: (context: Context) =>
                     this.getDefinitionsInScope(context).filter(
-                        (def) => !def.hasName(this.getName())
+                        (def) => !def.hasName(this.getName()),
                     ),
             },
         ];
@@ -182,7 +186,7 @@ export default class Reference extends SimpleExpression {
 
     clone(replace?: Replacement) {
         return new Reference(
-            this.replaceChild('name', this.name, replace)
+            this.replaceChild('name', this.name, replace),
         ) as this;
     }
 
@@ -211,7 +215,10 @@ export default class Reference extends SimpleExpression {
         if (bindOrTypeVar === undefined) {
             const scope = this.getScope(context);
             conflicts.push(
-                new UnknownName(this, scope instanceof Type ? scope : undefined)
+                new UnknownName(
+                    this,
+                    scope instanceof Type ? scope : undefined,
+                ),
             );
         }
         // Can't refer to type variables with a reference, those can only be mentioned in type inputs.
@@ -255,6 +262,10 @@ export default class Reference extends SimpleExpression {
         return this.resolve(context) === def;
     }
 
+    getTypeGuardKey() {
+        return 'this';
+    }
+
     computeType(context: Context): Type {
         // The type is the type of the bind.
         const definition = this.resolve(context);
@@ -271,55 +282,59 @@ export default class Reference extends SimpleExpression {
         if (
             definition instanceof Bind &&
             type instanceof UnionType &&
-            context.getReferenceType(this) === undefined
+            context.getReferenceType(this, this.getTypeGuardKey()) === undefined
         ) {
             // Find any conditionals with type checks that refer to the value bound to this name.
             // Reverse them so they are in furthest to nearest ancestor, so we narrow types in execution order.
-            const guards = context.source.root
-                .getAncestors(this)
-                ?.filter(
-                    (a): a is Conditional =>
-                        a instanceof Conditional &&
-                        a.condition.nodes(
-                            (n): n is Reference =>
-                                context.source.root.getParent(n) instanceof
-                                    Is &&
-                                n instanceof Reference &&
-                                definition === n.resolve(context)
-                        ).length > 0
-                )
-                .reverse();
+            const guards = getGuards(this, context, (node) => {
+                // Node is a reference
+                if (
+                    node instanceof Reference &&
+                    // And a reference to the same definition as this reference
+                    definition === node.resolve(context)
+                ) {
+                    const parent = context.source.root.getParent(node);
+                    return parent instanceof Expression && parent.guardsTypes();
+                } else return false;
+            });
 
             // Grab the furthest ancestor and evaluate possible types from there.
             const root = guards[0];
             if (root !== undefined) {
                 const possibleTypes = type.getTypeSet(context);
-                root.evaluateTypeSet(
-                    definition,
-                    possibleTypes,
-                    possibleTypes,
-                    context
-                );
+                root.evaluateTypeGuards(possibleTypes, {
+                    bind: definition,
+                    key: this.getTypeGuardKey(),
+                    original: possibleTypes,
+                    context,
+                });
             }
         }
 
-        return context.getReferenceType(this) ?? type;
+        return context.getReferenceType(this, this.getTypeGuardKey()) ?? type;
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        _: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
         // Cache the type of this name at this point in execution.
-        if (this.resolve(context) === bind)
-            context.setReferenceType(
+        if (
+            this.resolve(guard.context) === guard.bind &&
+            guard.key === this.getTypeGuardKey()
+        )
+            guard.context.setReferenceType(
                 this,
-                UnionType.getPossibleUnion(context, current.list())
+                this.getTypeGuardKey(),
+                UnionType.getPossibleUnion(guard.context, current.list()),
             );
 
         return current;
+    }
+
+    isGuardMatch(guard: GuardContext): boolean {
+        // This is a guard match if it corresponds to the same bind and key
+        return (
+            this.resolve(guard.context) === guard.bind &&
+            this.getTypeGuardKey() === guard.key
+        );
     }
 
     getDependencies(context: Context) {
@@ -354,15 +369,15 @@ export default class Reference extends SimpleExpression {
         return this.name;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Reference;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Reference);
     }
 
-    getStartExplanations(locale: Locale, context: Context) {
+    getStartExplanations(locales: Locales, context: Context) {
         return concretize(
-            locale,
-            locale.node.Reference.start,
-            new NodeRef(this.name, locale, context)
+            locales,
+            locales.get((l) => l.node.Reference.start),
+            new NodeRef(this.name, locales, context),
         );
     }
 

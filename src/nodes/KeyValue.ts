@@ -2,13 +2,13 @@ import Expression from './Expression';
 import type { Grammar, Replacement } from './Node';
 import type Token from './Token';
 import BindToken from './BindToken';
-import type Locale from '@locale/Locale';
 import Glyphs from '../lore/Glyphs';
 import Purpose from '../concepts/Purpose';
 import type { BasisTypeName } from '../basis/BasisConstants';
 import Node, { node } from './Node';
 import Sym from './Sym';
 import ExpressionPlaceholder from './ExpressionPlaceholder';
+import type Locales from '../locale/Locales';
 
 export default class KeyValue extends Node {
     readonly key: Expression;
@@ -38,18 +38,23 @@ export default class KeyValue extends Node {
         ];
     }
 
+    getDescriptor() {
+        return 'KeyValue';
+    }
+
     getGrammar(): Grammar {
         return [
             {
                 name: 'key',
                 kind: node(Expression),
-                label: (translation: Locale) => translation.term.key,
+                label: (locales: Locales) => locales.get((l) => l.term.key),
             },
             { name: 'bind', kind: node(Sym.Bind) },
             {
                 name: 'value',
                 kind: node(Expression),
-                label: (translation: Locale) => translation.term.value,
+                space: true,
+                label: (locales: Locales) => locales.get((l) => l.term.value),
             },
         ];
     }
@@ -74,8 +79,8 @@ export default class KeyValue extends Node {
         return;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.KeyValue;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.KeyValue);
     }
 
     getGlyphs() {

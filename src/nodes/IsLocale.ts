@@ -7,7 +7,6 @@ import Sym from './Sym';
 import { GLOBE1_SYMBOL } from '@parser/Symbols';
 import BoolValue from '@values/BoolValue';
 import { node, type Grammar, type Replacement, optional } from './Node';
-import type Locale from '@locale/Locale';
 import SimpleExpression from './SimpleExpression';
 import BooleanType from './BooleanType';
 import Glyphs from '../lore/Glyphs';
@@ -15,10 +14,10 @@ import Purpose from '../concepts/Purpose';
 import concretize from '../locale/concretize';
 import Language from './Language';
 import StartFinish from '@runtime/StartFinish';
-import type Bind from './Bind';
 import type Expression from './Expression';
 import type TypeSet from './TypeSet';
 import type Node from './Node';
+import type Locales from '../locale/Locales';
 
 export default class IsLocale extends SimpleExpression {
     readonly globe: Token;
@@ -40,11 +39,15 @@ export default class IsLocale extends SimpleExpression {
     static getPossibleNodes(
         type: Type | undefined,
         node: Node,
-        selected: boolean
+        selected: boolean,
     ) {
         return selected === false
             ? [IsLocale.make(Language.make(undefined))]
             : [];
+    }
+
+    getDescriptor() {
+        return 'IsLocale';
     }
 
     getGrammar(): Grammar {
@@ -60,7 +63,7 @@ export default class IsLocale extends SimpleExpression {
     clone(replace?: Replacement) {
         return new IsLocale(
             this.replaceChild('globe', this.globe, replace),
-            this.replaceChild('locale', this.locale, replace)
+            this.replaceChild('locale', this.locale, replace),
         ) as this;
     }
 
@@ -89,19 +92,19 @@ export default class IsLocale extends SimpleExpression {
             this.locale === undefined
                 ? false
                 : this.locale.region === undefined
-                ? evaluator
-                      .getLocales()
-                      .some((locale) => this.locale?.isLocaleLanguage(locale))
-                : evaluator
-                      .getLocales()
-                      .some((locale) => this.locale?.isLocale(locale))
+                  ? evaluator
+                        .getLocales()
+                        .some((locale) => this.locale?.isLocaleLanguage(locale))
+                  : evaluator
+                        .getLocales()
+                        .some((locale) => this.locale?.isLocale(locale)),
         );
     }
 
     getDependencies(): Expression[] {
         return [];
     }
-    evaluateTypeSet(bind: Bind, original: TypeSet, current: TypeSet): TypeSet {
+    evaluateTypeGuards(current: TypeSet): TypeSet {
         return current;
     }
 
@@ -113,15 +116,15 @@ export default class IsLocale extends SimpleExpression {
         return this.locale ?? this.globe;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.IsLocale;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.IsLocale);
     }
 
-    getStartExplanations(locale: Locale) {
+    getStartExplanations(locales: Locales) {
         return concretize(
-            locale,
-            locale.node.IsLocale.start,
-            this.locale?.toWordplay() ?? '-'
+            locales,
+            locales.get((l) => l.node.IsLocale.start),
+            this.locale?.toWordplay() ?? '-',
         );
     }
 

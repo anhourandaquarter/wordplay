@@ -10,20 +10,21 @@
     import Spaces from '@parser/Spaces';
     import NodeView from '@components/editor/NodeView.svelte';
     import {
-        getCaret,
         HiddenSymbol,
         RootSymbol,
         SpaceSymbol,
         type SpaceContext,
         CaretSymbol,
+        LocalizeSymbol,
     } from './Contexts';
     import Root from '@nodes/Root';
     import Source from '@nodes/Source';
     import Name from '@nodes/Name';
     import Program from '@nodes/Program';
-    import { languages } from '../../db/Database';
+    import { locales } from '../../db/Database';
     import TextLiteral from '../../nodes/TextLiteral';
     import FormattedLiteral from '../../nodes/FormattedLiteral';
+    import type Caret from '@edit/Caret';
 
     export let node: Node;
     /** Optional space; if not provided, all nodes are rendered with preferred space. */
@@ -34,6 +35,7 @@
     export let elide = false;
     /** If true, hides names and docs not in a selected locale */
     export let localized = false;
+    export let caret: Caret | undefined = undefined;
 
     /** Get the root, or make one if it's not a source. */
     $: root = node instanceof Source ? node.root : new Root(node);
@@ -79,17 +81,19 @@
         renderedSpace.set(newSpace);
     }
 
-    let caret = getCaret();
-
     // A set of hidden nodes, such as hidden translations.
     let hidden = writable<Set<Node>>(new Set());
     setContext(HiddenSymbol, hidden);
 
-    // When the caret changes, the update what's hidden.
+    let localize = writable<boolean>(localized);
+    setContext(LocalizeSymbol, localize);
+    $: localize.set(localized);
+
+    // Update what's hidden.
     $: {
         const newHidden = new Set<Node>();
 
-        if (localized) {
+        if ($localize) {
             // Hide any language tagged nodes that 1) the caret isn't in, and 2) either have no language tag or aren't one of the selected tags.
             // Also hide any name separators if the first visible name has one.
             for (const tagged of node
@@ -101,45 +105,50 @@
                         n instanceof TextLiteral ||
                         n instanceof FormattedLiteral
                 )) {
-                // Get all the names or docs
+                // Get the language tags on the nodes.
                 const tags = tagged.getTags();
-                // If at least one is visible, hide all those not in a preferred language.
-                if (
-                    $languages.some((lang) =>
-                        tags.some((l) => l.getLanguage() === lang)
-                    )
-                ) {
-                    let first = false;
-                    for (const nameOrDoc of tags) {
-                        const caretIn = $caret?.isIn(nameOrDoc, true);
-                        const selectedLocale = $languages.some(
-                            (t) => t === nameOrDoc.getLanguage()
-                        );
-                        // Not a selected language and not in the node? Hide it.
-                        if (!selectedLocale && !caretIn)
-                            newHidden.add(nameOrDoc);
-                        // Is the selected language and inert? Hide the language tag.
-                        else if (
-                            selectedLocale &&
-                            nameOrDoc.language &&
-                            !caretIn
-                        )
-                            newHidden.add(nameOrDoc.language);
-                        // Not first? Hide the separator.
-                        if (!first) {
-                            first = true;
-                            if (
-                                nameOrDoc instanceof Name &&
-                                nameOrDoc.separator
+
+                // Is this caret inside this node?
+                const inside =
+                    caret === undefined ? false : caret.isIn(tagged, true);
+
+                // If the caret is not inside the node, decide whether to hide.
+                if (!inside) {
+                    // If at least one is visible, hide all those not in a preferred language.
+                    if (
+                        $locales
+                            .getLanguages()
+                            .some((lang) =>
+                                tags.some((l) => l.getLanguage() === lang)
                             )
-                                newHidden.add(nameOrDoc.separator);
+                    ) {
+                        let first = false;
+                        for (const nameOrDoc of tags) {
+                            const selectedLocale = $locales
+                                .getLanguages()
+                                .some((t) => t === nameOrDoc.getLanguage());
+                            // Not a selected language and not in the node and has a language? Hide it.
+                            if (!selectedLocale && nameOrDoc.language)
+                                newHidden.add(nameOrDoc);
+                            // Is the selected language and inert? Hide the language tag.
+                            else if (selectedLocale && nameOrDoc.language)
+                                newHidden.add(nameOrDoc.language);
+                            // Not first? Hide the separator.
+                            if (!first) {
+                                first = true;
+                                if (
+                                    nameOrDoc instanceof Name &&
+                                    nameOrDoc.separator
+                                )
+                                    newHidden.add(nameOrDoc.separator);
+                            }
                         }
                     }
-                }
-                // Otherwise, hide all but the first.
-                else {
-                    for (const nameOrDoc of tags.slice(1))
-                        newHidden.add(nameOrDoc);
+                    // Otherwise, hide all but the first name
+                    else {
+                        for (const nameOrDoc of tags.slice(1))
+                            newHidden.add(nameOrDoc);
+                    }
                 }
 
                 // If this is a doc and we're not in a program, hide it unconditionally.
@@ -177,6 +186,10 @@
 
         /** This allows us to style things up the the tree. */
         text-decoration: inherit;
+    }
+
+    :global(.dragging) .root {
+        cursor: grabbing;
     }
 
     .elide {

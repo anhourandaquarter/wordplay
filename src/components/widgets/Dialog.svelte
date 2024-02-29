@@ -1,43 +1,42 @@
 <script lang="ts">
-    import { onMount, tick } from 'svelte';
-    import { locale } from '../../db/Database';
+    import { tick } from 'svelte';
+    import { locales } from '../../db/Database';
     import Button from './Button.svelte';
     import type { DialogText } from '../../locale/UITexts';
     import Header from '../app/Header.svelte';
+    import MarkupHtmlView from '../concepts/MarkupHTMLView.svelte';
+    import Emoji from '@components/app/Emoji.svelte';
 
-    export let dialog: HTMLDialogElement | undefined = undefined;
-    export let show: boolean;
+    export let show = false;
     export let description: DialogText;
-    export let width: string | undefined = undefined;
     export let closeable = true;
+    export let button:
+        | { tip: string; icon?: string; label: string }
+        | undefined = undefined;
+
+    let view: HTMLDialogElement | undefined = undefined;
 
     $: {
-        if (dialog) {
+        if (view) {
             if (show) {
-                dialog.showModal();
-                tick().then(() => dialog?.focus());
+                view.showModal();
+                tick().then(() => view?.focus());
             } else {
-                dialog.close();
+                view.close();
             }
         }
     }
-
-    function outclick(event: PointerEvent) {
-        if (dialog && event.target === dialog) show = false;
-    }
-
-    onMount(() => {
-        if (closeable) {
-            document.addEventListener('pointerdown', outclick);
-            return () => document.removeEventListener('pointerdown', outclick);
-        }
-    });
 </script>
 
+{#if button}
+    <Button tip={button.tip} action={() => (show = true)}
+        >{#if button.icon}<Emoji>{button.icon}</Emoji>
+        {/if}{button.label}</Button
+    >
+{/if}
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <dialog
-    bind:this={dialog}
-    style:width
+    bind:this={view}
     tabindex="-1"
     on:keydown={closeable
         ? (event) => (event.key === 'Escape' ? (show = false) : undefined)
@@ -45,12 +44,12 @@
 >
     <div class="content">
         <Header>{description.header}</Header>
-        <p>{description.explanation}</p>
+        <MarkupHtmlView markup={description.explanation} />
         <slot />
         {#if closeable}
             <div class="close">
                 <Button
-                    tip={$locale.ui.widget.dialog.close}
+                    tip={$locales.get((l) => l.ui.widget.dialog.close)}
                     action={() => (show = false)}>❌</Button
                 >
             </div>
@@ -63,7 +62,9 @@
         position: relative;
         border-radius: var(--wordplay-border-radius);
         padding: 2em;
-        width: 80vw;
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 40em;
         height: max-content;
         background-color: var(--wordplay-background);
         color: var(--wordplay-foreground);

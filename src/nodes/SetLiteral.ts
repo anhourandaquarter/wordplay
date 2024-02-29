@@ -1,4 +1,4 @@
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import Token from './Token';
 import type Type from './Type';
 import type Evaluator from '@runtime/Evaluator';
@@ -11,11 +11,9 @@ import type Context from './Context';
 import UnionType from './UnionType';
 import type TypeSet from './TypeSet';
 import SetType from './SetType';
-import type Bind from './Bind';
 import { SET_CLOSE_SYMBOL, SET_OPEN_SYMBOL } from '@parser/Symbols';
 import Sym from './Sym';
 import { node, type Grammar, type Replacement, list } from './Node';
-import type Locale from '@locale/Locale';
 import Glyphs from '../lore/Glyphs';
 import type { BasisTypeName } from '../basis/BasisConstants';
 import Purpose from '../concepts/Purpose';
@@ -24,18 +22,27 @@ import SetCloseToken from './SetCloseToken';
 import type Conflict from '../conflicts/Conflict';
 import concretize from '../locale/concretize';
 import AnyType from './AnyType';
+import type Locales from '../locale/Locales';
+import { MAX_LINE_LENGTH } from '@parser/Spaces';
 
 export default class SetLiteral extends Expression {
     readonly open: Token;
     readonly values: Expression[];
     readonly close: Token | undefined;
+    readonly literal?: Token;
 
-    constructor(open: Token, values: Expression[], close: Token | undefined) {
+    constructor(
+        open: Token,
+        values: Expression[],
+        close: Token | undefined,
+        literal?: Token,
+    ) {
         super();
 
         this.open = open;
         this.values = values;
         this.close = close;
+        this.literal = literal;
 
         this.computeChildren();
     }
@@ -44,12 +51,16 @@ export default class SetLiteral extends Expression {
         return new SetLiteral(
             new Token(SET_OPEN_SYMBOL, Sym.SetOpen),
             values ?? [],
-            new Token(SET_CLOSE_SYMBOL, Sym.SetClose)
+            new Token(SET_CLOSE_SYMBOL, Sym.SetClose),
         );
     }
 
     static getPossibleNodes() {
         return [SetLiteral.make()];
+    }
+
+    getDescriptor() {
+        return 'SetLiteral';
     }
 
     getGrammar(): Grammar {
@@ -62,9 +73,15 @@ export default class SetLiteral extends Expression {
                 getType: (context) =>
                     this.getItemType(context) ?? new AnyType(),
                 space: true,
+                newline:
+                    this.values.reduce(
+                        (sum, value) => sum + value.toWordplay().length,
+                        0,
+                    ) > MAX_LINE_LENGTH,
                 indent: true,
             },
             { name: 'close', kind: node(Sym.SetClose) },
+            { name: 'literal', kind: node(Sym.Literal) },
         ];
     }
 
@@ -72,7 +89,8 @@ export default class SetLiteral extends Expression {
         return new SetLiteral(
             this.replaceChild('open', this.open, replace),
             this.replaceChild<Expression[]>('values', this.values, replace),
-            this.replaceChild('close', this.close, replace)
+            this.replaceChild('close', this.close, replace),
+            this.replaceChild('literal', this.literal, replace),
         ) as this;
     }
 
@@ -95,13 +113,15 @@ export default class SetLiteral extends Expression {
             ? undefined
             : UnionType.getPossibleUnion(
                   context,
-                  this.values.map((v) => (v as Expression).getType(context))
+                  this.values.map((v) => (v as Expression).getType(context)),
               );
     }
 
     computeType(context: Context): Type {
-        // Strip away any concrete types in the item types.
-        return SetType.make(this.getItemType(context)).generalize(context);
+        // Generate a union type from all the values.
+        const union = SetType.make(this.getItemType(context));
+        // If literal, return the union, otherwise generalize it.
+        return this.literal ? union : union.generalize(context);
     }
 
     getDependencies(): Expression[] {
@@ -117,7 +137,7 @@ export default class SetLiteral extends Expression {
                     ...steps,
                     ...(item as Expression).compile(evaluator, context),
                 ],
-                []
+                [],
             ),
             // Then build the set or map.
             new Finish(this),
@@ -134,15 +154,10 @@ export default class SetLiteral extends Expression {
         return new SetValue(this, values);
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
         this.values.forEach((val) => {
             if (val instanceof Expression)
-                val.evaluateTypeSet(bind, original, current, context);
+                val.evaluateTypeGuards(current, guard);
         });
         return current;
     }
@@ -155,23 +170,26 @@ export default class SetLiteral extends Expression {
         return this.close ?? this.values[this.values.length - 1] ?? this.open;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.SetLiteral;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.SetLiteral);
     }
 
-    getStartExplanations(locale: Locale) {
-        return concretize(locale, locale.node.SetLiteral.start);
+    getStartExplanations(locales: Locales) {
+        return concretize(
+            locales,
+            locales.get((l) => l.node.SetLiteral.start),
+        );
     }
 
     getFinishExplanations(
-        locale: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         return concretize(
-            locale,
-            locale.node.SetLiteral.finish,
-            this.getValueIfDefined(locale, context, evaluator)
+            locales,
+            locales.get((l) => l.node.SetLiteral.finish),
+            this.getValueIfDefined(locales, context, evaluator),
         );
     }
 

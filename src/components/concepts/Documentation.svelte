@@ -28,7 +28,7 @@
     import { tick } from 'svelte';
     import TextField from '../widgets/TextField.svelte';
     import type Project from '../../models/Project';
-    import { Projects, locale, locales } from '../../db/Database';
+    import { Projects, locales } from '../../db/Database';
     import getScrollParent from '../util/getScrollParent';
     import Note from '../widgets/Note.svelte';
     import ConceptLinkUI from './ConceptLinkUI.svelte';
@@ -59,7 +59,7 @@
 
     // Set a context that stores a project context for nodes in the palette to use.
     // Keep it up to date as the project changes.
-    $: setContext('context', project.getContext(project.main));
+    $: setContext('context', project.getContext(project.getMain()));
 
     async function scrollToTop() {
         // Wait for everything to render
@@ -78,12 +78,14 @@
     onDestroy(() => queryResetUnsub());
 
     // When the path changes to a non-bind concept, scroll to top.
+    let previousPath: Concept[] = [];
     $: {
         if (
-            $path.length > 0 &&
-            !($path[$path.length - 1] instanceof BindConcept)
+            previousPath.map((c) => c.getName($locales, false)).join() !==
+            $path.map((c) => c.getName($locales, false)).join()
         )
             scrollToTop();
+        previousPath = $path.slice();
     }
 
     // If the query changes to non-empty, compute results
@@ -97,11 +99,11 @@
                     const [, bMatches] = b;
                     const aMinPriority = Math.min.apply(
                         null,
-                        aMatches.map(([, , match]) => match)
+                        aMatches.map(([, , match]) => match),
                     );
                     const bMinPriority = Math.min.apply(
                         null,
-                        bMatches.map(([, , match]) => match)
+                        bMatches.map(([, , match]) => match),
                     );
                     return aMinPriority - bMinPriority;
                 });
@@ -115,15 +117,15 @@
         currentConcept === undefined
             ? undefined
             : currentConcept
-                  .getDocs($locale)
+                  .getDocs($locales)
                   ?.nodes()
                   .filter(
                       (n): n is ConceptLink =>
                           n instanceof ConceptLink &&
-                          n.concept.getText().startsWith('@UI/')
+                          n.concept.getText().startsWith('@UI/'),
                   )
                   .map((concept) =>
-                      concept.concept.getText().substring('@UI/'.length)
+                      concept.concept.getText().substring('@UI/'.length),
                   );
 
     // When a creator drops on the palette, remove the dragged node from the source it was dragged from.
@@ -152,14 +154,14 @@
 
         const newSource = source.withProgram(
             source.expression.replace(node, replacement),
-            source.spaces.withReplacement(node, replacement)
+            source.spaces.withReplacement(node, replacement),
         );
 
         // Update the project with the new source files
         Projects.reviseProject(
             project
                 .withSource(source, newSource)
-                .withCaret(newSource, source.getNodeFirstPosition(node) ?? 0)
+                .withCaret(newSource, source.getNodeFirstPosition(node) ?? 0),
         );
     }
 
@@ -179,28 +181,34 @@
 <div class="header">
     <TextField
         placeholder={'🔍'}
-        description={$locale.ui.docs.field.search}
+        description={$locales.get((l) => l.ui.docs.field.search)}
         bind:text={query}
         fill
     />
     {#if currentConcept}
         <span class="path">
             {#if $path.length > 1}
-                <Button tip={$locale.ui.docs.button.home} action={home}
-                    >⇤</Button
+                <Button
+                    tip={$locales.get((l) => l.ui.docs.button.home)}
+                    action={home}>⇤</Button
                 >{/if}
-            <Button tip={$locale.ui.docs.button.back} action={back}>←</Button>
-            {#each $path as concept, index}{#if index > 0}…{/if}<ConceptLinkUI
-                    link={concept}
-                    symbolic={false}
-                />
+            <Button
+                tip={$locales.get((l) => l.ui.docs.button.back)}
+                action={back}>←</Button
+            >
+            {#each $path as concept, index}{#if index > 0}
+                    ·
+                {/if}{#if index === $path.length - 1}<ConceptLinkUI
+                        link={concept}
+                        symbolic={false}
+                    />{/if}
             {/each}
         </span>
     {/if}
 </div>
 <section
     class="palette"
-    aria-label={$locale.ui.docs.label}
+    aria-label={$locales.get((l) => l.ui.docs.label)}
     on:pointerup={handleDrop}
     bind:this={view}
 >
@@ -211,7 +219,7 @@
                 <p class="result">
                     <CodeView {concept} node={concept.getRepresentation()} />
                     <!-- Show the matching text -->
-                    {#if text.length > 1 || concept.getName($locale, false) !== text[0][0]}
+                    {#if text.length > 1 || concept.getName($locales, false) !== text[0][0]}
                         <div class="matches">
                             {#each text as [match, index]}
                                 <Note
@@ -219,10 +227,10 @@
                                         class="match"
                                         >{match.substring(
                                             index,
-                                            index + query.length
+                                            index + query.length,
                                         )}</span
                                     >{match.substring(
-                                        index + query.length
+                                        index + query.length,
                                     )}</Note
                                 >
                             {/each}
@@ -272,44 +280,48 @@
             <!-- Home page is default. -->
         {:else if $index}
             <ConceptsView
-                category={$locale.term.project}
+                category={$locales.get((l) => l.term.project)}
                 concepts={$index.getPrimaryConceptsWithPurpose(Purpose.Project)}
             />
             <ConceptsView
-                category={$locale.term.value}
+                category={$locales.get((l) => l.term.value)}
                 concepts={$index.getPrimaryConceptsWithPurpose(Purpose.Value)}
             />
             <ConceptsView
-                category={$locale.term.evaluate}
+                category={$locales.get((l) => l.term.evaluate)}
                 concepts={$index.getPrimaryConceptsWithPurpose(
-                    Purpose.Evaluate
+                    Purpose.Evaluate,
                 )}
             />
             <ConceptsView
-                category={$locale.term.bind}
+                category={$locales.get((l) => l.term.bind)}
                 concepts={$index.getPrimaryConceptsWithPurpose(Purpose.Bind)}
             />
             <ConceptsView
-                category={$locale.term.decide}
+                category={$locales.get((l) => l.term.decide)}
                 concepts={$index.getPrimaryConceptsWithPurpose(Purpose.Decide)}
             />
             <ConceptsView
-                category={$locale.term.input}
+                category={$locales.get((l) => l.term.input)}
                 concepts={$index.getPrimaryConceptsWithPurpose(Purpose.Input)}
             />
             <ConceptsView
-                category={$locale.term.output}
+                category={$locales.get((l) => l.term.output)}
                 concepts={$index.getPrimaryConceptsWithPurpose(Purpose.Output)}
             />
             <ConceptsView
-                category={$locale.term.type}
+                category={$locales.get((l) => l.term.type)}
                 concepts={$index.getPrimaryConceptsWithPurpose(Purpose.Type)}
             />
             <ConceptsView
-                category={$locale.term.document}
+                category={$locales.get((l) => l.term.document)}
                 concepts={$index.getPrimaryConceptsWithPurpose(
-                    Purpose.Document
+                    Purpose.Document,
                 )}
+            />
+            <ConceptsView
+                category={$locales.get((l) => l.term.source)}
+                concepts={$index.getPrimaryConceptsWithPurpose(Purpose.Source)}
             />
         {/if}
     </div>
@@ -330,7 +342,10 @@
     }
 
     .palette {
-        transition: width ease-out, visibility ease-out, opacity ease-out;
+        transition:
+            width ease-out,
+            visibility ease-out,
+            opacity ease-out;
         transition-duration: calc(var(--animation-factor) * 200ms);
     }
 
@@ -348,6 +363,7 @@
         border-bottom: var(--wordplay-border-width) solid
             var(--wordplay-border-color);
         padding: var(--wordplay-spacing);
+        padding-top: 0;
         display: flex;
         flex-direction: column;
         gap: var(--wordplay-spacing);
@@ -361,14 +377,15 @@
     .path {
         display: flex;
         flex-direction: row;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: scroll;
+        font-size: var(--wordplay-small-font-size);
         gap: var(--wordplay-spacing);
         padding-left: var(--wordplay-spacing);
         align-items: center;
     }
 
     .result {
-        font-style: italic;
         margin-top: var(--wordplay-spacing);
     }
 

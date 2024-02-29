@@ -18,6 +18,7 @@ import type { TemplateInput } from '../locale/concretize';
 import type Markup from './Markup';
 import type Sym from './Sym';
 import type Concretizer from './Concretizer';
+import type Locales from '../locale/Locales';
 
 /* A global ID for nodes, for helping index them */
 let NODE_ID_COUNTER = 0;
@@ -51,6 +52,9 @@ export default abstract class Node {
      * A list of fields that represent this node's sequence of nodes and the types of nodes allowed on each field.
      */
     abstract getGrammar(): Grammar;
+
+    /** A stable name by which this kind of node can be referred to (since constructor.name is minified) */
+    abstract getDescriptor(): string;
 
     /**
      * A list of names that determine this node's children. Can't extract these through reflection, so they must be manually supplied
@@ -332,11 +336,11 @@ export default abstract class Node {
             // Order matters here: defintions close in the tree have precedent, so they should go first.
             if (additional)
                 definitions = definitions.concat(
-                    additional.getDefinitions(this, context)
+                    additional.getDefinitions(this, context),
                 );
             if (scope)
                 definitions = definitions.concat(
-                    scope.getDefinitions(this, context)
+                    scope.getDefinitions(this, context),
                 );
             // Before changing the scope, see if it has any additional basis scope to add.
             additional = scope?.getAdditionalBasisScope(context);
@@ -346,7 +350,7 @@ export default abstract class Node {
 
         // Finally, implicitly include standard libraries and definitions.
         definitions = definitions.concat(
-            context.project.getDefaultShares().all
+            context.project.getDefaultShares().all,
         );
 
         // Cache the definitions for later.
@@ -361,10 +365,10 @@ export default abstract class Node {
      **/
     getDefinitionOfNameInScope(
         name: string,
-        context: Context
+        context: Context,
     ): Definition | undefined {
         return this.getDefinitionsInScope(context).find((def) =>
-            def.hasName(name)
+            def.hasName(name),
         );
     }
 
@@ -389,7 +393,7 @@ export default abstract class Node {
     replaceChild<Child extends FieldValue>(
         field: keyof this,
         child: Child,
-        replace?: Replacement
+        replace?: Replacement,
     ): Child {
         // If there is no replacement, deep clone the child.
         if (replace === undefined)
@@ -397,8 +401,8 @@ export default abstract class Node {
                 child === undefined
                     ? undefined
                     : Array.isArray(child)
-                    ? child.map((c) => c.clone())
-                    : child.clone()
+                      ? child.map((c) => c.clone())
+                      : child.clone()
             ) as Child;
 
         // Otherwise, begin the search for the replacement by first destructuring the requested change.
@@ -410,9 +414,9 @@ export default abstract class Node {
         // Bail if the field couldn't be found. This means there's a fatal problem with one of the Node's clone() implementations.
         if (typeof field !== 'string' || kind === undefined)
             throw Error(
-                `Could not find field ${String(field)} on ${
-                    this.constructor.name
-                }`
+                `Could not find field ${String(
+                    field,
+                )} on ${this.getDescriptor()}`,
             );
 
         // There are four types of originals to handle. Let's check each for validity.
@@ -431,8 +435,8 @@ export default abstract class Node {
                         Node.invalidReplacementToString(
                             field,
                             kind,
-                            replacement
-                        )
+                            replacement,
+                        ),
                     );
                     return child as Child;
                 }
@@ -450,8 +454,8 @@ export default abstract class Node {
                         Node.invalidReplacementToString(
                             field,
                             kind,
-                            replacement
-                        )
+                            replacement,
+                        ),
                     );
                     return child as Child;
                 }
@@ -474,8 +478,8 @@ export default abstract class Node {
                         Node.invalidReplacementToString(
                             field,
                             kind,
-                            replacement
-                        )
+                            replacement,
+                        ),
                     );
                     return child as Child;
                 }
@@ -489,8 +493,8 @@ export default abstract class Node {
                         Node.invalidReplacementToString(
                             field,
                             kind,
-                            replacement
-                        )
+                            replacement,
+                        ),
                     );
                     return child as Child;
                 }
@@ -515,7 +519,7 @@ export default abstract class Node {
                     return replacement as Child;
                 // Otherwise, create a new list with the replacement inside it.
                 return child.map((c) =>
-                    c === original ? replacement : c
+                    c === original ? replacement : c,
                 ) as Child;
             }
             // Otherwise, just return the replacement, whatever it is.
@@ -537,11 +541,11 @@ export default abstract class Node {
             const match = child.find(
                 (c) =>
                     (original instanceof Node && c.contains(original)) ||
-                    (Array.isArray(original) && c.hasList(original))
+                    (Array.isArray(original) && c.hasList(original)),
             );
             if (match)
                 return child.map((c) =>
-                    c === match ? c.clone(replace) : c
+                    c === match ? c.clone(replace) : c,
                 ) as Child;
             else return child;
         }
@@ -551,12 +555,12 @@ export default abstract class Node {
     static invalidReplacementToString(
         field: string,
         kind: FieldKind,
-        replacement: FieldValue
+        replacement: FieldValue,
     ) {
         return `Attempt to replace list field ${String(
-            field
+            field,
         )} failed because replacement list is not a list or contains invalid items; expected ${kind.toString()}, but received ${(Array.isArray(
-            replacement
+            replacement,
         )
             ? replacement
             : [replacement]
@@ -589,7 +593,7 @@ export default abstract class Node {
     getPreferredPrecedingSpace(
         child: Node,
         space: string,
-        depth: number
+        depth: number,
     ): string {
         const field = this.getFieldOfChild(child);
 
@@ -641,8 +645,8 @@ export default abstract class Node {
     /**
      * Given a locale, get the node's static label
      * */
-    getLabel(locale: Locale): string {
-        return this.getNodeLocale(locale).name;
+    getLabel(locales: Locales): string {
+        return this.getNodeLocale(locales).name;
     }
 
     /**
@@ -650,29 +654,29 @@ export default abstract class Node {
      * */
     getDescription(
         concretizer: Concretizer,
-        locale: Locale,
-        context: Context
+        locales: Locales,
+        context: Context,
     ): Markup {
-        const text = this.getNodeLocale(locale);
+        const text = this.getNodeLocale(locales);
         return concretizer(
-            locale,
+            locales,
             // Is there a description? Use that. Otherwise just use the name.
             'description' in text
                 ? (text as DescriptiveNodeText).description
                 : text.name,
-            ...this.getDescriptionInputs(locale, context)
+            ...this.getDescriptionInputs(locales, context),
         );
     }
 
     /**
      * Get the list of inputs to give to concretize the description.
      */
-    getDescriptionInputs(_: Locale, __: Context): TemplateInput[] {
+    getDescriptionInputs(_: Locales, __: Context): TemplateInput[] {
         return [];
     }
 
-    getDoc(locale: Locale): DocText {
-        return this.getNodeLocale(locale).doc;
+    getDoc(locales: Locales): DocText {
+        return this.getNodeLocale(locales).doc;
     }
 
     /**
@@ -684,17 +688,17 @@ export default abstract class Node {
         return undefined;
     }
 
-    abstract getNodeLocale(locale: Locale): NodeText | DescriptiveNodeText;
+    abstract getNodeLocale(locales: Locales): NodeText | DescriptiveNodeText;
 
     /** Provide localized labels for any child that can be a placeholder. */
     getChildPlaceholderLabel(
         child: Node,
-        translation: Locale,
+        locales: Locales,
         context: Context,
-        root: Root
+        root: Root,
     ): Template | undefined {
         const label = this.getFieldOfChild(child)?.label;
-        return label ? label(translation, child, context, root) : undefined;
+        return label ? label(locales, child, context, root) : undefined;
     }
 
     /** Translates the node back into Wordplay text, using spaces if provided and . */
@@ -709,7 +713,7 @@ export default abstract class Node {
                 const preferred = this.getPreferredPrecedingSpace(
                     child,
                     '',
-                    childDepth
+                    childDepth,
                 );
                 return preferred + child.toWordplay(spaces, locale, childDepth);
             })
@@ -719,7 +723,7 @@ export default abstract class Node {
     /** A representation for debugging */
     toString(depth = 0): string {
         const tabs = '\t'.repeat(depth);
-        return `${tabs}${this.constructor.name}\n${this.getChildren()
+        return `${tabs}${this.getDescriptor()}\n${this.getChildren()
             .map((n) => n.toString(depth + 1))
             .join('\n')}`;
     }
@@ -732,16 +736,16 @@ export type Field = {
     kind: Any | Empty | ListOf | IsA;
     /** A description of the field for the UI */
     label?: (
-        locale: Locale,
+        locales: Locales,
         child: Node,
         context: Context,
-        root: Root
+        root: Root,
     ) => Template;
     /** True if a preceding space is preferred the node */
     space?: boolean | ((node: Node) => boolean);
     /** True if the field should be indented if on a new line */
     indent?: boolean | ((parent: Node, child: Node) => boolean);
-    /** True if the field should have newlines */
+    /** True if the field prefers newlines */
     newline?: boolean;
     /** True if the field should have double newlines */
     double?: boolean;
@@ -842,7 +846,7 @@ export class ListOf extends FieldKind {
 
     allowsUnconditionalNone() {
         return this.kinds.some(
-            (kind) => kind instanceof Empty && kind.dependency === undefined
+            (kind) => kind instanceof Empty && kind.dependency === undefined,
         );
     }
 
@@ -853,7 +857,7 @@ export class ListOf extends FieldKind {
     enumerate(): NodeKind[] {
         return this.kinds.reduce(
             (list, kind) => [...list, ...kind.enumerate()],
-            [] as NodeKind[]
+            [] as NodeKind[],
         );
     }
 
@@ -906,8 +910,8 @@ export class Empty extends FieldKind {
         return dependencies === undefined
             ? []
             : Array.isArray(dependencies)
-            ? dependencies
-            : [dependencies];
+              ? dependencies
+              : [dependencies];
     }
 
     toString() {
@@ -937,7 +941,7 @@ export class Any extends FieldKind {
     enumerate(): NodeKind[] {
         return this.kinds.reduce(
             (list, kind) => [...list, ...kind.enumerate()],
-            [] as NodeKind[]
+            [] as NodeKind[],
         );
     }
 

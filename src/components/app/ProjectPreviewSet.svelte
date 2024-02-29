@@ -1,14 +1,11 @@
 <script lang="ts">
     import type Project from '../../models/Project';
     import ProjectPreview from './ProjectPreview.svelte';
-    import { languages } from '../../db/Database';
-    import getProjectLink from './getProjectLink';
+    import { locales } from '../../db/Database';
     import Button from '../widgets/Button.svelte';
     import ConfirmButton from '../widgets/ConfirmButton.svelte';
-    import { goto } from '$app/navigation';
 
     export let set: Project[];
-    export let beforePlay: undefined | ((project: Project) => void) = undefined;
     export let edit:
         | {
               description: string;
@@ -27,35 +24,30 @@
 
     function sortProjects(projects: Project[]): Project[] {
         return projects.sort((a, b) =>
-            a.getName().localeCompare(b.getName(), $languages)
+            a.getName().localeCompare(b.getName(), $locales.getLanguages())
         );
     }
+
+    $: listed = sortProjects(set).filter((p) => p.isListed());
 </script>
 
 <div class="projects">
-    {#each sortProjects(set).filter((p) => p.listed) as project (project.id)}
+    {#each listed as project (project.getID())}
         {@const removeMeta = remove(project)}
-        <ProjectPreview
-            {project}
-            action={() => {
-                if (beforePlay) beforePlay(project);
-                goto(getProjectLink(project, true));
-            }}
-            delay={Math.random() * set.length * 50}
-            >{#if removeMeta}<div class="controls">
-                    {#if edit}<Button
-                            tip={edit.description}
-                            action={() =>
-                                edit ? edit.action(project) : undefined}
-                            >{edit.label}</Button
-                        >{/if}<ConfirmButton
+        <ProjectPreview {project} link={project.getLink(true)}
+            ><div class="controls">
+                {#if edit}<Button
+                        tip={edit.description}
+                        action={() => (edit ? edit.action(project) : undefined)}
+                        >{edit.label}</Button
+                    >{/if}{#if removeMeta}<ConfirmButton
                         prompt={removeMeta.prompt}
                         tip={removeMeta.description}
                         action={() =>
                             removeMeta ? removeMeta.action() : undefined}
                         >{removeMeta.label}</ConfirmButton
-                    ></div
-                >{/if}<slot /></ProjectPreview
+                    >{/if}</div
+            ><slot /></ProjectPreview
         >
     {/each}
 </div>

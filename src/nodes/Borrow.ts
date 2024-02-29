@@ -32,7 +32,6 @@ import {
     any,
     optional,
 } from './Node';
-import type Locale from '@locale/Locale';
 import SimpleExpression from './SimpleExpression';
 import UnimplementedException from '@values/UnimplementedException';
 import NodeRef from '@locale/NodeRef';
@@ -42,6 +41,7 @@ import Glyphs from '../lore/Glyphs';
 import concretize from '../locale/concretize';
 import Purpose from '../concepts/Purpose';
 import Reference from './Reference';
+import type Locales from '../locale/Locales';
 
 export type SharedDefinition =
     | Source
@@ -62,7 +62,7 @@ export default class Borrow extends SimpleExpression {
         source?: Reference,
         dot?: Token,
         name?: Reference,
-        version?: Token
+        version?: Token,
     ) {
         super();
 
@@ -75,6 +75,10 @@ export default class Borrow extends SimpleExpression {
         this.computeChildren();
     }
 
+    getDescriptor() {
+        return 'Borrow';
+    }
+
     getGrammar(): Grammar {
         return [
             { name: 'borrow', kind: node(Sym.Borrow) },
@@ -82,24 +86,27 @@ export default class Borrow extends SimpleExpression {
                 name: 'source',
                 kind: any(node(Reference), none()),
                 space: true,
-                label: (locale: Locale) => locale.node.Borrow.source,
+                label: (locales: Locales) =>
+                    locales.get((l) => l.node.Borrow.source),
             },
             { name: 'dot', kind: optional(node(Sym.Access)) },
             {
                 name: 'name',
                 kind: optional(node(Reference)),
-                label: (locale: Locale) => locale.node.Borrow.name,
+                label: (locales: Locales) =>
+                    locales.get((l) => l.node.Borrow.name),
             },
             {
                 name: 'version',
                 kind: optional(node(Sym.Number)),
-                label: (locale: Locale) => locale.node.Borrow.version,
+                label: (locales: Locales) =>
+                    locales.get((l) => l.node.Borrow.version),
             },
         ];
     }
 
     getPurpose() {
-        return Purpose.Project;
+        return Purpose.Source;
     }
 
     clone(replace?: Replacement) {
@@ -108,7 +115,7 @@ export default class Borrow extends SimpleExpression {
             this.replaceChild('source', this.source, replace),
             this.replaceChild('dot', this.dot, replace),
             this.replaceChild('name', this.name, replace),
-            this.replaceChild('version', this.version, replace)
+            this.replaceChild('version', this.version, replace),
         ) as this;
     }
 
@@ -117,13 +124,13 @@ export default class Borrow extends SimpleExpression {
     }
 
     getShare(
-        context: Context
+        context: Context,
     ): [Source | undefined, SharedDefinition] | undefined {
         if (this.source === undefined) return undefined;
 
         return context.project.getShare(
             this.source.getName(),
-            this.name?.getName()
+            this.name?.getName(),
         );
     }
 
@@ -166,7 +173,7 @@ export default class Borrow extends SimpleExpression {
                     this,
                     this.borrow,
                     undefined,
-                    evaluator
+                    evaluator,
                 );
 
             // Otherwise, bind the definition in the current evaluation, wrapping it in a value if necessary.
@@ -174,14 +181,14 @@ export default class Borrow extends SimpleExpression {
                 definition instanceof FunctionDefinition
                     ? new FunctionValue(definition, undefined)
                     : definition instanceof StructureDefinition
-                    ? new StructureDefinitionValue(definition)
-                    : definition instanceof StreamDefinition
-                    ? new StreamDefinitionValue(definition)
-                    : definition;
+                      ? new StructureDefinitionValue(definition)
+                      : definition instanceof StreamDefinition
+                        ? new StreamDefinitionValue(definition)
+                        : definition;
 
             if (value instanceof Bind || value instanceof Source)
                 throw Error(
-                    "It should't ever be possible that a Bind or Source is shared without a source."
+                    "It should't ever be possible that a Bind or Source is shared without a source.",
                 );
 
             // Bind the value in the current evaluation for use.
@@ -215,7 +222,7 @@ export default class Borrow extends SimpleExpression {
                         this,
                         this.source.name,
                         undefined,
-                        evaluator
+                        evaluator,
                     );
                 evaluator.bind(source.names, value);
             }
@@ -228,7 +235,7 @@ export default class Borrow extends SimpleExpression {
                         this,
                         this.name.name,
                         undefined,
-                        evaluator
+                        evaluator,
                     );
                 evaluator.bind(definition.names, value);
             }
@@ -243,7 +250,7 @@ export default class Borrow extends SimpleExpression {
             : definition.getType(context);
     }
 
-    evaluateTypeSet(_: Bind, __: TypeSet, current: TypeSet): TypeSet {
+    evaluateTypeGuards(current: TypeSet): TypeSet {
         return current;
     }
 
@@ -265,25 +272,25 @@ export default class Borrow extends SimpleExpression {
         return this.source ?? this.borrow;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Borrow;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Borrow);
     }
 
-    getStartExplanations(locale: Locale, context: Context) {
+    getStartExplanations(locales: Locales, context: Context) {
         return concretize(
-            locale,
-            locale.node.Borrow.start,
+            locales,
+            locales.get((l) => l.node.Borrow.start),
             this.source
                 ? new NodeRef(
                       this.source,
-                      locale,
+                      locales,
                       context,
-                      this.source.getName()
+                      this.source.getName(),
                   )
                 : undefined,
             this.name
-                ? new NodeRef(this.name, locale, context, this.name.getName())
-                : undefined
+                ? new NodeRef(this.name, locales, context, this.name.getName())
+                : undefined,
         );
     }
 

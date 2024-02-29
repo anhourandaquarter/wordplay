@@ -14,12 +14,10 @@ import Dimension from './Dimension';
 import Docs from './Docs';
 import { BorrowCycle } from '@conflicts/BorrowCycle';
 import Expression, { ExpressionKind } from './Expression';
-import type Bind from './Bind';
 import type Type from './Type';
 import type TypeSet from './TypeSet';
 import type Value from '@values/Value';
 import { node, type Grammar, type Replacement, optional, list } from './Node';
-import type Locale from '@locale/Locale';
 import type LanguageCode from '@locale/LanguageCode';
 import Sym from './Sym';
 import Glyphs from '../lore/Glyphs';
@@ -27,6 +25,7 @@ import BlankException from '@values/BlankException';
 import concretize from '../locale/concretize';
 import Purpose from '../concepts/Purpose';
 import ValueRef from '../locale/ValueRef';
+import type Locales from '../locale/Locales';
 
 export default class Program extends Expression {
     readonly docs?: Docs;
@@ -38,7 +37,7 @@ export default class Program extends Expression {
         docs: Docs | undefined,
         borrows: Borrow[],
         expression: Block,
-        end: Token | undefined
+        end: Token | undefined,
     ) {
         super();
 
@@ -55,8 +54,12 @@ export default class Program extends Expression {
             undefined,
             [],
             new Block(expressions, BlockKind.Root),
-            new Token('', Sym.End)
+            new Token('', Sym.End),
         );
+    }
+
+    getDescriptor() {
+        return 'Program';
     }
 
     getGrammar(): Grammar {
@@ -69,7 +72,7 @@ export default class Program extends Expression {
     }
 
     getPurpose() {
-        return Purpose.Evaluate;
+        return Purpose.Source;
     }
 
     clone(replace?: Replacement) {
@@ -77,7 +80,7 @@ export default class Program extends Expression {
             this.replaceChild('docs', this.docs, replace),
             this.replaceChild('borrows', this.borrows, replace),
             this.replaceChild('expression', this.expression, replace),
-            this.replaceChild('end', this.end, replace)
+            this.replaceChild('end', this.end, replace),
         ) as this;
     }
 
@@ -102,7 +105,7 @@ export default class Program extends Expression {
         return this.expression.getType(context);
     }
 
-    evaluateTypeSet(_: Bind, __: TypeSet, current: TypeSet): TypeSet {
+    evaluateTypeGuards(current: TypeSet): TypeSet {
         return current;
     }
 
@@ -115,7 +118,7 @@ export default class Program extends Expression {
                 if (definition !== undefined) definitions.push(definition);
             } else
                 definitions.push(
-                    definition === undefined ? source : definition
+                    definition === undefined ? source : definition,
                 );
         }
         return definitions;
@@ -128,12 +131,12 @@ export default class Program extends Expression {
                     this.nodes(
                         (n): n is Language =>
                             n instanceof Language &&
-                            n.getLanguageText() !== undefined
+                            n.getLanguageText() !== undefined,
                     ) as Language[]
                 )
                     .map((n) => n.getLanguageCode())
-                    .filter((l): l is LanguageCode => l !== undefined)
-            )
+                    .filter((l): l is LanguageCode => l !== undefined),
+            ),
         );
     }
 
@@ -154,7 +157,7 @@ export default class Program extends Expression {
             new Start(this),
             ...this.borrows.reduce(
                 (steps: Step[], borrow) => [...steps, ...borrow.compile()],
-                []
+                [],
             ),
             ...this.expression.compile(evaluator, context),
             new Finish(this),
@@ -183,39 +186,39 @@ export default class Program extends Expression {
         return this.end ?? this.expression;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Program;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Program);
     }
 
     getStartExplanations(
-        locale: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         const reaction = evaluator.getReactionPriorTo(evaluator.getStepIndex());
         const change = reaction && reaction.changes.length > 0;
 
         return concretize(
-            locale,
-            locale.node.Program.start,
+            locales,
+            locales.get((l) => l.node.Program.start),
             change
-                ? new ValueRef(reaction.changes[0].stream, locale, context)
+                ? new ValueRef(reaction.changes[0].stream, locales, context)
                 : undefined,
             change
-                ? new ValueRef(reaction.changes[0].value, locale, context)
-                : undefined
+                ? new ValueRef(reaction.changes[0].value, locales, context)
+                : undefined,
         );
     }
 
     getFinishExplanations(
-        locale: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         return concretize(
-            locale,
-            locale.node.Program.finish,
-            this.getValueIfDefined(locale, context, evaluator)
+            locales,
+            locales.get((l) => l.node.Program.finish),
+            this.getValueIfDefined(locales, context, evaluator),
         );
     }
 

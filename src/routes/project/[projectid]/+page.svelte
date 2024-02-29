@@ -12,9 +12,8 @@
     import Loading from '@components/app/Loading.svelte';
     import { setContext } from 'svelte';
     import { browser } from '$app/environment';
-    import { Projects, locale } from '@db/Database';
+    import { Projects, locales } from '@db/Database';
     import Page from '@components/app/Page.svelte';
-    import { Settings } from '@db/Database';
     import Writing from '../../../components/app/Writing.svelte';
 
     /** True if we're async loading the project, as opposed to getting it from the browser cache. */
@@ -63,7 +62,7 @@
                                 project = proj;
                                 overwritten =
                                     Projects.getHistory(
-                                        proj.id
+                                        proj.getID()
                                     )?.wasOverwritten() ?? false;
                             });
                         }
@@ -77,21 +76,21 @@
 </script>
 
 <svelte:head>
-    <title>{project ? project.name : '…'}</title>
+    <title>{project ? project.getName() : '…'}</title>
 </svelte:head>
 
 {#if project}
-    <Page
-        fullscreen={Settings.getProjectLayout(project.id)?.isFullscreen() ??
-            false}
-    >
+    <Page>
         <!-- When the project ID changes, create a new project. -->
-        {#key project.id}
-            <ProjectView {project} {editable} {overwritten} />
+        {#key project.getID()}
+            <ProjectView {project} {editable} {overwritten} warn={true} />
         {/key}
     </Page>
 {:else if loading}
     <Loading />
 {:else if $page.params.projectid || error}
-    <Writing><Feedback>{$locale.ui.project.error.unknown}</Feedback></Writing>
+    <Writing
+        ><Feedback>{$locales.get((l) => l.ui.project.error.unknown)}</Feedback
+        ></Writing
+    >
 {/if}

@@ -6,18 +6,19 @@ import { localeToLanguage } from './localeToLanguage';
 import { toDocString, type NameAndDoc, nameWithoutMentions } from './Locale';
 import type Locale from './Locale';
 import { parseLocaleDoc } from '@locale/Locale';
+import type Locales from './Locales';
 
 export function getInputLocales(
-    locales: Locale[],
+    locales: Locales,
     select: (translation: Locale) => NameAndDoc[]
 ): { docs: Docs; names: Names }[] {
     // Make a list of docs and names by bind index.
     const binds: { docs: Doc[]; names: Name[] }[] = [];
 
     // Convert each translation into names and docs for each input.
-    for (const [translation, inputs] of locales.map(
-        (translation) => [translation, select(translation)] as const
-    )) {
+    for (const [translation, inputs] of locales
+        .getLocales()
+        .map((locale) => [locale, select(locale)] as const)) {
         inputs.forEach((input, index) => {
             if (binds[index] === undefined)
                 binds[index] = { docs: [], names: [] };
@@ -54,7 +55,11 @@ export function getInputLocales(
 export function getLocaleNames(nameAndDoc: NameAndDoc, locale: Locale) {
     return (
         Array.isArray(nameAndDoc.names) ? nameAndDoc.names : [nameAndDoc.names]
-    ).map((name) =>
-        Name.make(nameWithoutMentions(name), localeToLanguage(locale))
-    );
+    )
+        .map((name) => {
+            const stripped = nameWithoutMentions(name);
+            if (stripped === '') return undefined;
+            return Name.make(stripped, localeToLanguage(locale));
+        })
+        .filter((name): name is Name => name !== undefined);
 }

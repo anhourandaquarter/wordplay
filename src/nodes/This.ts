@@ -2,7 +2,6 @@ import type Conflict from '@conflicts/Conflict';
 import type Type from './Type';
 import type Value from '@values/Value';
 import type Step from '@runtime/Step';
-import type Bind from './Bind';
 import type Context from './Context';
 import type TypeSet from './TypeSet';
 import type Evaluator from '@runtime/Evaluator';
@@ -20,7 +19,6 @@ import Reaction from './Reaction';
 import ValueException from '@values/ValueException';
 import { node, type Grammar, type Replacement } from './Node';
 import SimpleExpression from './SimpleExpression';
-import type Locale from '@locale/Locale';
 import { UnenclosedType } from './UnenclosedType';
 import Glyphs from '../lore/Glyphs';
 import { PROPERTY_SYMBOL } from '../parser/Symbols';
@@ -28,6 +26,7 @@ import Sym from './Sym';
 import concretize from '../locale/concretize';
 import type Node from './Node';
 import Purpose from '../concepts/Purpose';
+import type Locales from '../locale/Locales';
 
 type ThisStructure = StructureDefinition | ConversionDefinition | Reaction;
 
@@ -49,7 +48,7 @@ export default class This extends SimpleExpression {
         type: Type | undefined,
         node: Node,
         selected: boolean,
-        context: Context
+        context: Context,
     ) {
         return context
             .getRoot(node)
@@ -58,10 +57,14 @@ export default class This extends SimpleExpression {
                 (a) =>
                     a instanceof StructureDefinition ||
                     a instanceof ConversionDefinition ||
-                    a instanceof Reaction
+                    a instanceof Reaction,
             )
             ? [This.make()]
             : [];
+    }
+
+    getDescriptor() {
+        return 'This';
     }
 
     getGrammar(): Grammar {
@@ -84,7 +87,7 @@ export default class This extends SimpleExpression {
                 (a) =>
                     a instanceof StructureDefinition ||
                     a instanceof ConversionDefinition ||
-                    a instanceof Reaction
+                    a instanceof Reaction,
             ) as ThisStructure | undefined;
     }
 
@@ -102,18 +105,18 @@ export default class This extends SimpleExpression {
         return structure === undefined
             ? new UnenclosedType(this)
             : // Structure definition's have the structure type
-            structure instanceof StructureDefinition
-            ? new StructureType(structure, [])
-            : // Conversion definitions have the input type
-            structure instanceof ConversionDefinition
-            ? // We strip the unit from this in order to provide a scalar for conversion.
-              structure.input instanceof NumberType
-                ? NumberType.make()
-                : structure.input
-            : // Reactions have the reaction's value type
-            structure instanceof Reaction
-            ? structure.initial.getType(context)
-            : new UnenclosedType(this);
+              structure instanceof StructureDefinition
+              ? new StructureType(structure, [])
+              : // Conversion definitions have the input type
+                structure instanceof ConversionDefinition
+                ? // We strip the unit from this in order to provide a scalar for conversion.
+                  structure.input instanceof NumberType
+                    ? NumberType.make()
+                    : structure.input
+                : // Reactions have the reaction's value type
+                  structure instanceof Reaction
+                  ? structure.initial.getType(context)
+                  : new UnenclosedType(this);
     }
 
     getDependencies(context: Context): Expression[] {
@@ -148,15 +151,7 @@ export default class This extends SimpleExpression {
         );
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
-        bind;
-        original;
-        context;
+    evaluateTypeGuards(current: TypeSet) {
         return current;
     }
 
@@ -168,19 +163,19 @@ export default class This extends SimpleExpression {
         return this.dis;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.This;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.This);
     }
 
     getStartExplanations(
-        translation: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         return concretize(
-            translation,
-            translation.node.This.start,
-            this.getValueIfDefined(translation, context, evaluator)
+            locales,
+            locales.get((l) => l.node.This.start),
+            this.getValueIfDefined(locales, context, evaluator),
         );
     }
 

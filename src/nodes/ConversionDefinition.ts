@@ -1,5 +1,5 @@
 import type Node from './Node';
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import Token from './Token';
 import Sym from './Sym';
 import type Conflict from '@conflicts/Conflict';
@@ -12,12 +12,10 @@ import type Step from '@runtime/Step';
 import ConversionDefinitionValue from '@values/ConversionDefinitionValue';
 import type Context from './Context';
 import { CONVERT_SYMBOL } from '@parser/Symbols';
-import type Bind from './Bind';
 import type TypeSet from './TypeSet';
 import Docs from './Docs';
 import StartFinish from '@runtime/StartFinish';
 import { node, none, type Grammar, type Replacement, any } from './Node';
-import type Locale from '@locale/Locale';
 import InternalException from '@values/InternalException';
 import Glyphs from '../lore/Glyphs';
 import Purpose from '../concepts/Purpose';
@@ -27,8 +25,9 @@ import NodeRef from '../locale/NodeRef';
 import TypePlaceholder from './TypePlaceholder';
 import ExpressionPlaceholder from './ExpressionPlaceholder';
 import { toTokens } from '../parser/toTokens';
-import parseType from '../parser/paresType';
+import parseType from '../parser/parseType';
 import DefinitionExpression from './DefinitionExpression';
+import type Locales from '../locale/Locales';
 
 export default class ConversionDefinition extends DefinitionExpression {
     readonly docs: Docs | undefined;
@@ -42,7 +41,7 @@ export default class ConversionDefinition extends DefinitionExpression {
         arrow: Token,
         input: Type,
         output: Type,
-        expression: Expression
+        expression: Expression,
     ) {
         super();
 
@@ -59,14 +58,14 @@ export default class ConversionDefinition extends DefinitionExpression {
         docs: Docs | undefined,
         input: Type | string,
         output: Type | string,
-        expression: Expression
+        expression: Expression,
     ) {
         return new ConversionDefinition(
             docs,
             new Token(CONVERT_SYMBOL, Sym.Convert),
             input instanceof Type ? input : parseType(toTokens(input)),
             output instanceof Type ? output : parseType(toTokens(output)),
-            expression
+            expression,
         );
     }
 
@@ -76,9 +75,18 @@ export default class ConversionDefinition extends DefinitionExpression {
                 undefined,
                 TypePlaceholder.make(),
                 TypePlaceholder.make(),
-                ExpressionPlaceholder.make()
+                ExpressionPlaceholder.make(),
             ),
         ];
+    }
+
+    /** Used by Evaluator to get the steps for the evaluation of this conversion. */
+    getEvaluationSteps(evaluator: Evaluator, context: Context): Step[] {
+        return this.expression.compile(evaluator, context);
+    }
+
+    getDescriptor() {
+        return 'ConversionDefinition';
     }
 
     getGrammar(): Grammar {
@@ -108,7 +116,7 @@ export default class ConversionDefinition extends DefinitionExpression {
             this.replaceChild('arrow', this.arrow, replace),
             this.replaceChild('input', this.input, replace),
             this.replaceChild('output', this.output, replace),
-            this.replaceChild('expression', this.expression, replace)
+            this.replaceChild('expression', this.expression, replace),
         ) as this;
     }
 
@@ -162,7 +170,7 @@ export default class ConversionDefinition extends DefinitionExpression {
             return new InternalException(
                 this,
                 evaluator,
-                'there is no evaluation, which should be impossible'
+                'there is no evaluation, which should be impossible',
             );
 
         const value = new ConversionDefinitionValue(this, context);
@@ -172,14 +180,9 @@ export default class ConversionDefinition extends DefinitionExpression {
         return value;
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
         if (this.expression instanceof Expression)
-            this.expression.evaluateTypeSet(bind, original, current, context);
+            this.expression.evaluateTypeGuards(current, guard);
         return current;
     }
 
@@ -190,14 +193,14 @@ export default class ConversionDefinition extends DefinitionExpression {
         return this.arrow;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.ConversionDefinition;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.ConversionDefinition);
     }
 
-    getStartExplanations(translation: Locale) {
+    getStartExplanations(locales: Locales) {
         return concretize(
-            translation,
-            translation.node.ConversionDefinition.start
+            locales,
+            locales.get((l) => l.node.ConversionDefinition.start),
         );
     }
 
@@ -205,10 +208,10 @@ export default class ConversionDefinition extends DefinitionExpression {
         return Glyphs.Conversion;
     }
 
-    getDescriptionInputs(locale: Locale, context: Context) {
+    getDescriptionInputs(locales: Locales, context: Context) {
         return [
-            new NodeRef(this.input, locale, context),
-            new NodeRef(this.output, locale, context),
+            new NodeRef(this.input, locales, context),
+            new NodeRef(this.output, locales, context),
         ];
     }
 }

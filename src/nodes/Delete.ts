@@ -1,6 +1,6 @@
 import type Node from './Node';
 import Token from './Token';
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import type Conflict from '@conflicts/Conflict';
 import type Type from './Type';
 import BooleanType from './BooleanType';
@@ -15,7 +15,6 @@ import type Definition from './Definition';
 import type TypeSet from './TypeSet';
 import type Evaluator from '@runtime/Evaluator';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import NodeRef from '@locale/NodeRef';
 import Glyphs from '../lore/Glyphs';
 import IncompatibleInput from '../conflicts/IncompatibleInput';
@@ -31,6 +30,7 @@ import BoolValue from '@values/BoolValue';
 import { getIteration, getIterationResult } from '../basis/Iteration';
 import { DELETE_SYMBOL } from '../parser/Symbols';
 import ExpressionPlaceholder from './ExpressionPlaceholder';
+import type Locales from '../locale/Locales';
 
 type DeleteState = { index: number; list: StructureValue[]; table: TableValue };
 
@@ -53,18 +53,22 @@ export default class Delete extends Expression {
         return new Delete(table, new Token(DELETE_SYMBOL, Sym.Delete), query);
     }
 
+    getDescriptor() {
+        return 'Delete';
+    }
+
     getGrammar(): Grammar {
         return [
             {
                 name: 'table',
                 kind: node(Expression),
-                label: (translation: Locale) => translation.term.table,
+                label: (locales: Locales) => locales.get((l) => l.term.table),
             },
             { name: 'del', kind: node(Sym.Delete), space: true },
             {
                 name: 'query',
                 kind: node(Expression),
-                label: (translation: Locale) => translation.term.query,
+                label: (locales: Locales) => locales.get((l) => l.term.query),
                 // Must be a boolean
                 getType: () => BooleanType.make(),
                 space: true,
@@ -76,7 +80,7 @@ export default class Delete extends Expression {
         type: Type | undefined,
         anchor: Node,
         selected: boolean,
-        context: Context
+        context: Context,
     ) {
         const anchorType =
             anchor instanceof Expression ? anchor.getType(context) : undefined;
@@ -86,7 +90,7 @@ export default class Delete extends Expression {
             ? [
                   Delete.make(
                       anchor,
-                      ExpressionPlaceholder.make(BooleanType.make())
+                      ExpressionPlaceholder.make(BooleanType.make()),
                   ),
               ]
             : [];
@@ -100,7 +104,7 @@ export default class Delete extends Expression {
         return new Delete(
             this.replaceChild('table', this.table, replace),
             this.replaceChild('del', this.del, replace),
-            this.replaceChild('query', this.query, replace)
+            this.replaceChild('query', this.query, replace),
         ) as this;
     }
 
@@ -118,7 +122,11 @@ export default class Delete extends Expression {
         // Table must be table typed.
         if (!(tableType instanceof TableType))
             conflicts.push(
-                new IncompatibleInput(this.table, tableType, TableType.make([]))
+                new IncompatibleInput(
+                    this.table,
+                    tableType,
+                    TableType.make([]),
+                ),
             );
 
         // The query must be truthy.
@@ -128,7 +136,11 @@ export default class Delete extends Expression {
             !(queryType instanceof BooleanType)
         )
             conflicts.push(
-                new IncompatibleInput(this.query, queryType, BooleanType.make())
+                new IncompatibleInput(
+                    this.query,
+                    queryType,
+                    BooleanType.make(),
+                ),
             );
 
         return conflicts;
@@ -161,7 +173,7 @@ export default class Delete extends Expression {
             undefined,
             [],
             this.query,
-            BooleanType.make()
+            BooleanType.make(),
         );
 
         return [
@@ -177,7 +189,7 @@ export default class Delete extends Expression {
                         : evaluator.getValueOrTypeException(
                               this,
                               TableType.make(),
-                              table
+                              table,
                           );
                 },
                 (evaluator, info) => {
@@ -189,8 +201,8 @@ export default class Delete extends Expression {
                                 evaluator,
                                 this,
                                 query,
-                                info.table.rows[info.index]
-                            )
+                                info.table.rows[info.index],
+                            ),
                         );
                         return true;
                     }
@@ -203,7 +215,7 @@ export default class Delete extends Expression {
                         info.list.push(info.table.rows[info.index]);
                     // Increment the counter.
                     info.index = info.index + 1;
-                }
+                },
             ),
             new Finish(this),
         ];
@@ -218,16 +230,11 @@ export default class Delete extends Expression {
         return new TableValue(this, table.type, list);
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
         if (this.table instanceof Expression)
-            this.table.evaluateTypeSet(bind, original, current, context);
+            this.table.evaluateTypeGuards(current, guard);
         if (this.query instanceof Expression)
-            this.query.evaluateTypeSet(bind, original, current, context);
+            this.query.evaluateTypeGuards(current, guard);
         return current;
     }
 
@@ -238,27 +245,27 @@ export default class Delete extends Expression {
         return this.del;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Delete;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Delete);
     }
 
-    getStartExplanations(locale: Locale, context: Context) {
+    getStartExplanations(locales: Locales, context: Context) {
         return concretize(
-            locale,
-            locale.node.Delete.start,
-            new NodeRef(this.table, locale, context)
+            locales,
+            locales.get((l) => l.node.Delete.start),
+            new NodeRef(this.table, locales, context),
         );
     }
 
     getFinishExplanations(
-        locale: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         return concretize(
-            locale,
-            locale.node.Delete.finish,
-            this.getValueIfDefined(locale, context, evaluator)
+            locales,
+            locales.get((l) => l.node.Delete.finish),
+            this.getValueIfDefined(locales, context, evaluator),
         );
     }
 

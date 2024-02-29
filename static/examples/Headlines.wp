@@ -1,7 +1,29 @@
 Headlines
 === start/en
-headlines: Webpage('https://www.nytimes.com' 'h3')
+headlines: Webpage('https://www.nytimes.com' 'h3.indicate-hover')
 top: headlines•[''] ? headlines.subsequence(1 7) ø
 top•ø ? 
-Phrase('…')
-Group(Stack() top.translate(ƒ (headline) Phrase(headline)))
+    Phrase('loading')
+    Group(
+        Stack('<') 
+        [
+            Phrase(`*New York Times Headlines*` 2m face: 'Arvo')].append(
+            top.translate(
+                ƒ (headline) 
+                    Phrase(
+                        headline 
+                        ↵: 20m
+                        alignment: '<'
+                        face: 'Ubuntu'
+                        resting: Sequence(
+                            {
+                                0%: Pose(rotation: 3°) 
+                                50%: Pose(rotation: -3°) 
+                                100%: Pose(rotation: 3°)
+                            }
+                            duration: 3s
+                        )
+                    )
+                )
+            )  
+    )

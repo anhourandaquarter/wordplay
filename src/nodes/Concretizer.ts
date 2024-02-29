@@ -1,11 +1,11 @@
-import type Locale from '@locale/Locale';
 import type { TemplateInput } from '../locale/concretize';
 import type Markup from './Markup';
+import type Locales from '../locale/Locales';
 
 type Concretizer = (
-    locale: Locale,
+    locales: Locales,
     template: string,
     ...inputs: TemplateInput[]
 ) => Markup;
 
-export default Concretizer;
+export { type Concretizer as default };

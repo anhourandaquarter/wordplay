@@ -27,10 +27,11 @@
         getSelectedOutput,
         getSelectedPhrase,
     } from '../project/Contexts';
-    import { DB, Projects, locale, locales } from '../../db/Database';
+    import { DB, Projects, locales } from '../../db/Database';
     import TextLang from '../../output/TextLang';
     import MarkupHtmlView from '../concepts/MarkupHTMLView.svelte';
     import Markup from '../../nodes/Markup';
+    import { HorizontalLayout, layoutToCSS } from '@locale/Scripts';
 
     export let phrase: Phrase;
     export let place: Place;
@@ -85,7 +86,7 @@
                 ) {
                     input.setSelectionRange(
                         $selectedPhrase.index,
-                        $selectedPhrase.index
+                        $selectedPhrase.index,
                     );
                     input.focus();
                 }
@@ -122,7 +123,7 @@
         // Place must be a Place to move it, so creator don't accidently delete a compelx expression.
         const mapping = phrase.value.creator.getInput(
             $project.shares.output.Phrase.inputs[3],
-            $project.getNodeContext(phrase.value.creator)
+            $project.getNodeContext(phrase.value.creator),
         );
         if (
             !(
@@ -130,7 +131,7 @@
                 (mapping instanceof Evaluate &&
                     mapping.is(
                         $project.shares.output.Place,
-                        $project.getNodeContext(phrase.value.creator)
+                        $project.getNodeContext(phrase.value.creator),
                     ))
             )
         )
@@ -141,14 +142,14 @@
             event.key === 'ArrowLeft'
                 ? -1 * increment
                 : event.key === 'ArrowRight'
-                ? increment
-                : 0;
+                  ? increment
+                  : 0;
         let vertical =
             event.key === 'ArrowUp'
                 ? 1 * increment
                 : event.key === 'ArrowDown'
-                ? -1 * increment
-                : 0;
+                  ? -1 * increment
+                  : 0;
 
         select(null);
 
@@ -159,7 +160,7 @@
             $locales,
             horizontal,
             vertical,
-            true
+            true,
         );
     }
 
@@ -181,7 +182,7 @@
                 phrase.value.creator,
                 phrase.value.creator.replace(
                     originalTextValue.creator,
-                    TextLiteral.make(newText)
+                    TextLiteral.make(newText),
                 ),
             ],
         ]);
@@ -194,7 +195,9 @@
         aria-hidden={empty ? 'true' : null}
         aria-disabled={!selectable}
         aria-label={still ? phrase.getDescription($locales) : null}
-        aria-roledescription={!selectable ? $locale.term.phrase : null}
+        aria-roledescription={!selectable
+            ? $locales.get((l) => l.term.phrase)
+            : null}
         class="output phrase"
         class:selected
         tabIndex={interactive && ((!empty && selectable) || editing) ? 0 : null}
@@ -211,7 +214,8 @@
         style:opacity={getOpacityCSS(phrase.getFirstRestPose(), phrase.pose)}
         style:width="{metrics.width}px"
         style:height="{metrics.height}px"
-        style:line-height="{phrase.wrap !== undefined
+        style:line-height="{phrase.wrap !== undefined ||
+        phrase.direction !== HorizontalLayout
             ? metrics.ascent + metrics.descent
             : metrics.height}px"
         style:transform={toOutputTransform(
@@ -220,8 +224,18 @@
             place,
             focus,
             parentAscent,
-            metrics
+            metrics,
         )}
+        style:writing-mode={layoutToCSS(phrase.direction)}
+        style:text-shadow={phrase.aura
+            ? `${getSizeCSS(phrase.aura.offsetX ?? 0)} ${getSizeCSS(
+                  phrase.aura.offsetY ?? 0,
+              )} ${getSizeCSS(phrase.aura.blur ?? 0)} ${
+                  phrase.aura.color?.toCSS() ??
+                  getColorCSS(phrase.getFirstRestPose(), phrase.pose) ??
+                  ''
+              }`
+            : null}
         style:white-space={phrase.wrap !== undefined ? 'normal' : 'nowrap'}
         style:text-align={phrase.alignment === undefined
             ? null
@@ -238,7 +252,7 @@
                 on:pointerdown|stopPropagation
                 style:width="{Math.max(
                     10,
-                    phrase.getMetrics(context, false).width
+                    phrase.getMetrics(context, false).width,
                 )}px"
                 style:height="{metrics.height}px"
                 style:line-height="{metrics.height}px"

@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import Project from '../models/Project';
 import Source from './Source';
 import { toTokens } from '../parser/toTokens';
-import parseType from '../parser/paresType';
+import parseType from '../parser/parseType';
 import DefaultLocale from '../locale/DefaultLocale';
 
 test.each([
@@ -17,7 +17,7 @@ test.each([
     ['{1|2:2|3}', '{#:#}'],
 ])('expect %s', (given: string, expected) => {
     const source = new Source('untitled', '');
-    const project = new Project(null, 'untitled', source, [], DefaultLocale);
+    const project = Project.make(null, 'untitled', source, [], DefaultLocale);
     const context = project.getContext(source);
 
     const type = parseType(toTokens(given));

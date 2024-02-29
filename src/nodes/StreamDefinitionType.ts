@@ -6,6 +6,7 @@ import type StreamDefinition from './StreamDefinition';
 import Glyphs from '../lore/Glyphs';
 import { STREAM_SYMBOL } from '../parser/Symbols';
 import type Spaces from '../parser/Spaces';
+import type Locales from '../locale/Locales';
 
 export default class StreamDefinitionType extends Type {
     readonly definition: StreamDefinition;
@@ -14,6 +15,10 @@ export default class StreamDefinitionType extends Type {
         super();
 
         this.definition = definition;
+    }
+
+    getDescriptor() {
+        return 'StreamDefinitionType';
     }
 
     getGrammar() {
@@ -54,8 +59,8 @@ export default class StreamDefinitionType extends Type {
         )}`;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.StreamDefinitionType;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.StreamDefinitionType);
     }
 
     getGlyphs() {

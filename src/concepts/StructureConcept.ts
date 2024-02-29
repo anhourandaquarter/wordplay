@@ -8,11 +8,11 @@ import NameType from '@nodes/NameType';
 import type Context from '@nodes/Context';
 import ConversionConcept from './ConversionConcept';
 import StructureType from '@nodes/StructureType';
-import type Locale from '@locale/Locale';
 import Purpose from './Purpose';
 import Emotion from '../lore/Emotion';
 import type Markup from '../nodes/Markup';
 import type { Character } from '../tutorial/Tutorial';
+import type Locales from '../locale/Locales';
 
 export default class StructureConcept extends Concept {
     /** The type this concept represents. */
@@ -45,8 +45,8 @@ export default class StructureConcept extends Concept {
         definition: StructureDefinition,
         type: Type | undefined,
         examples: Node[] | undefined,
-        locales: Locale[],
-        context: Context
+        locales: Locales,
+        context: Context,
     ) {
         super(purpose, affiliation, context);
 
@@ -54,8 +54,8 @@ export default class StructureConcept extends Concept {
         this.type =
             type ??
             NameType.make(
-                this.definition.names.getPreferredNameString(locales),
-                this.definition
+                locales.getName(this.definition.names),
+                this.definition,
             );
         this.examples =
             examples === undefined || examples.length === 0
@@ -72,20 +72,20 @@ export default class StructureConcept extends Concept {
                         def,
                         this,
                         locales,
-                        context
-                    )
+                        context,
+                    ),
             );
         this.conversions = this.definition
             .getAllConversions()
             .map((def) => new ConversionConcept(def, context, this));
 
         this.inputs = this.definition.inputs.map(
-            (bind) => new BindConcept(this.purpose, bind, locales, context)
+            (bind) => new BindConcept(this.purpose, bind, locales, context),
         );
         this.properties = this.definition
             .getProperties()
             .map(
-                (bind) => new BindConcept(this.purpose, bind, locales, context)
+                (bind) => new BindConcept(this.purpose, bind, locales, context),
             );
 
         this.inter = this.definition
@@ -96,23 +96,17 @@ export default class StructureConcept extends Concept {
                         purpose,
                         this.definition,
                         inter,
-                        NameType.make(
-                            inter.names.getPreferredNameString(locales),
-                            inter
-                        ),
+                        NameType.make(locales.getName(inter.names), inter),
                         [],
                         locales,
-                        context
-                    )
+                        context,
+                    ),
             );
     }
 
-    getGlyphs(locales: Locale[]) {
+    getGlyphs(locales: Locales) {
         return {
-            symbols: this.definition.names.getPreferredNameString(
-                locales,
-                true
-            ),
+            symbols: locales.getName(this.definition.names),
         };
     }
 
@@ -124,13 +118,13 @@ export default class StructureConcept extends Concept {
         return this.definition.names.hasName(name);
     }
 
-    getDocs(locale: Locale): Markup | undefined {
-        const doc = this.definition.docs?.getPreferredLocale(locale);
-        return doc?.markup.concretize(locale, []);
+    getDocs(locales: Locales): Markup | undefined {
+        const doc = this.definition.docs?.getPreferredLocale(locales);
+        return doc?.markup.concretize(locales, []);
     }
 
-    getName(locale: Locale, symbolic: boolean) {
-        return this.definition.names.getPreferredNameString([locale], symbolic);
+    getName(locales: Locales, symbolic: boolean) {
+        return locales.getName(this.definition.names, symbolic);
     }
 
     getRepresentation() {
@@ -161,23 +155,25 @@ export default class StructureConcept extends Concept {
         );
     }
 
-    getCharacter(locale: Locale): Character | undefined {
-        const name = this.definition.names.getNonSymbolicName();
-        if (name === undefined) return undefined;
-        for (const [key, text] of Object.entries(locale.output))
-            if (
-                'names' in text &&
-                ((typeof text.names === 'string' && text.names === name) ||
-                    text.names.includes(name))
-            )
-                return key as Character;
-        for (const [key, text] of Object.entries(locale.basis))
-            if (
-                'name' in text &&
-                ((typeof text.name === 'string' && text.name === name) ||
-                    text.name.includes(name))
-            )
-                return key as Character;
+    getCharacter(locales: Locales): Character | undefined {
+        for (const locale of locales.getLocales()) {
+            const name = this.definition.names.getNonSymbolicName();
+            if (name === undefined) return undefined;
+            for (const [key, text] of Object.entries(locale.output))
+                if (
+                    'names' in text &&
+                    ((typeof text.names === 'string' && text.names === name) ||
+                        text.names.includes(name))
+                )
+                    return key as Character;
+            for (const [key, text] of Object.entries(locale.basis))
+                if (
+                    'name' in text &&
+                    ((typeof text.name === 'string' && text.name === name) ||
+                        text.name.includes(name))
+                )
+                    return key as Character;
+        }
         return undefined;
     }
 
@@ -187,7 +183,7 @@ export default class StructureConcept extends Concept {
     representsType(type: Type) {
         return (
             (type instanceof StructureType &&
-                this.definition === type.structure) ||
+                this.definition === type.definition) ||
             (type instanceof NameType &&
                 type.definition &&
                 this.definition == type.definition) ||

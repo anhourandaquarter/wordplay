@@ -1,12 +1,16 @@
 import type { BasisTypeName } from '../basis/BasisConstants';
-import type Locale from '@locale/Locale';
 import Type from './Type';
 import Glyphs from '../lore/Glyphs';
 import { PLACEHOLDER_SYMBOL } from '../parser/Symbols';
+import type Locales from '../locale/Locales';
 
 export default class AnyType extends Type {
     constructor() {
         super();
+    }
+
+    getDescriptor() {
+        return 'AnyType';
     }
 
     getGrammar() {
@@ -25,8 +29,8 @@ export default class AnyType extends Type {
         return;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.AnyType;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.AnyType);
     }
 
     toWordplay() {

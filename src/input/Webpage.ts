@@ -20,6 +20,7 @@ import UnionType from '../nodes/UnionType';
 import NoneType from '../nodes/NoneType';
 import MessageException from '../values/MessageException';
 import type ExceptionValue from '../values/ExceptionValue';
+import type Locales from '../locale/Locales';
 
 /**
  * Webpage stream values can be one of three things:
@@ -285,8 +286,10 @@ export default class Webpage extends StreamValue<
                         position += chunk.length;
                     }
 
-                    // Decode into a UTF-8 string and set it as the response.
-                    response = new TextDecoder('utf-8').decode(chunksAll);
+                    // Decode into a UTF-8 string, then parse it as a JSON string, then set it as the response.
+                    response = JSON.parse(
+                        new TextDecoder('utf-8').decode(chunksAll)
+                    );
                 }
             }
         }
@@ -315,7 +318,7 @@ export default class Webpage extends StreamValue<
     }
 }
 
-export function createWebpageDefinition(locales: Locale[]) {
+export function createWebpageDefinition(locales: Locales) {
     const url = Bind.make(
         getDocLocales(locales, (locale) => locale.input.Webpage.url.doc),
         getNameLocales(locales, (locale) => locale.input.Webpage.url.names),

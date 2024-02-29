@@ -1,5 +1,7 @@
 <script lang="ts">
-    export let label: string;
+    import { locales } from '@db/Database';
+
+    export let label: string | undefined = undefined;
     export let large = false;
 </script>
 
@@ -9,7 +11,7 @@
     aria-live="assertive"
     aria-atomic="true"
     aria-relevant="all"
-    aria-label={label}
+    aria-label={label ?? $locales.get((l) => l.ui.widget.loading.message)}
 />
 
 <style>

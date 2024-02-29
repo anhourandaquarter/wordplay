@@ -1,5 +1,4 @@
 import type Conflict from '@conflicts/Conflict';
-import type Locale from '@locale/Locale';
 import Purpose from '../concepts/Purpose';
 import Glyphs from '../lore/Glyphs';
 import { node, type Grammar, type Replacement, any, none, list } from './Node';
@@ -19,6 +18,8 @@ import Node from './Node';
 import type { FontWeight } from '../basis/Fonts';
 import Mention from './Mention';
 import Branch from './Branch';
+import type Locales from '../locale/Locales';
+import { withVariationSelector } from '../unicode/emoji';
 
 export type Format = 'italic' | 'underline' | 'light' | 'bold' | 'extra';
 
@@ -30,7 +31,7 @@ export default class Words extends Content {
     constructor(
         open: Token | undefined,
         words: Segment[],
-        close: Token | undefined
+        close: Token | undefined,
     ) {
         super();
 
@@ -43,6 +44,10 @@ export default class Words extends Content {
         return new Words(undefined, [new Token('…', Sym.Words)], undefined);
     }
 
+    getDescriptor() {
+        return 'Words';
+    }
+
     getGrammar(): Grammar {
         return [
             {
@@ -53,7 +58,7 @@ export default class Words extends Content {
                     node(Sym.Light),
                     node(Sym.Bold),
                     node(Sym.Extra),
-                    none('close')
+                    none('close'),
                 ),
             },
             {
@@ -66,7 +71,7 @@ export default class Words extends Content {
                     node(Example),
                     node(Sym.Words),
                     node(Mention),
-                    node(Branch)
+                    node(Branch),
                 ),
             },
             {
@@ -77,7 +82,7 @@ export default class Words extends Content {
                     node(Sym.Light),
                     node(Sym.Bold),
                     node(Sym.Extra),
-                    none('open')
+                    none('open'),
                 ),
             },
         ];
@@ -91,7 +96,7 @@ export default class Words extends Content {
         return new Words(
             this.replaceChild('open', this.open, replace),
             this.replaceChild('segments', this.getNodeSegments(), replace),
-            this.replaceChild('close', this.close, replace)
+            this.replaceChild('close', this.close, replace),
         ) as this;
     }
 
@@ -103,22 +108,34 @@ export default class Words extends Content {
         return Purpose.Document;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Words;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Words);
     }
 
     getFormat(): Format | undefined {
         return this.open === undefined
             ? undefined
             : this.open.isSymbol(Sym.Italic)
-            ? 'italic'
-            : this.open.isSymbol(Sym.Underline)
-            ? 'underline'
-            : this.open.isSymbol(Sym.Light)
-            ? 'light'
-            : this.open.isSymbol(Sym.Bold)
-            ? 'bold'
-            : 'extra';
+              ? 'italic'
+              : this.open.isSymbol(Sym.Underline)
+                ? 'underline'
+                : this.open.isSymbol(Sym.Light)
+                  ? 'light'
+                  : this.open.isSymbol(Sym.Bold)
+                    ? 'bold'
+                    : 'extra';
+    }
+
+    /** Gets this format and all of the nested formats of segments that wrap the entire Word. */
+    getFormats(): Format[] {
+        const format = this.getFormat();
+        if (format === undefined) return [];
+        else if (this.segments.length === 1) {
+            return this.segments[0] instanceof Token ||
+                !(this.segments[0] instanceof Words)
+                ? [format]
+                : [format, ...this.segments[0].getFormats()];
+        } else return [format];
     }
 
     getWeight(): FontWeight | undefined {
@@ -126,16 +143,16 @@ export default class Words extends Content {
             ? this.open.isSymbol(Sym.Light)
                 ? 300
                 : this.open.isSymbol(Sym.Bold)
-                ? 700
-                : this.open.isSymbol(Sym.Extra)
-                ? 900
-                : 400
+                  ? 700
+                  : this.open.isSymbol(Sym.Extra)
+                    ? 900
+                    : 400
             : undefined;
     }
 
     containsText(text: string): boolean {
         return this.segments.some(
-            (segment) => segment instanceof Words && segment.containsText(text)
+            (segment) => segment instanceof Words && segment.containsText(text),
         );
     }
 
@@ -144,9 +161,9 @@ export default class Words extends Content {
     }
 
     concretize(
-        locale: Locale,
+        locales: Locales,
         inputs: TemplateInput[],
-        replacements: [Node, Node][]
+        replacements: [Node, Node][],
     ): Words | undefined {
         const concrete = this.segments.map((content) => {
             if (content instanceof ValueRef || content instanceof NodeRef)
@@ -154,13 +171,15 @@ export default class Words extends Content {
             // Replace all repeated special characters with single special characters.
             else if (content instanceof Token) {
                 const replacement = content.withText(
-                    unescapeMarkupSymbols(content.getText())
+                    withVariationSelector(
+                        unescapeMarkupSymbols(content.getText()),
+                    ),
                 );
                 if (replacement.getText() !== content.getText()) {
                     replacements.push([content, replacement]);
                     return replacement;
                 } else return content;
-            } else return content.concretize(locale, inputs, replacements);
+            } else return content.concretize(locales, inputs, replacements);
         });
         return concrete.some((s) => s === undefined)
             ? undefined
@@ -176,7 +195,7 @@ export default class Words extends Content {
 
     toText(): string {
         return unescaped(
-            this.segments.map((segment) => segment.toText()).join('')
+            this.segments.map((segment) => segment.toText()).join(''),
         );
     }
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
     import Dialog from '@components/widgets/Dialog.svelte';
-    import { locale } from '../../db/Database';
+    import { locales } from '../../db/Database';
     import type Project from '../../models/Project';
     import { getUser } from './Contexts';
     import {
@@ -11,27 +11,26 @@
     } from '../../models/Moderation';
     import MarkupHtmlView from '../concepts/MarkupHTMLView.svelte';
 
-    export let show: boolean;
     export let project: Project;
 
     const user = getUser();
 
     /** See if this is a public project being viewed by someone who isn't a creator or collaborator */
     $: audience = isAudience($user, project);
-    $: warnings = getWarnings(project.flags, $locale);
-    $: blocks = getBlocks(project.flags, $locale);
-    $: unmoderated = getUnmoderated(project.flags, $locale);
+    $: warnings = getWarnings(project.getFlags(), $locales.getLocale());
+    $: blocks = getBlocks(project.getFlags(), $locales.getLocale());
+    $: unmoderated = getUnmoderated(project.getFlags(), $locales.getLocale());
 </script>
 
 <!-- If this is an audience member and one of the flags are active -->
-{#if show && audience && warnings.length + blocks.length + unmoderated.length > 0}
+{#if audience && warnings.length + blocks.length + unmoderated.length > 0}
     <Dialog
-        bind:show
+        show
         description={blocks.length > 0
-            ? $locale.moderation.blocked
+            ? $locales.getLocale().moderation.blocked
             : warnings.length > 0
-            ? $locale.moderation.warning
-            : $locale.moderation.unmoderated}
+            ? $locales.getLocale().moderation.warning
+            : $locales.getLocale().moderation.unmoderated}
         closeable={blocks.length === 0}
     >
         <ul>
@@ -41,6 +40,3 @@
         </ul>
     </Dialog>
 {/if}
-
-<style>
-</style>

@@ -4,7 +4,7 @@ import type { Edit } from './Commands';
 import type Purpose from '@concepts/Purpose';
 import type ConceptIndex from '@concepts/ConceptIndex';
 import Literal from '@nodes/Literal';
-import type Locale from '../../../locale/Locale';
+import type Locales from '@locale/Locales';
 
 export type MenuSelection = [number, number | undefined];
 export type MenuOrganization = (Revision | RevisionSet)[];
@@ -22,6 +22,7 @@ const PurposeRelevance: Record<Purpose, number> = {
     bind: 7,
     type: 8,
     document: 9,
+    source: 10,
 };
 
 /** An immutable container for menu state. */
@@ -76,8 +77,9 @@ export default class Menu {
             // RevisionSets are organized alphabetically by locale.
             const priority = this.revisions.filter(
                 (revision) =>
-                    revision.isCompletion() ||
-                    revision.getNewNode([]) instanceof Literal
+                    revision.isCompletion(this.concepts.locales) ||
+                    revision.getNewNode(this.concepts.locales) instanceof
+                        Literal
             );
             const removals = this.revisions.filter((revision) =>
                 revision.isRemoval()
@@ -88,12 +90,9 @@ export default class Menu {
             );
             const kinds: Map<Purpose, Revision[]> = new Map();
             for (const other of others) {
-                const node = other.getNewNode([]);
-                const purpose =
-                    node === undefined
-                        ? undefined
-                        : this.concepts.getRelevantConcept(node)?.getPurpose();
-                if (purpose) {
+                const node = other.getNewNode(this.concepts.locales);
+                if (node) {
+                    const purpose = node.getPurpose();
                     const revisions = kinds.get(purpose);
                     if (revisions) kinds.set(purpose, [...revisions, other]);
                     else kinds.set(purpose, [other]);
@@ -276,7 +275,7 @@ export default class Menu {
             : this;
     }
 
-    doEdit(locales: Locale[], revision: Revision | RevisionSet | undefined) {
+    doEdit(locales: Locales, revision: Revision | RevisionSet | undefined) {
         if (revision === undefined) return this.action(undefined);
         return revision
             ? this.action(

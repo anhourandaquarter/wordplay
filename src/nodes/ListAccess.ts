@@ -1,9 +1,9 @@
 import type Conflict from '@conflicts/Conflict';
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import ListType from './ListType';
 import NumberType from './NumberType';
 import type Token from './Token';
-import Type from './Type';
+import type Type from './Type';
 import type Evaluator from '@runtime/Evaluator';
 import type Value from '@values/Value';
 import ListValue from '@values/ListValue';
@@ -14,13 +14,11 @@ import Start from '@runtime/Start';
 import type Context from './Context';
 import type TypeSet from './TypeSet';
 import Unit from './Unit';
-import type Bind from './Bind';
+import Bind from './Bind';
 import UnclosedDelimiter from '@conflicts/UnclosedDelimiter';
 import ListOpenToken from './ListOpenToken';
 import ListCloseToken from './ListCloseToken';
-import NumberLiteral from './NumberLiteral';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import { NotAType } from './NotAType';
 import NodeRef from '@locale/NodeRef';
 import Glyphs from '../lore/Glyphs';
@@ -31,6 +29,12 @@ import IncompatibleInput from '../conflicts/IncompatibleInput';
 import concretize from '../locale/concretize';
 import Sym from './Sym';
 import ExpressionPlaceholder from './ExpressionPlaceholder';
+import type Locales from '../locale/Locales';
+import AnyType from './AnyType';
+import getGuards from './getGuards';
+import Reference from './Reference';
+import PropertyReference from './PropertyReference';
+import UnionType from './UnionType';
 
 export default class ListAccess extends Expression {
     readonly list: Expression;
@@ -42,7 +46,7 @@ export default class ListAccess extends Expression {
         list: Expression,
         open: Token,
         index: Expression,
-        close?: Token
+        close?: Token,
     ) {
         super();
 
@@ -59,7 +63,7 @@ export default class ListAccess extends Expression {
             list,
             new ListOpenToken(),
             index,
-            new ListCloseToken()
+            new ListCloseToken(),
         );
     }
 
@@ -67,9 +71,13 @@ export default class ListAccess extends Expression {
         return [
             ListAccess.make(
                 ExpressionPlaceholder.make(ListType.make()),
-                ExpressionPlaceholder.make(NumberType.make())
+                ExpressionPlaceholder.make(NumberType.make()),
             ),
         ];
+    }
+
+    getDescriptor() {
+        return 'ListAccess';
     }
 
     getGrammar(): Grammar {
@@ -77,7 +85,7 @@ export default class ListAccess extends Expression {
             {
                 name: 'list',
                 kind: node(Expression),
-                label: (translation: Locale) => translation.term.list,
+                label: (locales: Locales) => locales.get((l) => l.term.list),
                 // Must be a list
                 getType: () => ListType.make(),
             },
@@ -85,7 +93,7 @@ export default class ListAccess extends Expression {
             {
                 name: 'index',
                 kind: node(Expression),
-                label: (translation: Locale) => translation.term.index,
+                label: (locales: Locales) => locales.get((l) => l.term.index),
                 // Must be a number
                 getType: () => NumberType.make(),
             },
@@ -98,12 +106,12 @@ export default class ListAccess extends Expression {
             this.replaceChild('list', this.list, replace),
             this.replaceChild('open', this.open, replace),
             this.replaceChild('index', this.index, replace),
-            this.replaceChild('close', this.close, replace)
+            this.replaceChild('close', this.close, replace),
         ) as this;
     }
 
     getPurpose(): Purpose {
-        return Purpose.Value;
+        return Purpose.Evaluate;
     }
 
     getAffiliatedType(): BasisTypeName | undefined {
@@ -115,13 +123,13 @@ export default class ListAccess extends Expression {
 
         if (this.close === undefined)
             conflicts.push(
-                new UnclosedDelimiter(this, this.open, new ListCloseToken())
+                new UnclosedDelimiter(this, this.open, new ListCloseToken()),
             );
 
         const listType = this.list.getType(context);
         if (!(listType instanceof ListType))
             conflicts.push(
-                new IncompatibleInput(this.list, listType, ListType.make())
+                new IncompatibleInput(this.list, listType, ListType.make()),
             );
 
         const indexType = this.index.getType(context);
@@ -131,25 +139,77 @@ export default class ListAccess extends Expression {
             (indexType.unit instanceof Unit && !indexType.unit.isUnitless())
         )
             conflicts.push(
-                new IncompatibleInput(this.index, indexType, NumberType.make())
+                new IncompatibleInput(this.index, indexType, NumberType.make()),
             );
 
         return conflicts;
     }
 
     computeType(context: Context): Type {
+        // Non-number index? Give a more precise unknown type.
+        const indexType = this.index.getType(context);
+        if (!(indexType instanceof NumberType))
+            return new NotAType(this, indexType, NumberType.make());
+
         // The type is the list's value type, or unknown otherwise.
         const listType = this.list.getType(context);
-        if (listType instanceof ListType && listType.type instanceof Type) {
-            if (
-                listType.length !== undefined &&
-                this.index instanceof NumberLiteral &&
-                this.index.getValue().num.greaterThanOrEqualTo(1) &&
-                this.index.getValue().num.lessThanOrEqualTo(listType.length)
-            )
-                return listType.type;
-            else return listType.type;
-        } else return new NotAType(this, listType, ListType.make());
+        if (listType instanceof ListType) {
+            // No type specified? It could be anything.
+            if (listType.type === undefined) return new AnyType();
+
+            // Get the type specified.
+            const itemType = listType.type;
+
+            // See if there are any type guards on list accesses with equivalent expressions.
+            // Find any type guards that are also list accesses that have an equivalent index expression.
+            const guards = getGuards(this, context, (node) => {
+                if (
+                    // Node is a list access
+                    node instanceof ListAccess &&
+                    // And it's index expression is equal this access's index expression
+                    node.index.isEqualTo(this.index)
+                ) {
+                    // If the parent of the list access is an expression and it guards types, then return it.
+                    const parent = context.source.root.getParent(node);
+                    return parent instanceof Expression && parent.guardsTypes();
+                } else return false;
+            });
+
+            // Grab the furthest ancestor and evaluate possible types from there.
+            const root = guards[0];
+            if (root !== undefined) {
+                const reference = this.getReference();
+                // Get the list this refers to.
+                const bind = reference ? reference.resolve(context) : undefined;
+                if (bind instanceof Bind && reference) {
+                    // Get the possible types of the item type.
+                    const possibleTypes = itemType.getTypeSet(context);
+                    root.evaluateTypeGuards(possibleTypes, {
+                        bind,
+                        key: this.index.toWordplay(),
+                        original: possibleTypes,
+                        context,
+                    });
+                    // Get the narrowed type of this index. Use the expression as the key.
+                    return (
+                        context.getReferenceType(
+                            reference,
+                            this.index.toWordplay(),
+                        ) ?? itemType
+                    );
+                }
+            }
+            return itemType;
+        }
+        // Not a list? Give a more precise unknown type.
+        else return new NotAType(this, listType, ListType.make());
+    }
+
+    getReference(): Reference | PropertyReference | undefined {
+        return this.list instanceof Reference ||
+            this.list instanceof PropertyReference
+            ? this.list
+            : undefined;
     }
 
     getDependencies(): Expression[] {
@@ -185,40 +245,55 @@ export default class ListAccess extends Expression {
         return list.get(index);
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
+        // We're evaluating the bind this list refers to, cache the possible values of this index at this point.
+        if (
+            (this.list instanceof Reference ||
+                this.list instanceof PropertyReference) &&
+            this.isGuardMatch(guard)
+        )
+            guard.context.setReferenceType(
+                this.list,
+                this.index.toWordplay(),
+                UnionType.getPossibleUnion(guard.context, current.list()),
+            );
+
+        // Pass the guards down through the list and index.
         if (this.list instanceof Expression)
-            this.list.evaluateTypeSet(bind, original, current, context);
+            this.list.evaluateTypeGuards(current, guard);
         if (this.index instanceof Expression)
-            this.index.evaluateTypeSet(bind, original, current, context);
+            this.index.evaluateTypeGuards(current, guard);
         return current;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.ListAccess;
+    isGuardMatch(guard: GuardContext): boolean {
+        return (
+            this.getReference()?.resolve(guard.context) === guard.bind &&
+            this.index.toWordplay() === guard.key
+        );
     }
 
-    getStartExplanations(locale: Locale, context: Context) {
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.ListAccess);
+    }
+
+    getStartExplanations(locales: Locales, context: Context) {
         return concretize(
-            locale,
-            locale.node.ListAccess.start,
-            new NodeRef(this.list, locale, context)
+            locales,
+            locales.get((l) => l.node.ListAccess.start),
+            new NodeRef(this.list, locales, context),
         );
     }
 
     getFinishExplanations(
-        locale: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         return concretize(
-            locale,
-            locale.node.ListAccess.finish,
-            this.getValueIfDefined(locale, context, evaluator)
+            locales,
+            locales.get((l) => l.node.ListAccess.finish),
+            this.getValueIfDefined(locales, context, evaluator),
         );
     }
 

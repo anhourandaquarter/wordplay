@@ -3,7 +3,11 @@ import BooleanType from '@nodes/BooleanType';
 import StructureDefinition from '@nodes/StructureDefinition';
 import BoolValue from '@values/BoolValue';
 import TextValue from '@values/TextValue';
-import { createBasisConversion, createBasisFunction } from './Basis';
+import {
+    createBasisConversion,
+    createBasisFunction,
+    createEqualsFunction,
+} from './Basis';
 import type Value from '@values/Value';
 import { getDocLocales } from '@locale/getDocLocales';
 import { getNameLocales } from '@locale/getNameLocales';
@@ -12,9 +16,9 @@ import type Expression from '../nodes/Expression';
 import type Locale from '../locale/Locale';
 import type { FunctionText, NameAndDoc } from '../locale/Locale';
 import type Type from '../nodes/Type';
-import AnyType from '../nodes/AnyType';
+import type Locales from '../locale/Locales';
 
-export default function bootstrapBool(locales: Locale[]) {
+export default function bootstrapBool(locales: Locales) {
     function createBooleanFunction(
         text: (locale: Locale) => FunctionText<NameAndDoc[]>,
         inputs: Type[],
@@ -87,17 +91,15 @@ export default function bootstrapBool(locales: Locale[]) {
                         return left.not(requestor);
                     }
                 ),
-                createBooleanFunction(
+                createEqualsFunction(
+                    locales,
                     (locale) => locale.basis.Boolean.function.equals,
-                    [new AnyType()],
-                    (requestor, left, right) =>
-                        new BoolValue(requestor, left.isEqualTo(right))
+                    true
                 ),
-                createBooleanFunction(
+                createEqualsFunction(
+                    locales,
                     (locale) => locale.basis.Boolean.function.notequal,
-                    [new AnyType()],
-                    (requestor, left, right) =>
-                        new BoolValue(requestor, !left.isEqualTo(right))
+                    false
                 ),
                 createBasisConversion(
                     getDocLocales(

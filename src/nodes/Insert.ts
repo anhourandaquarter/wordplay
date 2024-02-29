@@ -1,5 +1,5 @@
 import type Node from './Node';
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import Row, { getRowFromValues } from './Row';
 import type Conflict from '@conflicts/Conflict';
 import TableType from './TableType';
@@ -18,7 +18,6 @@ import Halt from '@runtime/Halt';
 import ExceptionValue from '@values/ExceptionValue';
 import TypeException from '@values/TypeException';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import UnimplementedException from '@values/UnimplementedException';
 import NodeRef from '@locale/NodeRef';
 import Glyphs from '../lore/Glyphs';
@@ -34,6 +33,7 @@ import Token from './Token';
 import { INSERT_SYMBOL, TABLE_CLOSE_SYMBOL } from '../parser/Symbols';
 import Sym from './Sym';
 import ExpressionPlaceholder from './ExpressionPlaceholder';
+import type Locales from '../locale/Locales';
 
 export default class Insert extends Expression {
     readonly table: Expression;
@@ -54,9 +54,13 @@ export default class Insert extends Expression {
             new Row(
                 new Token(INSERT_SYMBOL, Sym.Insert),
                 cells,
-                new Token(TABLE_CLOSE_SYMBOL, Sym.TableClose)
-            )
+                new Token(TABLE_CLOSE_SYMBOL, Sym.TableClose),
+            ),
         );
+    }
+
+    getDescriptor() {
+        return 'Insert';
     }
 
     getGrammar(): Grammar {
@@ -64,12 +68,12 @@ export default class Insert extends Expression {
             {
                 name: 'table',
                 kind: node(Expression),
-                label: (translation: Locale) => translation.term.table,
+                label: (locales: Locales) => locales.get((l) => l.term.table),
             },
             {
                 name: 'row',
                 kind: node(Row),
-                label: (translation: Locale) => translation.term.row,
+                label: (locales: Locales) => locales.get((l) => l.term.row),
                 space: true,
             },
         ];
@@ -79,7 +83,7 @@ export default class Insert extends Expression {
         type: Type | undefined,
         anchor: Node,
         selected: boolean,
-        context: Context
+        context: Context,
     ) {
         const anchorType =
             anchor instanceof Expression ? anchor.getType(context) : undefined;
@@ -90,8 +94,8 @@ export default class Insert extends Expression {
                   Insert.make(
                       anchor,
                       tableType.columns.map((c) =>
-                          ExpressionPlaceholder.make(c.getType(context))
-                      )
+                          ExpressionPlaceholder.make(c.getType(context)),
+                      ),
                   ),
               ]
             : [];
@@ -104,7 +108,7 @@ export default class Insert extends Expression {
     clone(replace?: Replacement) {
         return new Insert(
             this.replaceChild('table', this.table, replace),
-            this.replaceChild('row', this.row, replace)
+            this.replaceChild('row', this.row, replace),
         ) as this;
     }
 
@@ -146,8 +150,8 @@ export default class Insert extends Expression {
                                     tableType,
                                     cell,
                                     expected,
-                                    given
-                                )
+                                    given,
+                                ),
                             );
                     }
                 }
@@ -156,7 +160,7 @@ export default class Insert extends Expression {
             for (const column of tableType.columns) {
                 if (!matchedColumns.includes(column) && !column.hasDefault())
                     conflicts.push(
-                        new MissingCell(this.row, tableType, column)
+                        new MissingCell(this.row, tableType, column),
                     );
             }
 
@@ -167,7 +171,7 @@ export default class Insert extends Expression {
                 const cell = cells.shift();
                 if (cell === undefined)
                     conflicts.push(
-                        new MissingCell(this.row, tableType, column)
+                        new MissingCell(this.row, tableType, column),
                     );
                 else {
                     const expected = column.getType(context);
@@ -178,8 +182,8 @@ export default class Insert extends Expression {
                                 tableType,
                                 cell,
                                 expected,
-                                given
-                            )
+                                given,
+                            ),
                         );
                 }
             }
@@ -221,50 +225,50 @@ export default class Insert extends Expression {
                                   this,
                                   evaluator,
                                   TableType.make([]),
-                                  evaluator.popValue(this)
+                                  evaluator.popValue(this),
                               ),
-                          this
+                          this,
                       ),
                   ]
                 : this.row.allExpressions()
-                ? // It's all expressions, compile all of them in order.
-                  this.row.cells.reduce(
-                      (steps: Step[], cell) => [
-                          ...steps,
-                          ...cell.compile(evaluator, context),
-                      ],
-                      []
-                  )
-                : // Otherwise, loop through the required columns, finding the corresponding bind, and compiling it's expression, or the default if not found.
-                  tableType.columns.reduce((steps: Step[], column) => {
-                      const matchingCell: Expression | undefined =
-                          this.row.cells.find(
-                              (cell) =>
-                                  column instanceof Bind &&
-                                  cell instanceof Bind &&
-                                  column.sharesName(cell)
-                          ) as Expression | undefined;
-                      if (
-                          matchingCell === undefined ||
-                          !(matchingCell instanceof Bind) ||
-                          matchingCell.value === undefined
-                      )
-                          return [
-                              ...steps,
-                              new Halt(
-                                  (evaluator) =>
-                                      new UnimplementedException(
-                                          evaluator,
-                                          this
-                                      ),
-                                  this
-                              ),
-                          ];
-                      return [
-                          ...steps,
-                          ...matchingCell.value.compile(evaluator, context),
-                      ];
-                  }, [])),
+                  ? // It's all expressions, compile all of them in order.
+                    this.row.cells.reduce(
+                        (steps: Step[], cell) => [
+                            ...steps,
+                            ...cell.compile(evaluator, context),
+                        ],
+                        [],
+                    )
+                  : // Otherwise, loop through the required columns, finding the corresponding bind, and compiling it's expression, or the default if not found.
+                    tableType.columns.reduce((steps: Step[], column) => {
+                        const matchingCell: Expression | undefined =
+                            this.row.cells.find(
+                                (cell) =>
+                                    column instanceof Bind &&
+                                    cell instanceof Bind &&
+                                    column.sharesName(cell),
+                            ) as Expression | undefined;
+                        if (
+                            matchingCell === undefined ||
+                            !(matchingCell instanceof Bind) ||
+                            matchingCell.value === undefined
+                        )
+                            return [
+                                ...steps,
+                                new Halt(
+                                    (evaluator) =>
+                                        new UnimplementedException(
+                                            evaluator,
+                                            this,
+                                        ),
+                                    this,
+                                ),
+                            ];
+                        return [
+                            ...steps,
+                            ...matchingCell.value.compile(evaluator, context),
+                        ];
+                    }, [])),
             new Finish(this),
         ];
     }
@@ -288,16 +292,11 @@ export default class Insert extends Expression {
         return row instanceof StructureValue ? table.insert(this, row) : row;
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
         if (this.table instanceof Expression)
-            this.table.evaluateTypeSet(bind, original, current, context);
+            this.table.evaluateTypeGuards(current, guard);
         if (this.row instanceof Expression)
-            this.row.evaluateTypeSet(bind, original, current, context);
+            this.row.evaluateTypeGuards(current, guard);
         return current;
     }
 
@@ -308,27 +307,27 @@ export default class Insert extends Expression {
         return this.row.close ?? this.row.open;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Insert;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Insert);
     }
 
-    getStartExplanations(locale: Locale, context: Context) {
+    getStartExplanations(locales: Locales, context: Context) {
         return concretize(
-            locale,
-            locale.node.Insert.start,
-            new NodeRef(this.table, locale, context)
+            locales,
+            locales.get((l) => l.node.Insert.start),
+            new NodeRef(this.table, locales, context),
         );
     }
 
     getFinishExplanations(
-        locale: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         return concretize(
-            locale,
-            locale.node.Insert.finish,
-            this.getValueIfDefined(locale, context, evaluator)
+            locales,
+            locales.get((l) => l.node.Insert.finish),
+            this.getValueIfDefined(locales, context, evaluator),
         );
     }
 

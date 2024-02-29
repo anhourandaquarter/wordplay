@@ -11,17 +11,23 @@ import {
     deleteDoc,
 } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
-import Gallery from '../models/Gallery';
+import Gallery, {
+    deserializeGallery,
+    type SerializedGallery,
+} from '../models/Gallery';
 import type { Database } from './Database';
 import { firestore } from './firebase';
-import type { SerializedGallery } from '../models/Gallery';
 import { FirebaseError } from 'firebase/app';
 import { get, writable, type Writable } from 'svelte/store';
-import type Locale from '../locale/Locale';
 import type Project from '../models/Project';
 import { toLocaleString } from '../locale/Locale';
-import { ExampleGalleries } from '../examples/examples';
+import { getExampleGalleries } from '../examples/examples';
+import type Locales from '../locale/Locales';
 
+/** The name of the galleries collection in Firebase */
+export const GalleriesCollection = 'galleries';
+
+/** The in-memory representation of a Gallery, for type safe manipulation and analysis. */
 export default class GalleryDatabase {
     /** The main database that manages this gallery database */
     readonly database: Database;
@@ -39,6 +45,9 @@ export default class GalleryDatabase {
     readonly status: Writable<'loading' | 'noaccess' | 'loggedout' | 'loaded'> =
         writable('loading');
 
+    /** Example hard coded galleries */
+    readonly exampleGalleries: Writable<Gallery[]> = writable([]);
+
     /** Public galleries that have been loaded individually. */
     readonly publicGalleries: Map<string, Writable<Gallery>> = new Map();
 
@@ -49,9 +58,20 @@ export default class GalleryDatabase {
         this.database = database;
 
         // Add the example galleries to the database.
-        for (const gallery of ExampleGalleries) {
+        const examples = getExampleGalleries(database.Locales.getLocaleSet());
+        for (const gallery of examples)
             this.publicGalleries.set(gallery.getID(), writable(gallery));
-        }
+        this.exampleGalleries.set(examples);
+
+        // When the list of locales change, recreate the galleries with the new locales.
+        database.Locales.locales.subscribe((locales) => {
+            // Udpate each gallery store with the new localized gallery.
+            const localizedExamples = getExampleGalleries(locales);
+            for (const gallery of localizedExamples)
+                this.publicGalleries.get(gallery.getID())?.set(gallery);
+            // Update the list of example galleries.
+            this.exampleGalleries.set(localizedExamples);
+        });
 
         this.listen();
     }
@@ -76,7 +96,7 @@ export default class GalleryDatabase {
         this.galleriesQueryUnsubscribe = onSnapshot(
             // Listen for any changes to galleries for which this user is a curator or creator.
             query(
-                collection(firestore, 'galleries'),
+                collection(firestore, GalleriesCollection),
                 or(
                     where('curators', 'array-contains', user.uid),
                     where('creators', 'array-contains', user.uid)
@@ -92,11 +112,8 @@ export default class GalleryDatabase {
 
                 // Go through all of the galleries and update them.
                 snapshot.forEach((galleryDoc) => {
-                    // Get the gallery data from the Firestore document
-                    const data = galleryDoc.data() as SerializedGallery;
-
                     // Wrap it in a gallery.
-                    const gallery = new Gallery(data);
+                    const gallery = deserializeGallery(galleryDoc.data());
 
                     // Get the store for the gallery, or make one if we don't have one yet, and update the map.
                     // Also check the public galleries, in case we loaded it there first, so we reuse the same store.
@@ -128,11 +145,10 @@ export default class GalleryDatabase {
                 }
             }
         );
-        3;
     }
 
     /** Create a new gallery with this user as its curator. */
-    async create(locale: Locale): Promise<string | undefined> {
+    async create(locales: Locales): Promise<string | undefined> {
         const user = this.database.getUser();
         if (user === null) return undefined;
 
@@ -140,10 +156,13 @@ export default class GalleryDatabase {
 
         const id = uuidv4();
         const name: Record<string, string> = {};
-        name[toLocaleString(locale)] = locale.ui.gallery.untitled;
+        name[toLocaleString(locales.getLocales()[0])] = locales.get(
+            (l) => l.ui.gallery.untitled
+        );
         const description: Record<string, string> = {};
-        description[toLocaleString(locale)] = '';
+        description[toLocaleString(locales.getLocales()[0])] = '';
         const gallery: SerializedGallery = {
+            v: 1,
             id,
             path: null,
             name,
@@ -177,11 +196,11 @@ export default class GalleryDatabase {
         // Didn't find it locally? See if we get read it from the database.
         if (firestore) {
             try {
-                const galDoc = await getDoc(doc(firestore, 'galleries', id));
+                const galDoc = await getDoc(
+                    doc(firestore, GalleriesCollection, id)
+                );
                 if (galDoc.exists()) {
-                    const gallery = new Gallery(
-                        galDoc.data() as SerializedGallery
-                    );
+                    const gallery = deserializeGallery(galDoc.data());
                     const store =
                         this.publicGalleries.get(id) ??
                         writable<Gallery>(gallery);
@@ -208,7 +227,7 @@ export default class GalleryDatabase {
     async edit(gallery: Gallery) {
         if (firestore === undefined) return undefined;
         await setDoc(
-            doc(firestore, 'galleries', gallery.getID()),
+            doc(firestore, GalleriesCollection, gallery.getID()),
             gallery.data
         );
 
@@ -222,7 +241,7 @@ export default class GalleryDatabase {
 
     async delete(gallery: Gallery) {
         if (firestore === undefined) return undefined;
-        await deleteDoc(doc(firestore, 'galleries', gallery.getID()));
+        await deleteDoc(doc(firestore, GalleriesCollection, gallery.getID()));
 
         // The realtime query will remove it.
     }
@@ -248,17 +267,17 @@ export default class GalleryDatabase {
         const galleries = get(this.creatorGalleries);
         for (const store of galleries.values()) {
             const gallery = get(store);
-            if (gallery.hasProject(project.id))
-                this.edit(gallery.withoutProject(project.id));
+            if (gallery.hasProject(project.getID()))
+                this.edit(gallery.withoutProject(project.getID()));
         }
 
         // Add the project ID to the gallery.
-        this.edit(gallery.withProject(project.id));
+        this.edit(gallery.withProject(project.getID()));
     }
 
     // Remove the project from the gallery that it's in.
     async removeProject(project: Project) {
-        const galleryID = project.gallery;
+        const galleryID = project.getGallery();
         if (galleryID === null) return;
 
         // Find the gallery.
@@ -271,7 +290,7 @@ export default class GalleryDatabase {
         this.database.Projects.edit(project.withGallery(null), false, true);
 
         // Revise the gallery with a project ID.
-        this.edit(gallery.withoutProject(project.id));
+        this.edit(gallery.withoutProject(project.getID()));
     }
 
     // Remove the given creator from the gallery, and all of their projects.
@@ -295,7 +314,7 @@ export default class GalleryDatabase {
         const projectsToKeep: string[] = [];
         for (const projectID of gallery.getProjects()) {
             const project = await this.database.Projects.get(projectID);
-            if (project === undefined || project.owner !== uid)
+            if (project === undefined || project.getOwner() !== uid)
                 projectsToKeep.push(projectID);
             else {
                 this.database.Projects.edit(

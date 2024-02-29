@@ -3,7 +3,10 @@ import { ArrangementSetting } from './ArrangementSetting';
 import { AnimationFactorSetting } from './AnimationFactorSetting';
 import { LocalesSetting } from './LocalesSetting';
 import { WritingLayoutSetting } from './WritingLayoutSetting';
-import { TutorialProgressSetting } from './TutorialProgressSetting';
+import {
+    TutorialProgressSetting,
+    type TutorialProgress,
+} from './TutorialProgressSetting';
 import { CameraSetting } from './CameraSetting';
 import { MicSetting } from './MicSetting';
 import { derived } from 'svelte/store';
@@ -15,10 +18,33 @@ import type { WritingLayout } from '../locale/Scripts';
 import type Progress from '../tutorial/Progress';
 import Layout from '../components/project/Layout';
 import { BlocksSetting } from './BlocksSetting';
+import { LocalizedSetting } from './LocalizedSetting';
 import { DarkSetting } from './DarkSetting';
 import { doc, getDoc } from 'firebase/firestore';
 import { firestore } from './firebase';
-import type Setting from './Setting';
+import { CreatorCollection } from './CreatorDatabase';
+
+/** The schema of the record written to the creators collection. */
+export type SettingsSchemaV1 = {
+    v: 1;
+    tutorial: TutorialProgress;
+    locales: SupportedLocale[];
+    animationFactor: number;
+    writingLayout: WritingLayout;
+};
+
+export type SettingsSchema = SettingsSchemaV1;
+
+type SettingsSchemaUnknown = SettingsSchemaV1;
+
+function upgradeSettings(settings: SettingsSchemaUnknown): SettingsSchema {
+    switch (settings.v) {
+        case 1:
+            return settings;
+        default:
+            throw new Error(`Unknown settings version ${settings.v}`);
+    }
+}
 
 /** Enscapsulates settings stored in localStorage. */
 export default class SettingsDatabase {
@@ -35,13 +61,14 @@ export default class SettingsDatabase {
         camera: CameraSetting,
         mic: MicSetting,
         blocks: BlocksSetting,
+        localized: LocalizedSetting,
         dark: DarkSetting,
     };
 
     /** A derived store based on animation factor */
     readonly animationDuration = derived(
         this.settings.animationFactor.value,
-        (factor) => factor * 200
+        (factor) => factor * 200,
     );
 
     constructor(database: Database, locales: SupportedLocale[]) {
@@ -58,21 +85,21 @@ export default class SettingsDatabase {
         if (user === null) return;
 
         // Get the config from the database
-        const config = await getDoc(doc(firestore, 'users', user.uid));
+        const config = await getDoc(
+            doc(firestore, CreatorCollection, user.uid),
+        );
         if (config.exists()) {
-            const data = config.data();
+            const data = upgradeSettings(
+                config.data() as SettingsSchemaUnknown,
+            );
             // Copy each key/value pair from the database to memory and the local store.
-            for (const key in data) {
-                if (key in this.database.Settings.settings) {
-                    const value = data[key];
-                    (
-                        this.database.Settings.settings as Record<
-                            string,
-                            Setting<unknown>
-                        >
-                    )[key].set(this.database, value);
-                }
-            }
+            this.settings.animationFactor.set(
+                this.database,
+                data.animationFactor,
+            );
+            this.settings.locales.set(this.database, data.locales);
+            this.settings.tutorial.set(this.database, data.tutorial);
+            this.settings.writingLayout.set(this.database, data.writingLayout);
         }
     }
 
@@ -91,7 +118,7 @@ export default class SettingsDatabase {
         if (currentLayout !== null && currentLayout.isEqualTo(layout)) return;
 
         const newLayout = Object.fromEntries(
-            Object.entries(this.settings.layouts.get())
+            Object.entries(this.settings.layouts.get()),
         );
         newLayout[id] = layout.toObject();
         this.setLayout(newLayout);
@@ -114,7 +141,7 @@ export default class SettingsDatabase {
     }
 
     setTutorialProgress(progress: Progress) {
-        this.settings.tutorial.set(this.database, progress.seralize());
+        this.settings.tutorial.set(this.database, progress.serialize());
     }
 
     getCamera() {
@@ -145,16 +172,27 @@ export default class SettingsDatabase {
         this.settings.blocks.set(this.database, on);
     }
 
+    getBlocks() {
+        return this.settings.blocks.get();
+    }
+
+    getLocalized() {
+        return this.settings.localized.get();
+    }
+
+    setLocalized(on: boolean) {
+        this.settings.localized.set(this.database, on);
+    }
+
     /** To serialize to a database */
-    toObject() {
+    toObject(): SettingsSchema {
         // Get the config, but delete all device-specific configs.
-        const settings: Record<string, unknown> = {};
-        for (const [key, setting] of Object.entries(this.settings)) {
-            if (!setting.device) {
-                const value = setting.get();
-                if (value !== null) settings[key] = value;
-            }
-        }
-        return settings;
+        return {
+            v: 1,
+            animationFactor: this.settings.animationFactor.get(),
+            locales: this.settings.locales.get(),
+            tutorial: this.settings.tutorial.get(),
+            writingLayout: this.settings.writingLayout.get(),
+        };
     }
 }

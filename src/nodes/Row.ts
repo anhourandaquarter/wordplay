@@ -2,7 +2,6 @@ import type { Grammar, Replacement } from './Node';
 import Token from './Token';
 import Bind from './Bind';
 import Expression from './Expression';
-import type Locale from '@locale/Locale';
 import Glyphs from '../lore/Glyphs';
 import Purpose from '../concepts/Purpose';
 import Node, { any, list, node } from './Node';
@@ -15,6 +14,7 @@ import ExceptionValue from '@values/ExceptionValue';
 import ValueException from '../values/ValueException';
 import StructureValue from '../values/StructureValue';
 import { TABLE_CLOSE_SYMBOL, TABLE_OPEN_SYMBOL } from '../parser/Symbols';
+import type Locales from '../locale/Locales';
 
 export default class Row extends Node {
     readonly open: Token;
@@ -31,12 +31,16 @@ export default class Row extends Node {
         this.computeChildren();
     }
 
-    static make() {
+    static make(cells: Expression[] = []) {
         return new Row(
             new Token(TABLE_OPEN_SYMBOL, Sym.TableOpen),
-            [],
+            cells,
             new Token(TABLE_CLOSE_SYMBOL, Sym.TableClose)
         );
+    }
+
+    getDescriptor() {
+        return 'Row';
     }
 
     getGrammar(): Grammar {
@@ -50,7 +54,6 @@ export default class Row extends Node {
                     node(Sym.Delete),
                     node(Sym.Update)
                 ),
-                newline: true,
             },
             { name: 'cells', kind: list(true, node(Expression)), space: true },
             { name: 'close', kind: node(Sym.TableClose) },
@@ -81,8 +84,8 @@ export default class Row extends Node {
         return;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Row;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Row);
     }
 
     getGlyphs() {

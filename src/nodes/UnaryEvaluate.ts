@@ -1,12 +1,11 @@
 import type Conflict from '@conflicts/Conflict';
-import Expression from './Expression';
+import Expression, { type GuardContext } from './Expression';
 import type Type from './Type';
 import type Evaluator from '@runtime/Evaluator';
 import type Step from '@runtime/Step';
 import Finish from '@runtime/Finish';
 import Start from '@runtime/Start';
 import type Context from './Context';
-import type Bind from './Bind';
 import { NEGATE_SYMBOL, NOT_SYMBOL } from '@parser/Symbols';
 import type TypeSet from './TypeSet';
 import FunctionException from '@values/FunctionException';
@@ -16,7 +15,6 @@ import getConcreteExpectedType from './Generics';
 import type Value from '@values/Value';
 import UnknownNameType from './UnknownNameType';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import StartEvaluation from '@runtime/StartEvaluation';
 import NodeRef from '@locale/NodeRef';
 import Emotion from '../lore/Emotion';
@@ -28,6 +26,7 @@ import concretize from '../locale/concretize';
 import Reference from './Reference';
 import type Node from './Node';
 import Purpose from '../concepts/Purpose';
+import type Locales from '../locale/Locales';
 
 export default class UnaryEvaluate extends Expression {
     readonly fun: Reference;
@@ -47,6 +46,10 @@ export default class UnaryEvaluate extends Expression {
         return [];
     }
 
+    getDescriptor() {
+        return 'UnaryEvaluate';
+    }
+
     getGrammar(): Grammar {
         return [
             { name: 'fun', kind: node(Reference) },
@@ -61,7 +64,7 @@ export default class UnaryEvaluate extends Expression {
     clone(replace?: Replacement) {
         return new UnaryEvaluate(
             this.replaceChild('fun', this.fun, replace),
-            this.replaceChild('input', this.input, replace)
+            this.replaceChild('input', this.input, replace),
         ) as this;
     }
 
@@ -81,7 +84,7 @@ export default class UnaryEvaluate extends Expression {
     getFunction(context: Context) {
         const fun = this.getInputType(context).getDefinitionOfNameInScope(
             this.getOperator(),
-            context
+            context,
         );
         return fun instanceof FunctionDefinition ? fun : undefined;
     }
@@ -105,8 +108,8 @@ export default class UnaryEvaluate extends Expression {
                 new IncompatibleInput(
                     this.fun,
                     this.input.getType(context),
-                    FunctionType.make(undefined, [], new AnyType())
-                )
+                    FunctionType.make(undefined, [], new AnyType()),
+                ),
             );
 
         return conflicts;
@@ -119,7 +122,7 @@ export default class UnaryEvaluate extends Expression {
             : new UnknownNameType(
                   this,
                   this.fun.name,
-                  this.input.getType(context)
+                  this.input.getType(context),
               );
     }
 
@@ -157,7 +160,7 @@ export default class UnaryEvaluate extends Expression {
 
         // Start the function's expression.
         evaluator.startEvaluation(
-            new Evaluation(evaluator, this, fun.definition, value, new Map())
+            new Evaluation(evaluator, this, fun.definition, value, new Map()),
         );
     }
 
@@ -171,25 +174,15 @@ export default class UnaryEvaluate extends Expression {
     /**
      * Logical negations take the set complement of the current set from the original.
      * */
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
+    evaluateTypeGuards(current: TypeSet, guard: GuardContext) {
         // We only manipulate possible types for logical negation operators.
         if (this.getOperator() !== NOT_SYMBOL) return current;
 
         // Get the possible types of the operand.
-        const possible = this.input.evaluateTypeSet(
-            bind,
-            original,
-            current,
-            context
-        );
+        const possible = this.input.evaluateTypeGuards(current, guard);
 
         // Return the difference between the original types and the possible types,
-        return original.difference(possible, context);
+        return guard.original.difference(possible, guard.context);
     }
 
     getStart() {
@@ -199,27 +192,27 @@ export default class UnaryEvaluate extends Expression {
         return this.fun;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.UnaryEvaluate;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.UnaryEvaluate);
     }
 
-    getStartExplanations(locale: Locale, context: Context) {
+    getStartExplanations(locales: Locales, context: Context) {
         return concretize(
-            locale,
-            locale.node.UnaryEvaluate.start,
-            new NodeRef(this.input, locale, context)
+            locales,
+            locales.get((l) => l.node.UnaryEvaluate.start),
+            new NodeRef(this.input, locales, context),
         );
     }
 
     getFinishExplanations(
-        locale: Locale,
+        locales: Locales,
         context: Context,
-        evaluator: Evaluator
+        evaluator: Evaluator,
     ) {
         return concretize(
-            locale,
-            locale.node.UnaryEvaluate.finish,
-            this.getValueIfDefined(locale, context, evaluator)
+            locales,
+            locales.get((l) => l.node.UnaryEvaluate.finish),
+            this.getValueIfDefined(locales, context, evaluator),
         );
     }
 

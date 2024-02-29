@@ -5,18 +5,17 @@ import Token from './Token';
 import type Type from './Type';
 import Unit from './Unit';
 import { NotANumber } from '@conflicts/NotANumber';
-import type Bind from './Bind';
 import type Context from './Context';
 import type TypeSet from './TypeSet';
 import Sym from './Sym';
 import Node, { node, type Grammar, type Replacement, optional } from './Node';
-import type Locale from '@locale/Locale';
 import NodeRef from '@locale/NodeRef';
 import Literal from './Literal';
 import Glyphs from '../lore/Glyphs';
 import type { BasisTypeName } from '../basis/BasisConstants';
 import type Decimal from 'decimal.js';
 import concretize, { type TemplateInput } from '../locale/concretize';
+import type Locales from '../locale/Locales';
 
 export default class NumberLiteral extends Literal {
     readonly number: Token;
@@ -40,11 +39,11 @@ export default class NumberLiteral extends Literal {
                 number === undefined
                     ? 'NaN'
                     : typeof number === 'number'
-                    ? '' + number
-                    : number,
-                [Sym.Number, ...(type ? [type] : [])]
+                      ? '' + number
+                      : number,
+                [Sym.Number, ...(type ? [type] : [])],
             ),
-            unit === undefined ? Unit.Empty : unit
+            unit === undefined ? Unit.Empty : unit,
         );
     }
 
@@ -52,13 +51,13 @@ export default class NumberLiteral extends Literal {
         type: Type | undefined,
         _: Node,
         __: boolean,
-        context: Context
+        context: Context,
     ) {
         const possibleNumberTypes = type
             ?.getPossibleTypes(context)
             .filter(
                 (possibleType): possibleType is NumberType =>
-                    possibleType instanceof NumberType
+                    possibleType instanceof NumberType,
             );
 
         // If a type is provided, and it has a unit, suggest numbers with corresponding units.
@@ -70,8 +69,8 @@ export default class NumberLiteral extends Literal {
                           1,
                           numberType.unit instanceof Unit
                               ? numberType.unit.clone()
-                              : undefined
-                      )
+                              : undefined,
+                      ),
             );
         } else {
             return [
@@ -80,6 +79,10 @@ export default class NumberLiteral extends Literal {
                 NumberLiteral.make('∞', undefined, Sym.Infinity),
             ];
         }
+    }
+
+    getDescriptor() {
+        return 'NumberLiteral';
     }
 
     isPercent() {
@@ -96,7 +99,7 @@ export default class NumberLiteral extends Literal {
     clone(replace?: Replacement) {
         return new NumberLiteral(
             this.replaceChild('number', this.number, replace),
-            this.replaceChild('unit', this.unit, replace)
+            this.replaceChild('unit', this.unit, replace),
         ) as this;
     }
 
@@ -123,7 +126,7 @@ export default class NumberLiteral extends Literal {
                 this,
                 this.#numberCache,
                 this.unit,
-                this.#precisionCache
+                this.#precisionCache,
             );
         else {
             const value = new NumberValue(this, this.number, this.unit);
@@ -133,15 +136,7 @@ export default class NumberLiteral extends Literal {
         }
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
-        bind;
-        original;
-        context;
+    evaluateTypeGuards(current: TypeSet) {
         return current;
     }
 
@@ -152,15 +147,15 @@ export default class NumberLiteral extends Literal {
         return this.number;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.NumberLiteral;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.NumberLiteral);
     }
 
-    getStartExplanations(locale: Locale, context: Context) {
+    getStartExplanations(locales: Locales, context: Context) {
         return concretize(
-            locale,
-            locale.node.NumberLiteral.start,
-            new NodeRef(this.number, locale, context)
+            locales,
+            locales.get((l) => l.node.NumberLiteral.start),
+            new NodeRef(this.number, locales, context),
         );
     }
 
@@ -168,10 +163,10 @@ export default class NumberLiteral extends Literal {
         return Glyphs.Number;
     }
 
-    getDescriptionInputs(locale: Locale, context: Context): TemplateInput[] {
+    getDescriptionInputs(locales: Locales, context: Context): TemplateInput[] {
         return [
             this.number.getText(),
-            this.unit ? new NodeRef(this.unit, locale, context) : undefined,
+            this.unit ? new NodeRef(this.unit, locales, context) : undefined,
         ];
     }
 
@@ -187,7 +182,7 @@ export default class NumberLiteral extends Literal {
                       .plus(direction * amount)
                       .times(isPercent ? 100 : 1)
                       .toString() + (isPercent ? '%' : ''),
-                  this.unit
+                  this.unit,
               ) as this)
             : undefined;
     }

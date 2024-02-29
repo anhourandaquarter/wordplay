@@ -3,17 +3,16 @@ import Token from './Token';
 import type Type from './Type';
 import BoolValue from '@values/BoolValue';
 import { FALSE_SYMBOL, TRUE_SYMBOL } from '@parser/Symbols';
-import type Bind from './Bind';
 import type Context from './Context';
 import type TypeSet from './TypeSet';
 import Sym from './Sym';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import NodeRef from '@locale/NodeRef';
 import Literal from './Literal';
 import Glyphs from '../lore/Glyphs';
 import type { BasisTypeName } from '../basis/BasisConstants';
 import concretize from '../locale/concretize';
+import type Locales from '../locale/Locales';
 
 export default class BooleanLiteral extends Literal {
     readonly value: Token;
@@ -28,12 +27,16 @@ export default class BooleanLiteral extends Literal {
 
     static make(value: boolean) {
         return new BooleanLiteral(
-            new Token(value === true ? TRUE_SYMBOL : FALSE_SYMBOL, Sym.Boolean)
+            new Token(value === true ? TRUE_SYMBOL : FALSE_SYMBOL, Sym.Boolean),
         );
     }
 
     static getPossibleNodes() {
         return [BooleanLiteral.make(true), BooleanLiteral.make(false)];
+    }
+
+    getDescriptor() {
+        return 'BooleanLiteral';
     }
 
     getGrammar(): Grammar {
@@ -48,7 +51,7 @@ export default class BooleanLiteral extends Literal {
 
     clone(replace?: Replacement) {
         return new BooleanLiteral(
-            this.replaceChild('value', this.value, replace)
+            this.replaceChild('value', this.value, replace),
         ) as this;
     }
 
@@ -72,15 +75,7 @@ export default class BooleanLiteral extends Literal {
         return this.value.text.toString() === TRUE_SYMBOL;
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
-        bind;
-        original;
-        context;
+    evaluateTypeGuards(current: TypeSet) {
         return current;
     }
 
@@ -91,15 +86,15 @@ export default class BooleanLiteral extends Literal {
         return this.value;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.BooleanLiteral;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.BooleanLiteral);
     }
 
-    getStartExplanations(locale: Locale, context: Context) {
+    getStartExplanations(locales: Locales, context: Context) {
         return concretize(
-            locale,
-            locale.node.BooleanLiteral.start,
-            new NodeRef(this.value, locale, context, this.value.getText())
+            locales,
+            locales.get((l) => l.node.BooleanLiteral.start),
+            new NodeRef(this.value, locales, context, this.value.getText()),
         );
     }
 

@@ -18,7 +18,6 @@ import type Sequence from './Sequence';
 import { PX_PER_METER, sizeToPx } from './outputToCSS';
 import { getBind } from '@locale/getBind';
 import { CSSFallbackFaces, toNumber, type NameGenerator } from './Stage';
-import type Locale from '../locale/Locale';
 import type Project from '../models/Project';
 import type { DefinitePose } from './Pose';
 import StructureValue from '../values/StructureValue';
@@ -26,19 +25,29 @@ import { getOutputInput } from './Valued';
 import { getTypeStyle } from './toOutput';
 import MarkupValue from '@values/MarkupValue';
 import concretize from '../locale/concretize';
-import type Markup from '../nodes/Markup';
+import Markup from '../nodes/Markup';
 import segmentWraps from './segmentWraps';
 import type Matter from './Matter';
 import { toMatter } from './Matter';
+import type Locales from '../locale/Locales';
+import {
+    HorizontalLayout,
+    VerticalLeftRightLayout,
+    VerticalRightLeftLayout,
+    layoutToCSS,
+    type WritingLayoutSymbol,
+} from '@locale/Scripts';
+import { toAura } from './Aura';
+import type Aura from './Aura';
 
-export function createPhraseType(locales: Locale[]) {
+export function createPhraseType(locales: Locales) {
     return toStructure(`
     ${getBind(locales, (locale) => locale.output.Phrase, '•')} Output(
         ${getBind(locales, (locale) => locale.output.Phrase.text)}•""|[""]|\`…\`
         ${getBind(locales, (locale) => locale.output.Phrase.size)}•${'#m|ø: ø'}
         ${getBind(
             locales,
-            (locale) => locale.output.Phrase.face
+            (locale) => locale.output.Phrase.face,
         )}•${SupportedFontsFamiliesType}${'|ø: ø'}
         ${getBind(locales, (locale) => locale.output.Phrase.place)}•📍|ø: ø
         ${getBind(locales, (locale) => locale.output.Phrase.name)}•""|ø: ø
@@ -46,40 +55,46 @@ export function createPhraseType(locales: Locale[]) {
         ${getBind(locales, (locale) => locale.output.Phrase.color)}•🌈${'|ø: ø'}
         ${getBind(
             locales,
-            (locale) => locale.output.Phrase.background
+            (locale) => locale.output.Phrase.background,
         )}•Color${'|ø: ø'}
         ${getBind(
             locales,
-            (locale) => locale.output.Phrase.opacity
+            (locale) => locale.output.Phrase.opacity,
         )}•%${'|ø: ø'}
         ${getBind(locales, (locale) => locale.output.Phrase.offset)}•📍|ø: ø
         ${getBind(
             locales,
-            (locale) => locale.output.Phrase.rotation
+            (locale) => locale.output.Phrase.rotation,
         )}•#°${'|ø: ø'}
         ${getBind(locales, (locale) => locale.output.Phrase.scale)}•#${'|ø: ø'}
         ${getBind(locales, (locale) => locale.output.Phrase.flipx)}•?${'|ø: ø'}
         ${getBind(locales, (locale) => locale.output.Phrase.flipy)}•?${'|ø: ø'}
         ${getBind(
             locales,
-            (locale) => locale.output.Phrase.entering
+            (locale) => locale.output.Phrase.entering,
         )}•ø|🤪|💃: ø
         ${getBind(locales, (locale) => locale.output.Phrase.resting)}•ø|🤪|💃: ø
         ${getBind(locales, (locale) => locale.output.Phrase.moving)}•ø|🤪|💃: ø
         ${getBind(locales, (locale) => locale.output.Phrase.exiting)}•ø|🤪|💃: ø
         ${getBind(locales, (locale) => locale.output.Phrase.duration)}•#s: 0.25s
         ${getBind(locales, (locale) => locale.output.Phrase.style)}•${locales
-        .map((locale) =>
-            Object.values(locale.output.Easing).map((id) => `"${id}"`)
-        )
-        .flat()
-        .join('|')}: "${DefaultStyle}"
+            .getLocales()
+            .map((locale) =>
+                Object.values(locale.output.Easing).map((id) => `"${id}"`),
+            )
+            .flat()
+            .join('|')}: "${DefaultStyle}"
         ${getBind(locales, (locale) => locale.output.Phrase.wrap)}•#m|ø: ø
         ${getBind(
             locales,
-            (locale) => locale.output.Phrase.alignment
-        )}•'<'|'|'|'>': '|'
+            (locale) => locale.output.Phrase.alignment,
+        )}•'<'|'|'|'>': '<'
+        ${getBind(
+            locales,
+            (locale) => locale.output.Phrase.direction,
+        )}•'${HorizontalLayout}'|'${VerticalRightLeftLayout}'|'${VerticalLeftRightLayout}': '${HorizontalLayout}'
         ${getBind(locales, (locale) => locale.output.Phrase.matter)}•Matter|ø: ø
+        ${getBind(locales, (locale) => locale.output.Phrase.aura)}•ø|🔮: ø
     )`);
 }
 
@@ -98,7 +113,9 @@ export default class Phrase extends Output {
     readonly text: TextLang[] | MarkupValue;
     readonly wrap: number | undefined;
     readonly alignment: string | undefined;
+    readonly direction: WritingLayoutSymbol;
     readonly matter: Matter | undefined;
+    readonly aura: Aura | undefined;
 
     private _metrics: Metrics | undefined = undefined;
 
@@ -122,7 +139,9 @@ export default class Phrase extends Output {
         style: string,
         wrap: number | undefined,
         alignment: string | undefined,
-        matter: Matter | undefined
+        direction: WritingLayoutSymbol,
+        matter: Matter | undefined,
+        aura: Aura | undefined,
     ) {
         super(
             value,
@@ -138,13 +157,15 @@ export default class Phrase extends Output {
             moving,
             exiting,
             duration,
-            style
+            style,
         );
 
         this.text = text;
         this.wrap = wrap === undefined ? undefined : Math.max(1, wrap);
         this.alignment = alignment;
+        this.direction = direction;
         this.matter = matter;
+        this.aura = aura;
 
         // Make sure this font is loaded. This is a little late -- we could do some static analysis
         // and try to determine this in advance -- but anything can compute a font name. Maybe an optimization later.
@@ -157,7 +178,7 @@ export default class Phrase extends Output {
 
     getText() {
         return (this.value as StructureValue).resolve(
-            (this.value as StructureValue).type.inputs[0].names
+            (this.value as StructureValue).type.inputs[0].names,
         );
     }
 
@@ -167,9 +188,7 @@ export default class Phrase extends Output {
 
     getMetrics(context: RenderContext, parsed = true) {
         // Return the cache, if there is one.
-        if (parsed && this._metrics) {
-            return this._metrics;
-        }
+        if (parsed && this._metrics) return this._metrics;
 
         // The font is:
         // 1) the animated font, if there is one
@@ -201,7 +220,13 @@ export default class Phrase extends Output {
                 : // Otherwise, get the list of formatted segments.
                   text?.getFormats();
 
-        // Go throgh each formatted text,
+        // Remember whether the font is loaded, so we can decide whether to save the metrics.
+        const faceLoaded = Fonts.isFaceLoaded(renderedFace);
+
+        // Is the text horizontal or vertical? This determines how we calculate size.
+        const horizontal = this.direction === HorizontalLayout;
+
+        // Go through each formatted text,
         for (const formatted of formats) {
             // Split the text by spaces and measure each space separated chunk.
             for (const segment of segmentWraps(formatted.text)) {
@@ -212,8 +237,9 @@ export default class Phrase extends Output {
                     `${formatted.weight ?? ''} ${
                         formatted.italic ? 'italic' : ''
                     } ${sizeToPx(
-                        renderedSize
-                    )} "${renderedFace}", ${CSSFallbackFaces}`
+                        renderedSize,
+                    )} "${renderedFace}", ${CSSFallbackFaces}`,
+                    layoutToCSS(this.direction),
                 );
 
                 if (metrics) {
@@ -222,7 +248,7 @@ export default class Phrase extends Output {
                     height = Math.max(
                         metrics.actualBoundingBoxAscent +
                             metrics.actualBoundingBoxDescent,
-                        height
+                        height,
                     );
                     // If we're not wrapping, just accumulate the width.
                     if (maxWidth === undefined) {
@@ -252,6 +278,12 @@ export default class Phrase extends Output {
             height = totalHeight + (width > 0 ? ascent + descent : 0);
         }
 
+        if (!horizontal) {
+            const temp = width;
+            width = height;
+            height = temp;
+        }
+
         const dimensions = {
             width,
             height,
@@ -259,12 +291,9 @@ export default class Phrase extends Output {
             descent,
         };
         // If the font is loaded, these metrics can be trusted, so we cache them.
-        if (
-            height !== undefined &&
-            ascent !== undefined &&
-            Fonts.isFaceLoaded(renderedFace)
-        )
+        if (height !== undefined && ascent !== undefined && faceLoaded) {
             this._metrics = dimensions;
+        }
 
         // Return the current dimensions.
         return dimensions;
@@ -294,7 +323,7 @@ export default class Phrase extends Output {
         return undefined;
     }
 
-    getLocalizedTextOrDoc(locales: Locale[]): TextLang | Markup {
+    getLocalizedTextOrDoc(locales: Locales): TextLang | Markup {
         // Get the list of text lang and doc and find the one with the best matching language.
         if (Array.isArray(this.text)) {
             const options = this.text;
@@ -302,42 +331,54 @@ export default class Phrase extends Output {
             // first match. If no match, default to the first text.
             return (
                 locales
+                    .getLocales()
                     .map((locale) =>
-                        options.find((text) => locale.language === text.lang)
+                        options.find((text) => locale.language === text.lang),
                     )
                     .filter(
-                        (text): text is TextLang => text !== undefined
+                        (text): text is TextLang => text !== undefined,
                     )[0] ?? this.text[0]
             );
         } else return this.text.markup;
     }
 
-    getShortDescription(locales: Locale[]) {
+    getShortDescription(locales: Locales) {
         const textOrDoc = this.getLocalizedTextOrDoc(locales);
         return textOrDoc instanceof TextLang
             ? textOrDoc.text
             : textOrDoc?.toText() ?? '';
     }
 
-    getDescription(locales: Locale[]) {
+    getDescription(locales: Locales) {
         if (this._description === undefined) {
             const text = this.getShortDescription(locales);
 
             this._description = concretize(
-                locales[0],
-                locales[0].output.Phrase.description,
+                locales,
+                locales.get((l) => l.output.Phrase.description),
                 text,
                 this.name instanceof TextLang ? this.name.text : undefined,
                 this.size,
                 this.face,
-                this.pose.getDescription(locales)
+                this.pose.getDescription(locales),
             ).toText();
         }
         return this._description;
     }
 
+    getEntryAnimated() {
+        return this.entering !== undefined ? [this] : [];
+    }
+
     isEmpty() {
         return false;
+    }
+
+    getRepresentativeText(locales: Locales) {
+        const preferred = this.getLocalizedTextOrDoc(locales);
+        return preferred instanceof Markup
+            ? preferred.getRepresentativeText()
+            : preferred.text;
     }
 
     toString() {
@@ -354,7 +395,7 @@ export function toFont(value: Value | undefined): string | undefined {
 export function toPhrase(
     project: Project,
     value: Value | undefined,
-    namer: NameGenerator
+    namer: NameGenerator,
 ): Phrase | undefined {
     if (!(value instanceof StructureValue)) return undefined;
 
@@ -378,11 +419,14 @@ export function toPhrase(
 
     const wrap = toNumber(getOutputInput(value, 20));
     const alignment = toText(getOutputInput(value, 21));
-    const matter = toMatter(getOutputInput(value, 22));
+    const direction = toText(getOutputInput(value, 22));
+    const matter = toMatter(getOutputInput(value, 23));
+    const shadow = toAura(project, getOutputInput(value, 24));
 
     return texts !== undefined &&
         duration !== undefined &&
         style !== undefined &&
+        direction !== undefined &&
         pose &&
         selectable !== undefined
         ? new Phrase(
@@ -403,7 +447,9 @@ export function toPhrase(
               style,
               wrap,
               alignment?.text,
-              matter
+              direction.text as WritingLayoutSymbol,
+              matter,
+              shadow,
           )
         : undefined;
 }
@@ -419,13 +465,13 @@ export function toTextLang(value: Value | undefined) {
         value instanceof TextValue
             ? [new TextLang(value, value.text, value.format)]
             : value instanceof ListValue &&
-              value.values.every((t) => t instanceof TextValue)
-            ? (value.values as TextValue[]).map(
-                  (val) => new TextLang(val, val.text, val.format)
-              )
-            : value instanceof MarkupValue
-            ? value
-            : undefined;
+                value.values.every((t) => t instanceof TextValue)
+              ? (value.values as TextValue[]).map(
+                    (val) => new TextLang(val, val.text, val.format),
+                )
+              : value instanceof MarkupValue
+                ? value
+                : undefined;
 
     return texts;
 }

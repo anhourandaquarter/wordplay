@@ -1,6 +1,7 @@
 import type { User } from 'firebase/auth';
 import type { Locale, Template } from '../locale/Locale';
 import type Project from './Project';
+import type Locales from '../locale/Locales';
 
 /** Ways the platform can respond to a content moderation flag */
 export enum Remedy {
@@ -13,7 +14,6 @@ export enum Remedy {
 /**
  * These are the internal names that define categories of content moderation violations.
  * They're used as property names in moderation state in projects and galleries.
- * T
  */
 export const Flags = {
     /** Content that treats any individual or group of people as less than human */
@@ -48,13 +48,9 @@ export function withFlag(
     state: FlagState
 ): Moderation {
     if (!(flag in Flags)) return flags;
-    const newFlags = cloneFlags(flags);
+    const newFlags = { ...flags };
     newFlags[flag as Flag] = state;
     return newFlags;
-}
-
-export function cloneFlags(flags: Moderation): Moderation {
-    return Object.assign({}, flags);
 }
 
 /** Return a moderation state with all flags false */
@@ -104,25 +100,24 @@ export function isFlagged(flags: Moderation) {
 
 export function isAudience(user: User | null, project: Project): boolean {
     return (
-        project.public &&
+        project.isPublic() &&
         (user === null ||
-            (project.owner !== user.uid &&
-                !project.collaborators.includes(user.uid)))
+            (project.getOwner() !== user.uid &&
+                !project.hasCollaborator(user.uid)))
     );
 }
 
 export function getFlagDescription(
     flag: string,
-    locale: Locale
+    locales: Locales
 ): string | undefined {
-    return locale.moderation.flags[flag as Flag];
+    return locales.get((l) => l.moderation.flags)[flag as Flag];
 }
 
 export async function isModerator(user: User) {
     return user
         .getIdTokenResult()
         .then((idTokenResult) => {
-            // Confirm the user is an Admin.
             return idTokenResult.claims.mod === true;
         })
         .catch(() => {

@@ -41,7 +41,9 @@
         "query": "$?",
         "row": "$?",
         "set": "$?",
-        "key": "$?"
+        "key": "$?",
+        "help": "$?",
+        "feedback": "$?"
     },
     "token": {
         "EvalOpen": "$?",
@@ -72,9 +74,10 @@
         "URL": "$?",
         "Code": "$?",
         "Mention": "$?",
-        "Branch": "$?",
+        "Otherwise": "$?",
         "None": "$?",
         "Type": "$?",
+        "Literal": "$?",
         "TypeOperator": "$?",
         "TypeOpen": "$?",
         "TypeClose": "$?",
@@ -530,6 +533,13 @@
             "doc": "$?",
             "start": "$?"
         },
+        "Otherwise": {
+            "name": "$?",
+            "emotion": "curious",
+            "doc": "$?",
+            "start": "$?",
+            "finish": "$?"
+        },
         "Previous": {
             "name": "$?",
             "emotion": "$?",
@@ -684,7 +694,16 @@
             "name": "$?",
             "description": "$?",
             "emotion": "$?",
-            "doc": "$?"
+            "doc": "$?",
+            "conflict": {
+                "phone": "$?",
+                "email": "$?",
+                "tin": "$?",
+                "address": "$?",
+                "handle": "$?",
+                "resolution": "$?",
+                "reminder": "$?"
+            }
         },
         "FormattedLiteral": {
             "name": "$?",
@@ -1213,6 +1232,11 @@
                 },
                 "length": { "doc": "$?", "names": "$?", "inputs": [] },
                 "random": { "doc": "$?", "names": "$?", "inputs": [] },
+                "shuffled": {
+                    "doc": ["$?"],
+                    "names": "$? shuffle",
+                    "inputs": []
+                },
                 "first": { "doc": "$?", "names": "$?", "inputs": [] },
                 "last": { "doc": "$?", "names": "$?", "inputs": [] },
                 "has": {
@@ -1547,46 +1571,50 @@
     "input": {
         "Random": {
             "doc": "$?",
-            "names": ["Azar"],
+            "names": ["$?"],
             "inputs": [
                 { "names": "$?", "doc": "$?" },
                 { "names": "$?", "doc": "$?" }
             ]
         },
-        "Choice": { "doc": "$?", "names": ["Selección", "Elección"] },
+        "Choice": { "doc": "$?", "names": ["$?"] },
         "Button": {
             "doc": "$?",
-            "names": ["Botón"],
+            "names": ["$?"],
             "down": { "names": "$?", "doc": "$?" }
         },
-        "Pointer": { "doc": "$?", "names": ["Puntero"] },
+        "Pointer": { "doc": "$?", "names": ["$?"] },
         "Key": {
             "doc": "$?",
-            "names": ["Teclado"],
+            "names": ["$?"],
             "key": { "names": "$?", "doc": "$?" },
             "down": { "names": "$?", "doc": "$?" }
         },
         "Time": {
             "doc": "$?",
-            "names": ["Tiempo"],
-            "frequency": { "names": ["frecuencia"], "doc": "$?" }
+            "names": ["$?"],
+            "frequency": { "names": ["$?"], "doc": "$?" },
+            "relative": {
+                "names": "$?relative",
+                "doc": "$?"
+            }
         },
         "Volume": {
             "doc": "$?",
             "names": "$? Volume",
-            "frequency": { "names": ["frecuencia"], "doc": "$?" }
+            "frequency": { "names": ["$?"], "doc": "$?" }
         },
         "Pitch": {
             "doc": "$?",
             "names": "$? Pitch",
-            "frequency": { "names": ["frecuencia"], "doc": "$?" }
+            "frequency": { "names": ["$?"], "doc": "$?" }
         },
         "Camera": {
             "doc": "$?",
             "names": ["Cámara"],
-            "width": { "names": ["ancho"], "doc": "$?" },
-            "height": { "names": ["altura"], "doc": "$?" },
-            "frequency": { "names": ["frecuencia"], "doc": "$?" }
+            "width": { "names": ["$?"], "doc": "$?" },
+            "height": { "names": ["$?"], "doc": "$?" },
+            "frequency": { "names": ["$?"], "doc": "$?" }
         },
         "Motion": {
             "names": "movimiento",
@@ -1595,6 +1623,11 @@
             "velocity": { "doc": "$?", "names": "$? velocity" },
             "nextplace": { "doc": "$?", "names": "$? nextplace" },
             "nextvelocity": { "doc": "$?", "names": "$? nextvelocity" }
+        },
+        "Scene": {
+            "doc": "$?",
+            "names": "$? Scene",
+            "outputs": { "names": "$?", "doc": "$?" }
         },
         "Chat": {
             "doc": ["$?"],
@@ -1742,7 +1775,7 @@
             "layout": { "doc": "$?", "names": "$?" },
             "matter": {
                 "doc": "$?",
-                "names": "$? matter"
+                "names": "$?"
             },
             "size": { "doc": "$?", "names": "$?" },
             "face": { "doc": "$?", "names": "$?" },
@@ -1801,9 +1834,17 @@
                 "doc": "$?",
                 "names": "$? alignment"
             },
+            "direction": {
+                "doc": "$?",
+                "names": "$? direction"
+            },
             "matter": {
                 "doc": "$?",
                 "names": "$? matter"
+            },
+            "aura": {
+                "doc": "$?",
+                "names": "$?"
             },
             "name": { "doc": "$?", "names": "$?" },
             "selectable": { "doc": "$?", "names": "$?" },
@@ -2014,6 +2055,26 @@
                 "names": "$? shapes"
             }
         },
+        "Aura": {
+            "doc": "$?",
+            "names": "$? Aura",
+            "color": {
+                "doc": "$?",
+                "names": "$? color"
+            },
+            "blur": {
+                "doc": "$?",
+                "names": "$? blur"
+            },
+            "offsetX": {
+                "doc": "$?",
+                "names": "$? offsetX"
+            },
+            "offsetY": {
+                "doc": "$?",
+                "names": "$? offset"
+            }
+        },
         "Easing": {
             "straight": "$?",
             "cautious": "$?",
@@ -2035,12 +2096,40 @@
             "fadein": { "doc": "$?", "names": ["revelar"] },
             "popup": { "doc": "$?", "names": ["surgir"] },
             "shake": { "doc": "$?", "names": ["agitar"] }
+        },
+        "Source": {
+            "names": "$? Source",
+            "doc": "$?",
+            "name": {
+                "names": "$? name",
+                "doc": "$?"
+            },
+            "value": {
+                "names": "$? value",
+                "doc": "$?"
+            },
+            "DynamicEditLimitException": {
+                "description": "$?",
+                "explanation": "$?"
+            },
+            "ReadOnlyEditException": {
+                "description": "$?",
+                "explanation": "$?"
+            },
+            "EmptySourceNameException": {
+                "description": "$?",
+                "explanation": "$?"
+            },
+            "ProjectSizeLimitException": {
+                "description": "$?",
+                "explanation": "$?"
+            }
         }
     },
     "ui": {
         "font": {
             "app": "Noto Sans",
-            "code": "Noto Mono"
+            "code": "Noto Sans Mono"
         },
         "phrases": {
             "welcome": "$?"
@@ -2066,6 +2155,12 @@
                     "off": "$?"
                 }
             },
+            "label": {
+                "output": "$?",
+                "palette": "$?",
+                "docs": "$?",
+                "source": "$?"
+            },
             "button": {
                 "collapse": "$?"
             }
@@ -2085,7 +2180,8 @@
                 "focusSource": "$?",
                 "focusDocs": "$?",
                 "focusPalette": "$?",
-                "focusCycle": "$?"
+                "focusCycle": "$?",
+                "unsaved": "$?"
             },
             "field": {
                 "name": {
@@ -2093,7 +2189,18 @@
                     "placeholder": "$?"
                 }
             },
-            "help": "$?"
+            "help": "$?",
+            "save": {
+                "projectsNotSavedLocally": "$?",
+                "projectsCannotNotSaveLocally": "$?",
+                "projectContainedPII": "$?",
+                "projectsNotLoadingOnline": "$?",
+                "projectNotSavedOnline": "$?",
+                "settingsUnsaved": "$?"
+            },
+            "dialog": {
+                "unsaved": "$?"
+            }
         },
         "gallery": {
             "untitled": "$?",
@@ -2150,6 +2257,10 @@
                     "on": "$?",
                     "off": "$?"
                 },
+                "localized": {
+                    "on": "$?",
+                    "off": "$?"
+                },
                 "glyphs": {
                     "on": "$?",
                     "off": "$?"
@@ -2177,6 +2288,8 @@
                 "nextInline": "$?",
                 "lineStart": "$?",
                 "lineEnd": "$?",
+                "sourceStart": "$?",
+                "sourceEnd": "$?",
                 "priorNode": "$?",
                 "nextNode": "$?",
                 "parent": "$?",
@@ -2184,6 +2297,7 @@
                 "incrementLiteral": "$?",
                 "decrementLiteral": "$?",
                 "insertSymbol": "$?",
+                "insertTab": "$?",
                 "insertTrue": "$?",
                 "insertFalse": "$?",
                 "insertNone": "$?",
@@ -2195,12 +2309,17 @@
                 "insertLessOrEqual": "$?",
                 "insertGreaterOrEqual": "$?",
                 "insertStream": "$?",
+                "insertChange": "$?",
                 "insertConvert": "$?",
                 "insertPrevious": "$?",
                 "insertType": "$?",
                 "insertTable": "$?",
+                "insertTableClose": "$?",
+                "insertBorrow": "$?",
+                "insertShare": "$?",
                 "insertLine": "$?",
                 "backspace": "$?",
+                "delete": "$?",
                 "cut": "$?",
                 "copy": "$?",
                 "paste": "$?",
@@ -2209,11 +2328,19 @@
                 "type": "$?",
                 "undo": "$?",
                 "redo": "$?",
-                "search": "$?"
+                "search": "$?",
+                "tidy": "$?"
             }
         },
-        "conflicts": {
-            "label": "$?"
+        "annotations": {
+            "label": "$?",
+            "cursor": "$?",
+            "learn": "$?",
+            "evaluating": "$?",
+            "space": "$?",
+            "button": {
+                "resolution": "$?"
+            }
         },
         "output": {
             "label": "$?",
@@ -2295,10 +2422,14 @@
                     "public": {
                         "header": "$?",
                         "explanation": "$?"
+                    },
+                    "pii": {
+                        "header": "$?",
+                        "explanation": "$?"
                     }
                 },
                 "field": {
-                    "email": {
+                    "emailOrUsername": {
                         "placeholder": "$?",
                         "description": "$?"
                     }
@@ -2310,10 +2441,18 @@
                     }
                 },
                 "error": {
-                    "unknown": "$?"
+                    "unknown": "$?",
+                    "anonymous": "$?"
                 },
                 "button": {
-                    "submit": "$?"
+                    "submit": "$?",
+                    "sensitive": {
+                        "tip": "$?",
+                        "label": "$?"
+                    }
+                },
+                "options": {
+                    "gallery": "$?"
                 }
             },
             "settings": {
@@ -2339,6 +2478,10 @@
                         "label": "$?",
                         "modes": ["$?", "$?", "$?"]
                     }
+                },
+                "options": {
+                    "mic": "$?",
+                    "camera": "$?"
                 }
             },
             "locale": {
@@ -2347,12 +2490,14 @@
                 "subheader": {
                     "selected": "$?",
                     "supported": "$?",
+                    "coming": "$?",
                     "help": "$?"
                 },
                 "button": {
                     "show": "$?",
                     "add": "$?",
-                    "remove": "$?"
+                    "remove": "$?",
+                    "replace": "$?"
                 }
             },
             "help": {
@@ -2374,7 +2519,15 @@
                 "default": "$?",
                 "inherited": "$?",
                 "notSequence": "$?",
-                "notContent": "$?"
+                "notContent": "$?",
+                "format": "$?",
+                "weight": "$?",
+                "light": "$?",
+                "normal": "$?",
+                "bold": "$?",
+                "extra": "$?",
+                "italic": "$?",
+                "underline": "$?"
             },
             "button": {
                 "revert": "$?",
@@ -2429,6 +2582,9 @@
             },
             "landing": {
                 "call": ["$?"],
+                "value": "$?",
+                "description": "$?",
+                "beta": ["$?"],
                 "link": {
                     "about": "$?",
                     "learn": "$?",
@@ -2443,6 +2599,9 @@
                 "button": {
                     "next": "$?",
                     "previous": "$?"
+                },
+                "options": {
+                    "lesson": "$?"
                 }
             },
             "projects": {
@@ -2487,12 +2646,19 @@
             },
             "login": {
                 "header": "$?",
+                "subtitle": "$?",
                 "anonymous": "$?",
                 "prompt": {
                     "login": "$?",
+                    "forgot": "$?",
+                    "email": "$?",
                     "enter": "$?",
+                    "tooyoung": "$?",
+                    "passwordrule": "$?",
+                    "passwordreminder": "$?",
                     "play": "$?",
-                    "change": "$?",
+                    "changeEmail": "$?",
+                    "changePassword": "$?",
                     "logout": "$?",
                     "sent": "$?",
                     "success": "$?",
@@ -2508,14 +2674,33 @@
                     "offline": "$?",
                     "failure": "$?",
                     "unchanged": "$?",
-                    "delete": "$?"
+                    "delete": "$?",
+                    "wrongPassword": "$?"
                 },
                 "feedback": {
                     "changing": "$?",
-                    "deleting": "$?"
+                    "deleting": "$?",
+                    "updatedPassword": "$?",
+                    "match": "$?"
                 },
                 "field": {
                     "email": {
+                        "description": "$?",
+                        "placeholder": "$?"
+                    },
+                    "username": {
+                        "description": "$?",
+                        "placeholder": "$?"
+                    },
+                    "password": {
+                        "description": "$?",
+                        "placeholder": "$?"
+                    },
+                    "currentPassword": {
+                        "description": "$?",
+                        "placeholder": "$?"
+                    },
+                    "newPassword": {
                         "description": "$?",
                         "placeholder": "$?"
                     }
@@ -2526,7 +2711,8 @@
                         "label": "$?"
                     },
                     "login": "$?",
-                    "update": "$?",
+                    "updateEmail": "$?",
+                    "updatePassword": "$?",
                     "delete": {
                         "tip": "$?",
                         "label": "$?"
@@ -2535,12 +2721,30 @@
                         "tip": "$?",
                         "label": "$?"
                     }
+                },
+                "toggle": {
+                    "reveal": {
+                        "on": "$?",
+                        "off": "$?"
+                    }
+                }
+            },
+            "join": {
+                "header": "$?",
+                "prompt": {
+                    "username": "$?",
+                    "password": "$?"
                 }
             },
             "rights": {
                 "header": "$?",
                 "content": ["$?"],
                 "consequences": ["$?"]
+            },
+            "donate": {
+                "header": "$?",
+                "prompt": "$?",
+                "content": ["$?"]
             }
         },
         "edit": {
@@ -2577,6 +2781,7 @@
             "disclosure": "$?",
             "misinformation": "$?"
         },
+        "progress": "$?",
         "button": {
             "submit": {
                 "tip": "$?",
@@ -2586,6 +2791,28 @@
                 "tip": "$?",
                 "label": "$?"
             }
+        }
+    },
+    "gallery": {
+        "games": {
+            "name": "$?",
+            "description": "$?"
+        },
+        "visualizations": {
+            "name": "$?",
+            "description": "$?"
+        },
+        "motion": {
+            "name": "$?",
+            "description": "$?"
+        },
+        "av": {
+            "name": "$?",
+            "description": "$?"
+        },
+        "tools": {
+            "name": "$?",
+            "description": "$?"
         }
     }
 }

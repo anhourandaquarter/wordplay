@@ -2,11 +2,12 @@
     import { getConceptIndex, getConceptPath } from '../project/Contexts';
     import ConceptLink from '@nodes/ConceptLink';
     import Concept from '@concepts/Concept';
-    import { locale } from '../../db/Database';
+    import { locales } from '../../db/Database';
     import TutorialHighlight from '../app/TutorialHighlight.svelte';
     import type ConceptRef from '../../locale/ConceptRef';
     import Button from '../widgets/Button.svelte';
     import concretize from '../../locale/concretize';
+    import { withVariationSelector } from '../../unicode/emoji';
 
     export let link: ConceptRef | ConceptLink | Concept;
     export let label: string | undefined = undefined;
@@ -40,17 +41,17 @@
                 concept = $index.getConceptByName(names[0]);
                 if (concept && names.length > 1) {
                     const subConcept = Array.from(
-                        concept.getSubConcepts()
-                    ).find((sub) => sub.hasName(names[1], $locale));
+                        concept.getSubConcepts(),
+                    ).find((sub) => sub.hasName(names[1], $locales));
                     if (subConcept !== undefined) concept = subConcept;
                     else if (concept.affiliation !== undefined) {
                         const structure = $index.getStructureConcept(
-                            concept.affiliation
+                            concept.affiliation,
                         );
                         if (structure) {
                             const subConcept = Array.from(
-                                structure.getSubConcepts()
-                            ).find((sub) => sub.hasName(names[1], $locale));
+                                structure.getSubConcepts(),
+                            ).find((sub) => sub.hasName(names[1], $locales));
                             if (subConcept) {
                                 container = concept;
                                 concept = subConcept;
@@ -66,8 +67,8 @@
     let symbolicName: string;
     $: {
         if (concept) {
-            symbolicName = concept.getName($locale, true);
-            longName = concept.getName($locale, false);
+            symbolicName = concept.getName($locales, true);
+            longName = concept.getName($locales, false);
         }
     }
 
@@ -75,10 +76,11 @@
         // If we have a concept and the last concept isn't it, navigate
         if (concept) {
             // Already at this concept? Make a new path anyway to ensure that tile is shown if collapsed.
-            if ($path[$path.length - 1] !== concept)
+            const alreadyHere = $path.at(-1) === concept;
+            if (alreadyHere)
                 path.set([...$path.slice(0, $path.length - 1), concept]);
             // If the concept before the last is the concept, just go back
-            if ($path.length >= 2 && $path[$path.length - 2] === concept)
+            else if ($path.length >= 2 && $path[$path.length - 2] === concept)
                 path.set($path.slice(0, $path.length - 1));
             // Otherwise, append the concept.
             else path.set([...$path, concept]);
@@ -88,24 +90,30 @@
 
 {#if concept}<Button
         action={navigate}
-        tip={concretize($locale, $locale.ui.docs.link, longName).toText()}
+        tip={concretize(
+            $locales,
+            $locales.get((l) => l.ui.docs.link),
+            longName,
+        ).toText()}
         ><span class="conceptlink interactive"
-            >{#if label}{label}{:else}<span class="long">{longName}</span
+            >{#if label}{withVariationSelector(label)}{:else}<span class="long"
+                    >{longName}</span
                 >{#if symbolicName !== longName && symbolic}<sub
-                        >{symbolicName}</sub
+                        >{withVariationSelector(symbolicName)}</sub
                     >{/if}{/if}</span
         ></Button
     >{:else if ui}<TutorialHighlight
     />{:else if link instanceof ConceptLink}<span
         >{#if container}{container.getName(
-                $locale,
-                false
+                $locales,
+                false,
             )}{/if}{link.concept.getText()}</span
     >{/if}
 
 <style>
     .conceptlink {
         display: inline-block;
+        font-style: normal;
     }
 
     .conceptlink.interactive {

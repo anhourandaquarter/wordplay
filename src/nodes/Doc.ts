@@ -2,7 +2,6 @@ import Language from './Language';
 import { node, optional } from './Node';
 import type { Grammar, Replacement } from './Node';
 import Token from './Token';
-import type Locale from '@locale/Locale';
 import { DOCS_SYMBOL } from '@parser/Symbols';
 import Sym from './Sym';
 import type Paragraph from './Paragraph';
@@ -11,6 +10,10 @@ import Glyphs from '../lore/Glyphs';
 import Purpose from '../concepts/Purpose';
 import Markup from './Markup';
 import { LanguageTagged } from './LanguageTagged';
+import type Locales from '../locale/Locales';
+import type Conflict from '@conflicts/Conflict';
+import { PossiblePII } from '@conflicts/PossiblePII';
+import type Context from './Context';
 
 export default class Doc extends LanguageTagged {
     readonly open: Token;
@@ -22,7 +25,7 @@ export default class Doc extends LanguageTagged {
         open: Token,
         markup: Markup,
         close: Token | undefined,
-        lang: Language | undefined
+        lang: Language | undefined,
     ) {
         super();
 
@@ -39,12 +42,16 @@ export default class Doc extends LanguageTagged {
             new Token(DOCS_SYMBOL, Sym.Doc),
             new Markup(content ?? []),
             new Token(DOCS_SYMBOL, Sym.Doc),
-            undefined
+            undefined,
         );
     }
 
     static getPossibleNodes() {
         return [Doc.make()];
+    }
+
+    getDescriptor() {
+        return 'Doc';
     }
 
     getGrammar(): Grammar {
@@ -61,7 +68,7 @@ export default class Doc extends LanguageTagged {
             this.replaceChild('open', this.open, replace),
             this.replaceChild('markup', this.markup, replace),
             this.replaceChild('close', this.close, replace),
-            this.replaceChild('language', this.language, replace)
+            this.replaceChild('language', this.language, replace),
         ) as this;
     }
 
@@ -83,12 +90,12 @@ export default class Doc extends LanguageTagged {
                   .join();
     }
 
-    computeConflicts() {
-        return;
+    computeConflicts(context: Context): Conflict[] {
+        return PossiblePII.analyze(this, context);
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Doc;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Doc);
     }
 
     getGlyphs() {

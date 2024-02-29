@@ -19,14 +19,18 @@
     import type Layout from './Layout';
     import TextField from '../widgets/TextField.svelte';
     import { isName } from '../../parser/Tokenizer';
-    import { locale } from '../../db/Database';
+    import { locales } from '../../db/Database';
     import { onMount } from 'svelte';
     import Arrangement from '../../db/Arrangement';
     import Glyphs from '../../lore/Glyphs';
     import Color from '../../output/Color';
     import Toggle from '../widgets/Toggle.svelte';
-    import { EnterFullscreen, ExitFullscreen } from '../editor/util/Commands';
+    import type Project from '../../models/Project';
+    import Emoji from '@components/app/Emoji.svelte';
+    import TileSymbols from './TileSymbols';
+    import FullscreenIcon from './FullscreenIcon.svelte';
 
+    export let project: Project;
     export let tile: Tile;
     export let layout: Layout;
     export let arrangement: Arrangement;
@@ -200,60 +204,56 @@
         <div class="header" style:color={foreground} style:fill={foreground}>
             <div class="name" class:source={tile.isSource()}>
                 {#if editable && tile.isSource()}
-                    {Glyphs.Program.symbols}
+                    <Emoji>{Glyphs.Program.symbols}</Emoji>
                     <TextField
-                        text={tile.name}
-                        description={$locale.ui.source.field.name.description}
-                        placeholder={$locale.ui.source.field.name.placeholder}
+                        text={tile
+                            .getSource(project)
+                            ?.getPreferredName($locales.getLocales())}
+                        description={$locales.get(
+                            (l) => l.ui.source.field.name.description
+                        )}
+                        placeholder={$locales.get(
+                            (l) => l.ui.source.field.name.placeholder
+                        )}
                         validator={(text) => isName(text)}
                         changed={handleRename}
                     />
                 {:else}
-                    {tile.name}
+                    <Emoji>{TileSymbols[tile.kind]}</Emoji>{tile.getName(
+                        project,
+                        $locales
+                    )}
                 {/if}
                 <slot name="name" />
             </div>
             <div class="toolbar">
                 <slot name="extra" />
                 <Toggle
-                    tips={$locale.ui.tile.toggle.fullscreen}
+                    tips={$locales.get((l) => l.ui.tile.toggle.fullscreen)}
                     on={fullscreen}
-                    command={fullscreen ? ExitFullscreen : EnterFullscreen}
                     toggle={() =>
                         dispatch('fullscreen', {
                             fullscreen: !fullscreen,
                         })}
                 >
-                    <svg
-                        height="13px"
-                        viewBox="0 0 14 14"
-                        width="14px"
-                        style="stroke: currentColor; fill: currentColor; pointer-events: none;"
-                        ><title /><desc /><defs /><g
-                            fill-rule="evenodd"
-                            stroke-width="1"
-                            ><g transform="translate(-215.000000, -257.000000)"
-                                ><g
-                                    transform="translate(215.000000, 257.000000)"
-                                    ><path
-                                        d="M2,9 L0,9 L0,14 L5,14 L5,12 L2,12 L2,9 L2,9 Z M0,5 L2,5 L2,2 L5,2 L5,0 L0,0 L0,5 L0,5 Z M12,12 L9,12 L9,14 L14,14 L14,9 L12,9 L12,12 L12,12 Z M9,0 L9,2 L12,2 L12,5 L14,5 L14,0 L9,0 L9,0 Z"
-                                        id="Shape"
-                                    /></g
-                                ></g
-                            ></g
-                        ></svg
-                    >
+                    <FullscreenIcon />
                 </Toggle>
-                <Button
-                    tip={$locale.ui.tile.button.collapse}
-                    action={() => dispatch('mode', { mode: Mode.Collapsed })}
-                    active={!layout.isFullscreen()}>⨉</Button
-                >
+                {#if !layout.isFullscreen()}
+                    <Button
+                        tip={$locales.get((l) => l.ui.tile.button.collapse)}
+                        action={() =>
+                            dispatch('mode', { mode: Mode.Collapsed })}
+                        >–</Button
+                    >
+                {/if}
             </div>
         </div>
         <!-- Render the content -->
-        <div class="content" on:scroll={() => dispatch('scroll')}>
-            <slot name="content" />
+        <div class="main" class:rtl={$locales.getDirection() === 'rtl'}>
+            <div class="content" on:scroll={() => dispatch('scroll')}>
+                <slot name="content" />
+            </div>
+            <div class="margin"><slot name="margin" /></div>
         </div>
         <!-- Render a focus indicator. We do this instead of an outline to avoid content form overlapping an inset CSS outline.  -->
         {#if focuscontent}
@@ -275,6 +275,68 @@
 
         /* Don't let iOS grab pointer move events, so we can do drag and drop. */
         touch-action: none;
+    }
+
+    .main {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        flex-grow: 1;
+        gap: var(--wordplay-spacing);
+    }
+
+    /** Dim the header a bit so that they don't demand so much attention */
+    .header {
+        opacity: 0.8;
+    }
+
+    .toolbar {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        min-width: max-content;
+        gap: calc(var(--wordplay-spacing));
+    }
+
+    .footer {
+        width: 100%;
+        min-height: max-content;
+        flex-shrink: 0;
+    }
+
+    .main {
+        width: 100%;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow: auto;
+    }
+
+    .main.rtl {
+        flex-direction: row-reverse;
+    }
+
+    .content {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow: auto;
+        width: 100%;
+        flex-grow: 1;
+        min-height: auto;
+        /* This doesn't work in Chrome :( It prevents scrolling altogether */
+        /* scroll-behavior: smooth; */
+    }
+
+    .margin {
+        width: auto;
+        height: 100%;
+    }
+
+    .tile.fullscreen {
+        border: none !important;
     }
 
     .tile.responsive,
@@ -348,49 +410,20 @@
         flex-shrink: 0;
     }
 
-    /** Dim the header a bit so that they don't demand so much attention */
-    .header {
-        opacity: 0.8;
-    }
-
-    .toolbar {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        align-items: center;
-        min-width: max-content;
-        gap: calc(var(--wordplay-spacing));
-    }
-
-    .footer {
-        width: 100%;
-        min-height: max-content;
-        flex-shrink: 0;
-    }
-
-    .content {
-        width: 100%;
-        flex-grow: 1;
-        position: relative;
-        overflow: auto;
-        /* This doesn't work in Chrome :( It prevents scrolling altogether */
-        /* scroll-behavior: smooth; */
-    }
-
     .focus-indicator {
         height: var(--wordplay-focus-width);
         flex-shrink: 0;
         width: 100%;
     }
 
-    .content:focus-within + .focus-indicator {
+    .main:focus-within + .focus-indicator {
         background-color: var(--wordplay-focus-color);
     }
 
     .fullscreen {
-        position: fixed;
-        width: 100vw;
-        height: 100vh;
+        position: absolute;
+        width: 100%;
+        height: 100%;
         top: 0;
         left: 0;
         right: 0;
@@ -403,6 +436,7 @@
         display: flex;
         flex-direction: row;
         gap: var(--wordplay-spacing);
+        align-items: center;
     }
 
     .name.source {

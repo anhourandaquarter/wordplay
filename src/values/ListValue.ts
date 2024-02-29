@@ -9,9 +9,9 @@ import UnionType from '@nodes/UnionType';
 import type Context from '@nodes/Context';
 import { LIST_CLOSE_SYMBOL, LIST_OPEN_SYMBOL } from '@parser/Symbols';
 import type { BasisTypeName } from '../basis/BasisConstants';
-import type Locale from '@locale/Locale';
 import type Expression from '../nodes/Expression';
 import type Concretizer from '../nodes/Concretizer';
+import type Locales from '../locale/Locales';
 
 export default class ListValue extends SimpleValue {
     readonly values: Value[] = [];
@@ -32,7 +32,7 @@ export default class ListValue extends SimpleValue {
             num === 0
                 ? undefined
                 : this.values.at(
-                      num > 0 ? (num - 1) % this.values.length : num
+                      (num > 0 ? num - 1 : num) % this.values.length
                   );
         return value === undefined ? new NoneValue(this.creator) : value;
     }
@@ -152,14 +152,21 @@ export default class ListValue extends SimpleValue {
         return 'list';
     }
 
-    toWordplay(locales: Locale[]): string {
+    toWordplay(locales?: Locales): string {
         return `${LIST_OPEN_SYMBOL}${Array.from(this.values)
             .map((value) => value.toWordplay(locales))
             .join(' ')}${LIST_CLOSE_SYMBOL}`;
     }
 
-    getDescription(concretize: Concretizer, locale: Locale) {
-        return concretize(locale, locale.term.list);
+    getDescription(concretize: Concretizer, locales: Locales) {
+        return concretize(
+            locales,
+            locales.get((l) => l.term.list)
+        );
+    }
+
+    getRepresentativeText() {
+        return LIST_OPEN_SYMBOL + LIST_CLOSE_SYMBOL;
     }
 
     getSize() {

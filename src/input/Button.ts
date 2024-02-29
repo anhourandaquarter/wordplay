@@ -10,8 +10,8 @@ import NoneType from '@nodes/NoneType';
 import BoolValue from '@values/BoolValue';
 import StreamType from '@nodes/StreamType';
 import createStreamEvaluator from './createStreamEvaluator';
-import type Locale from '../locale/Locale';
-import NoneLiteral from '../nodes/NoneLiteral';
+import type Locales from '../locale/Locales';
+import BooleanLiteral from '../nodes/BooleanLiteral';
 
 export default class Button extends StreamValue<BoolValue, boolean> {
     on = false;
@@ -49,13 +49,13 @@ export default class Button extends StreamValue<BoolValue, boolean> {
     }
 }
 
-export function createButtonDefinition(locales: Locale[]) {
+export function createButtonDefinition(locales: Locales) {
     const DownBind = Bind.make(
         getDocLocales(locales, (locale) => locale.input.Button.down.doc),
         getNameLocales(locales, (locale) => locale.input.Button.down.names),
         UnionType.make(BooleanType.make(), NoneType.make()),
-        // Default to none
-        NoneLiteral.make()
+        // Default to true, because down is the most likely useful default.
+        BooleanLiteral.make(true)
     );
     return StreamDefinition.make(
         getDocLocales(locales, (locale) => locale.input.Button.doc),

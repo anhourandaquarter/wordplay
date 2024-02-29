@@ -5,7 +5,7 @@ import EvaluationLimitException from '../values/EvaluationLimitException';
 import StepLimitException from '../values/StepLimitException';
 import Evaluator from '@runtime/Evaluator';
 import { DB } from '../db/Database';
-import DefaultLocale from '../locale/DefaultLocale';
+import DefaultLocale, { DefaultLocales } from '../locale/DefaultLocale';
 
 test.each([0, 1, 10, 15])('Step back %i', (steps: number) => {
     const fib = `
@@ -14,8 +14,8 @@ test.each([0, 1, 10, 15])('Step back %i', (steps: number) => {
     `;
 
     const source = new Source('test', fib);
-    const project = new Project(null, 'test', source, [], DefaultLocale);
-    const evaluator = new Evaluator(project, DB, [DefaultLocale]);
+    const project = Project.make(null, 'test', source, [], DefaultLocale);
+    const evaluator = new Evaluator(project, DB, DefaultLocales);
     evaluator.start();
     const stepIndex = evaluator.getStepIndex();
 
@@ -37,12 +37,10 @@ test('Too many steps', () => {
     `;
 
     const source = new Source('test', fib);
-    const project = new Project(null, 'test', source, [], DefaultLocale);
-    const evaluator = new Evaluator(project, DB, [DefaultLocale]);
-    evaluator.start();
-    expect(evaluator.getLatestSourceValue(source)).toBeInstanceOf(
-        StepLimitException
-    );
+    const project = Project.make(null, 'test', source, [], DefaultLocale);
+    const evaluator = new Evaluator(project, DB, DefaultLocales);
+    const value = evaluator.getInitialValue();
+    expect(value).toBeInstanceOf(StepLimitException);
 });
 
 test('Too many evaluations', () => {
@@ -52,10 +50,8 @@ test('Too many evaluations', () => {
     `;
 
     const source = new Source('test', fib);
-    const project = new Project(null, 'test', source, [], DefaultLocale);
-    const evaluator = new Evaluator(project, DB, [DefaultLocale]);
-    evaluator.start();
-    expect(evaluator.getLatestSourceValue(source)).toBeInstanceOf(
-        EvaluationLimitException
-    );
+    const project = Project.make(null, 'test', source, [], DefaultLocale);
+    const evaluator = new Evaluator(project, DB, DefaultLocales);
+    const value = evaluator.getInitialValue();
+    expect(value).toBeInstanceOf(EvaluationLimitException);
 });

@@ -2,7 +2,6 @@ import TextType from './TextType';
 import type Type from './Type';
 import TextValue from '@values/TextValue';
 import type Language from './Language';
-import type Bind from './Bind';
 import type Context from './Context';
 import type TypeSet from './TypeSet';
 import { node, type Grammar, type Replacement, list } from './Node';
@@ -23,9 +22,10 @@ import Start from '@runtime/Start';
 import Finish from '@runtime/Finish';
 import type Evaluator from '@runtime/Evaluator';
 import type Value from '../values/Value';
+import type Locales from '../locale/Locales';
 
 export default class TextLiteral extends Literal {
-    /** The raw token in the program */
+    /** The list of translations for the text literal */
     readonly texts: Translation[];
 
     constructor(text: Translation[]) {
@@ -44,7 +44,7 @@ export default class TextLiteral extends Literal {
         type: Type | undefined,
         before: Node,
         selected: boolean,
-        context: Context
+        context: Context,
     ) {
         // Is the type one or more literal text types? Suggest those. Otherwise just suggest an empty text literal.
         const types = type
@@ -57,13 +57,17 @@ export default class TextLiteral extends Literal {
             : [TextLiteral.make()];
     }
 
+    getDescriptor() {
+        return 'TextLiteral';
+    }
+
     getGrammar(): Grammar {
         return [{ name: 'texts', kind: list(false, node(Translation)) }];
     }
 
     clone(replace?: Replacement): this {
         return new TextLiteral(
-            this.replaceChild('texts', this.texts, replace)
+            this.replaceChild('texts', this.texts, replace),
         ) as this;
     }
 
@@ -87,7 +91,7 @@ export default class TextLiteral extends Literal {
                         ...parts,
                         ...part.expression.compile(evaluator, context),
                     ],
-                    []
+                    [],
                 ),
             new Finish(this),
         ];
@@ -120,7 +124,7 @@ export default class TextLiteral extends Literal {
         return new TextValue(
             this,
             text,
-            translation.language?.getLanguageText()
+            translation.language?.getLanguageText(),
         );
     }
 
@@ -140,10 +144,10 @@ export default class TextLiteral extends Literal {
                           text.open.clone(),
                           text.segments[0].clone(),
                           text.close?.clone(),
-                          text.language
+                          text.language,
                       )
-                    : TextType.make()
-            )
+                    : TextType.make(),
+            ),
         );
     }
 
@@ -159,27 +163,19 @@ export default class TextLiteral extends Literal {
             : getPreferred(locales, this.texts);
     }
 
-    getValue(locales: Locale[]): TextValue {
+    getValue(locales: Locales): TextValue {
         // Get the alternatives
-        const best = this.getLocaleText(locales);
+        const best = this.getLocaleText(locales.getLocales());
         return new TextValue(
             this,
             best.getText(),
             best.language === undefined
                 ? undefined
-                : best.language.getLanguageText()
+                : best.language.getLanguageText(),
         );
     }
 
-    evaluateTypeSet(
-        bind: Bind,
-        original: TypeSet,
-        current: TypeSet,
-        context: Context
-    ) {
-        bind;
-        original;
-        context;
+    evaluateTypeGuards(current: TypeSet) {
         return current;
     }
 
@@ -195,12 +191,15 @@ export default class TextLiteral extends Literal {
         return this.texts[0];
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.TextLiteral;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.TextLiteral);
     }
 
-    getStartExplanations(translation: Locale) {
-        return concretize(translation, translation.node.TextLiteral.start);
+    getStartExplanations(locales: Locales) {
+        return concretize(
+            locales,
+            locales.get((l) => l.node.TextLiteral.start),
+        );
     }
 
     getGlyphs() {

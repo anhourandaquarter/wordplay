@@ -20,15 +20,7 @@
     } from '../project/Contexts';
     import type Evaluator from '@runtime/Evaluator';
     import type PaintingConfiguration from './PaintingConfiguration';
-    import {
-        animationFactor,
-        DB,
-        locale,
-        locales,
-        Projects,
-        writingDirection,
-        writingLayout,
-    } from '../../db/Database';
+    import { animationFactor, DB, locales, Projects } from '../../db/Database';
     import type Color from '../../output/Color';
     import Key from '../../input/Key';
     import { PX_PER_METER, rootScale } from '../../output/outputToCSS';
@@ -96,7 +88,7 @@
 
     $: exception = value instanceof ExceptionValue ? value : undefined;
 
-    /** Everyt ime the value changes, try to parse a Stage from it. */
+    /** Every time the value changes, try to parse a Stage from it. */
     $: stageValue = value === undefined ? undefined : toStage(evaluator, value);
 
     /** Keep track of whether the creator is typing, so we can blur output until the next change. */
@@ -124,10 +116,10 @@
     $: if ($announce && value && (exception || stageValue === undefined))
         $announce(
             'value',
-            $locale.language,
+            $locales.getLanguages()[0],
             exception
-                ? exception.getExplanation($locale).toText()
-                : value.getDescription(concretize, $locale).toText()
+                ? exception.getExplanation($locales).toText()
+                : value.getDescription(concretize, $locales).toText(),
         );
 
     /** When creator's preferred animation factor changes, update evaluator */
@@ -139,7 +131,9 @@
         if (event.key === 'Tab') return;
 
         // Reset the value if there's not a chat.
-        if (!chats && keyboardInputView) keyboardInputView.value = '';
+        if (!chats && keyboardInputView) {
+            keyboardInputView.value = '';
+        }
 
         // Is the program evaluating?
         if (evaluator.isPlaying()) {
@@ -219,7 +213,7 @@
                             (direction[1] > 0 &&
                                 focusRect.top < focusable.rect.top) ||
                             (direction[1] < 0 &&
-                                focusRect.bottom > focusable.rect.bottom)
+                                focusRect.bottom > focusable.rect.bottom),
                     )
                     // Sort by distance to center
                     .sort((a, b) => a.distance - b.distance);
@@ -248,7 +242,7 @@
                         project,
                         $selectedOutput.includes(evaluate)
                             ? $selectedOutput.filter((o) => o !== evaluate)
-                            : [evaluate]
+                            : [evaluate],
                     );
                     event.stopPropagation();
                     return;
@@ -288,7 +282,8 @@
                 .map((stream) => stream.react({ key: event.key, down: true }));
 
             // Announce the key pressed
-            if ($announce) $announce('keyinput', $locale.language, event.key);
+            if ($announce)
+                $announce('keyinput', $locales.getLanguages()[0], event.key);
 
             // Map keys onto axes of change for any Placement streams.
             if (
@@ -301,15 +296,15 @@
                         x: keysDown.get('ArrowLeft')
                             ? -1
                             : keysDown.get('ArrowRight')
-                            ? 1
-                            : 0,
+                              ? 1
+                              : 0,
                         y: keysDown.get('ArrowUp')
                             ? 1
                             : keysDown.get('ArrowDown')
-                            ? -1
-                            : 0,
+                              ? -1
+                              : 0,
                         z: keysDown.get('-') ? 1 : keysDown.get('=') ? -1 : 0,
-                    })
+                    }),
                 );
                 event.stopPropagation();
             }
@@ -375,14 +370,14 @@
                 // First, find the output on stage that this placement is placing,
                 // so we can find the position of the pointer relative to the output.
                 const output = stageValue.find(
-                    (output) => output.place?.value === placement.latest()
+                    (output) => output.place?.value === placement.latest(),
                 );
                 // Couldn't find the output? Move to the next one.
                 if (output === undefined) continue;
 
                 // Now find the view of the output.
                 const outputView = document.querySelector(
-                    `[data-id="${output.getHTMLID()}"]`
+                    `[data-id="${output.getHTMLID()}"]`,
                 );
                 // Couldn't find the view? Move on to the next one.
                 if (outputView === null) continue;
@@ -406,14 +401,14 @@
                         angle < 90 - threshold || angle > 270 + threshold
                             ? 1
                             : angle > 90 + threshold && angle < 270 - threshold
-                            ? -1
-                            : 0,
+                              ? -1
+                              : 0,
                     y:
                         angle > threshold && angle < 180 - threshold
                             ? 1
                             : angle > 180 + threshold && angle < 360 - threshold
-                            ? -1
-                            : 0,
+                              ? -1
+                              : 0,
                     z: 0,
                 });
             }
@@ -429,7 +424,7 @@
                 dx - rect.width / 2,
                 -(dy - rect.height / 2),
                 0,
-                renderedFocus.z
+                renderedFocus.z,
             );
             const focus = event.shiftKey;
             const place =
@@ -439,21 +434,23 @@
                           renderedFocus.value,
                           mx - renderedFocus.x,
                           my + renderedFocus.y,
-                          0
+                          0,
                       )
                     : // If moving focus, the start place is the rendered focus
-                    focus
-                    ? renderedFocus
-                    : // If there's selected output, it's the first output selected, and it has a place
-                    $selectedOutput && $selectedOutput.length > 0
-                    ? getOrCreatePlace(
-                          project,
-                          $locale,
-                          $selectedOutput[0],
-                          evaluator.project.getNodeContext($selectedOutput[0])
-                      )
-                    : // Otherwise, there's no place the click started.
-                      undefined;
+                      focus
+                      ? renderedFocus
+                      : // If there's selected output, it's the first output selected, and it has a place
+                        $selectedOutput && $selectedOutput.length > 0
+                        ? getOrCreatePlace(
+                              project,
+                              $locales,
+                              $selectedOutput[0],
+                              evaluator.project.getNodeContext(
+                                  $selectedOutput[0],
+                              ),
+                          )
+                        : // Otherwise, there's no place the click started.
+                          undefined;
 
             if (place) {
                 fit = false;
@@ -473,7 +470,7 @@
 
         // Find the last event we had for this pointer.
         const index = pointersByIndex.findIndex(
-            (ev) => ev.pointerId === event.pointerId
+            (ev) => ev.pointerId === event.pointerId,
         );
         // Replace it with this new event
         if (index >= 0) pointersByIndex[index] = event;
@@ -482,7 +479,7 @@
         if (pointersByIndex.length === 2) {
             // Find the difference on the x axis
             const currentPointerDifference = Math.abs(
-                pointersByIndex[0].clientX - pointersByIndex[1].clientX
+                pointersByIndex[0].clientX - pointersByIndex[1].clientX,
             );
             // No differences yet? Initialize to the current difference, which
             // is the anchor difference. Also initialize to the current rendered focus.
@@ -500,14 +497,14 @@
                     newZ > -1 || newZ === Infinity
                         ? -1
                         : newZ < -40 || newZ === -Infinity
-                        ? -40
-                        : newZ;
+                          ? -40
+                          : newZ;
 
                 if (!isNaN(boundedNewZ))
                     stage.setFocus(
                         startGesturePlace.x,
                         startGesturePlace.y,
-                        boundedNewZ
+                        boundedNewZ,
                     );
             }
         }
@@ -524,7 +521,7 @@
                     mouseXDelta,
                     mouseYDelta,
                     drag.startPlace.z,
-                    renderedFocus.z
+                    renderedFocus.z,
                 );
 
                 const newX = twoDigits(drag.startPlace.x + renderedDeltaX);
@@ -538,7 +535,7 @@
                         prior === undefined ||
                         Math.sqrt(
                             Math.pow(prior.x - newX, 2) +
-                                Math.pow(prior.y - newY, 2)
+                                Math.pow(prior.y - newY, 2),
                         ) > 0.5
                     ) {
                         // Add the point
@@ -547,14 +544,14 @@
                         const minX = twoDigits(
                             Math.min.apply(
                                 null,
-                                paintingPlaces.map((p) => p.x)
-                            )
+                                paintingPlaces.map((p) => p.x),
+                            ),
                         );
                         const minY = twoDigits(
                             Math.min.apply(
                                 null,
-                                paintingPlaces.map((p) => p.y)
-                            )
+                                paintingPlaces.map((p) => p.y),
+                            ),
                         );
 
                         // Create a stroke. represented as freeform group of phrases with explicit positions.
@@ -563,12 +560,12 @@
                                 .map(
                                     (p) =>
                                         `Place(${twoDigits(
-                                            p.x - minX
-                                        )}m ${twoDigits(p.y - minY)}m)`
+                                            p.x - minX,
+                                        )}m ${twoDigits(p.y - minY)}m)`,
                                 )
                                 .join(
-                                    ' '
-                                )}].translate(ƒ(place•Place) Phrase('a' place: place)) place: Place(${minX}m ${minY}m))`
+                                    ' ',
+                                )}].translate(ƒ(place•Place) Phrase('a' place: place)) place: Place(${minX}m ${minY}m))`,
                         );
 
                         // Add the stroke to the project's verse
@@ -589,7 +586,7 @@
                         stage.setFocus(
                             renderedDeltaX / scale + drag.startPlace.x,
                             renderedDeltaY / scale + drag.startPlace.y,
-                            drag.startPlace.z
+                            drag.startPlace.z,
                         );
                         event.stopPropagation();
                     } else if (
@@ -598,7 +595,7 @@
                         $selectedOutput.length > 0 &&
                         !$selectedOutput[0].is(
                             project.shares.output.Stage,
-                            project.getNodeContext($selectedOutput[0])
+                            project.getNodeContext($selectedOutput[0]),
                         )
                     ) {
                         moveOutput(
@@ -608,7 +605,7 @@
                             $locales,
                             newX,
                             newY,
-                            false
+                            false,
                         );
                         event.stopPropagation();
                     }
@@ -634,7 +631,7 @@
                     tileX,
                     tileY,
                     0,
-                    renderedFocus?.z ?? 0
+                    renderedFocus?.z ?? 0,
                 );
 
                 // Now translate the position relative to the stage focus.
@@ -649,7 +646,7 @@
     function handlePointerUp(event: PointerEvent) {
         // Remove this event from the event cache.
         const index = pointersByIndex.findIndex(
-            (ev) => ev.pointerId === event.pointerId
+            (ev) => ev.pointerId === event.pointerId,
         );
         if (index >= 0) pointersByIndex.splice(index, 1);
         // Rset the distance once the number of pointers is less than 2.
@@ -715,7 +712,7 @@
 
             // Focus it too, for keyboard output.
             const outputView = valueView?.querySelector(
-                `[data-node-id="${evaluate.id}"`
+                `[data-node-id="${evaluate.id}"`,
             );
 
             if (outputView instanceof HTMLElement) outputView.focus();
@@ -734,7 +731,7 @@
     }
 
     function getOutputNodeIDUnderMouse(
-        event: PointerEvent | MouseEvent
+        event: PointerEvent | MouseEvent,
     ): number | undefined {
         // Find the nearest .output element and get its node-id data attribute.
         const element = document.elementFromPoint(event.clientX, event.clientY);
@@ -752,8 +749,8 @@
             selectable && name
                 ? name
                 : stageValue.selectable
-                ? stageValue.getName()
-                : undefined;
+                  ? stageValue.getName()
+                  : undefined;
         if (selection) {
             evaluator
                 .getBasisStreamsOfType(Choice)
@@ -787,7 +784,7 @@
     }
 
     function getOutputNodeIDFromElement(
-        element: Element | null
+        element: Element | null,
     ): number | undefined {
         if (!(element instanceof HTMLElement)) return;
         const nodeIDString = element.dataset.nodeId;
@@ -798,7 +795,7 @@
     }
 
     function getOutputNodeFromID(
-        nodeID: number | undefined
+        nodeID: number | undefined,
     ): Evaluate | undefined {
         if (nodeID === undefined) return undefined;
 
@@ -827,18 +824,19 @@
     afterUpdate(() => {
         // Did the body get focus after the update? Focus on the nearest view in output.
         if (
+            interactive &&
             document.activeElement === document.body &&
             priorFocusRect &&
             valueView
         ) {
             const focusable = getMeasuredFocusableOutput(
-                DOMRectCenter(priorFocusRect)
+                DOMRectCenter(priorFocusRect),
             );
             // Pick the closest view to focus
             let output: HTMLElement | undefined = undefined;
             if (focusable.length > 0) {
                 const candidate = focusable.sort(
-                    (a, b) => a.distance - b.distance
+                    (a, b) => a.distance - b.distance,
                 )[0].view;
                 if (candidate instanceof HTMLElement) output = candidate;
             }
@@ -852,7 +850,7 @@
     class="output"
     data-uuid="stage"
     role="application"
-    aria-label={$locale.ui.output.label}
+    aria-label={$locales.get((l) => l.ui.output.label)}
     class:mini
     class:editing={$evaluation?.playing === false && !painting}
     class:selected={stageValue &&
@@ -860,8 +858,6 @@
         stageValue.value.creator instanceof Evaluate &&
         $selectedOutput &&
         $selectedOutput.includes(stageValue.value.creator)}
-    style:direction={$writingDirection}
-    style:writing-mode={$writingLayout}
 >
     <div
         class="value"
@@ -869,8 +865,8 @@
         class:typing
         role="presentation"
         bind:this={valueView}
-        on:keydown={interactive ? handleKeyDown : undefined}
-        on:keyup={interactive ? handleKeyUp : undefined}
+        on:keydown={interactive ? handleKeyDown : null}
+        on:keyup={interactive ? handleKeyUp : null}
         on:wheel={interactive ? handleWheel : null}
         on:pointerdown|stopPropagation={(event) =>
             interactive ? handlePointerDown(event) : null}
@@ -885,11 +881,13 @@
                     type="text"
                     class="keyboard-input"
                     placeholder={chats
-                        ? $locale.ui.output.field.key.placeholder
+                        ? $locales.get((l) => l.ui.output.field.key.placeholder)
                         : null}
                     data-defaultfocus
                     aria-autocomplete="none"
-                    aria-label={$locale.ui.output.field.key.description}
+                    aria-label={$locales.get(
+                        (l) => l.ui.output.field.key.description,
+                    )}
                     autocomplete={chats ? 'on' : 'off'}
                     autocorrect={chats ? 'on' : 'off'}
                     on:keydown={(event) =>
@@ -904,7 +902,8 @@
                 />
                 {#if chats}
                     <ButtonUI
-                        tip={$locale.ui.output.button.submit}
+                        background
+                        tip={$locales.get((l) => l.ui.output.button.submit)}
                         action={submitChat}>↑</ButtonUI
                     >
                 {/if}
@@ -920,12 +919,10 @@
                         invert
                     >
                         <svelte:fragment slot="content">
-                            {#each $locales as locale}
-                                <MarkupHTMLView
-                                    markup={exception.getExplanation(locale)}
-                                />
-                            {/each}</svelte:fragment
-                        ></Speech
+                            <MarkupHTMLView
+                                markup={exception.getExplanation($locales)}
+                            />
+                        </svelte:fragment></Speech
                     >
                 {/if}
             </div>
@@ -939,7 +936,7 @@
                     <ValueView {value} interactive={false} />
                 {:else}
                     {@const description = value
-                        .getDescription(concretize, $locale)
+                        .getDescription(concretize, $locales)
                         .toText()}
                     <h2>{description}</h2>
                     <ValueView {value} inline={false} />
@@ -970,12 +967,11 @@
 
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        align-items: center;
+        justify-items: stretch;
+        align-items: stretch;
         position: relative;
 
-        width: 100%;
-        height: 100%;
+        flex-grow: 1;
     }
 
     .output.editing.selected {
@@ -987,18 +983,24 @@
     .value {
         transform-origin: top right;
 
+        flex-grow: 1;
+
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        align-items: center;
+        justify-content: stretch;
+        align-items: stretch;
         position: relative;
 
-        width: 100%;
-        height: 100%;
         overflow: hidden;
-        transition: ease-in-out background-color, filter, ease-in,
+        transition:
+            ease-in-out background-color,
+            filter,
+            ease-in,
             height ease-in;
         transition-duration: calc(var(--animation-factor) * 200ms);
+
+        /** Query the container size */
+        container-type: inline-size;
     }
 
     .value.typing {
@@ -1017,14 +1019,13 @@
         display: flex;
         flex-direction: column;
         flex-grow: 1;
-        max-height: 100%;
-        width: 100%;
         padding: var(--wordplay-spacing);
-        font-size: 48pt;
         transform-origin: center;
         align-items: center;
         margin: auto;
         overflow: auto;
+        font-size: 5cqw;
+        padding-block-start: 2em;
     }
 
     .message.mini {

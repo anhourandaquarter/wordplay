@@ -5,16 +5,15 @@ import Halt from '@runtime/Halt';
 import UnparsableException from '@values/UnparsableException';
 import type Step from '@runtime/Step';
 import type Value from '@values/Value';
-import type Bind from './Bind';
 import type Expression from './Expression';
 import Node, { node, type Grammar, type Replacement, list } from './Node';
 import type TypeSet from './TypeSet';
 import UnparsableType from './UnparsableType';
-import type Locale from '@locale/Locale';
 import SimpleExpression from './SimpleExpression';
 import Glyphs from '../lore/Glyphs';
 import concretize from '../locale/concretize';
 import Purpose from '../concepts/Purpose';
+import type Locales from '../locale/Locales';
 
 export default class UnparsableExpression extends SimpleExpression {
     readonly unparsables: Node[];
@@ -25,12 +24,16 @@ export default class UnparsableExpression extends SimpleExpression {
         this.unparsables = nodes;
     }
 
+    getDescriptor() {
+        return 'UnparsableExpression';
+    }
+
     getGrammar(): Grammar {
         return [{ name: 'unparsables', kind: list(true, node(Node)) }];
     }
 
     getPurpose() {
-        return Purpose.Evaluate;
+        return Purpose.Source;
     }
 
     computeConflicts(): void | Conflict[] {
@@ -39,7 +42,7 @@ export default class UnparsableExpression extends SimpleExpression {
 
     clone(replace?: Replacement): this {
         return new UnparsableExpression(
-            this.replaceChild('unparsables', this.unparsables, replace)
+            this.replaceChild('unparsables', this.unparsables, replace),
         ) as this;
     }
 
@@ -47,7 +50,7 @@ export default class UnparsableExpression extends SimpleExpression {
         return new UnparsableType(this.unparsables);
     }
 
-    evaluateTypeSet(_: Bind, __: TypeSet, current: TypeSet) {
+    evaluateTypeGuards(current: TypeSet) {
         return current;
     }
 
@@ -59,7 +62,7 @@ export default class UnparsableExpression extends SimpleExpression {
         return [
             new Halt(
                 (evaluator) => new UnparsableException(evaluator, this),
-                this
+                this,
             ),
         ];
     }
@@ -77,14 +80,14 @@ export default class UnparsableExpression extends SimpleExpression {
         return this;
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.UnparsableExpression;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.UnparsableExpression);
     }
 
-    getStartExplanations(translation: Locale) {
+    getStartExplanations(locales: Locales) {
         return concretize(
-            translation,
-            translation.node.UnparsableExpression.start
+            locales,
+            locales.get((l) => l.node.UnparsableExpression.start),
         );
     }
 

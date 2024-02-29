@@ -21,11 +21,13 @@
     import PlaceEditor from './PlaceEditor.svelte';
     import ConceptLinkUI from '../concepts/ConceptLinkUI.svelte';
     import { getConceptIndex } from '../project/Contexts';
-    import { DB, locale, locales } from '../../db/Database';
+    import { DB, locales } from '../../db/Database';
     import { tick } from 'svelte';
     import { DOCUMENTATION_SYMBOL, EDIT_SYMBOL } from '../../parser/Symbols';
     import MotionEditor from './MotionEditor.svelte';
     import PlacementEditor from './PlacementEditor.svelte';
+    import NamedControl from './NamedControl.svelte';
+    import AuraEditor from './AuraEditor.svelte';
 
     export let project: Project;
     export let property: OutputProperty;
@@ -48,8 +50,8 @@
     }
 </script>
 
-<div class="property">
-    <h3 class="name">
+<NamedControl>
+    <svelte:fragment slot="name">
         {#if bindConcept}<small
                 ><ConceptLinkUI
                     link={bindConcept}
@@ -57,46 +59,36 @@
                 /></small
             >{/if}
         <label for={property.getName()}
-            >{bindConcept?.getName($locale, false) ?? '—'}</label
-        ></h3
-    >
-    {#if editable}
-        <Button
-            tip={valuesAreSet
-                ? $locale.ui.palette.button.revert
-                : $locale.ui.palette.button.set}
-            bind:view={toggleView}
-            action={() => toggleValues(!valuesAreSet)}
-            >{valuesAreSet ? '⨉' : EDIT_SYMBOL}</Button
-        >{/if}
-    <div class="control">
+            >{bindConcept?.getName($locales, false) ?? '—'}</label
+        >
+        {#if editable}
+            <Button
+                tip={valuesAreSet
+                    ? $locales.get((l) => l.ui.palette.button.revert)
+                    : $locales.get((l) => l.ui.palette.button.set)}
+                bind:view={toggleView}
+                action={() => toggleValues(!valuesAreSet)}
+                >{valuesAreSet ? '⨉' : EDIT_SYMBOL}</Button
+            >{/if}
+    </svelte:fragment>
+    <svelte:fragment slot="control">
         {#if values.areMixed()}
-            <Note
-                >{$locales
-                    .map((locale) => locale.ui.palette.labels.mixed)
-                    .join('/')}</Note
-            >
+            <Note>{$locales.get((l) => l.ui.palette.labels.mixed)}</Note>
         {:else if !values.areSet()}
             {@const expression = values.getExpression()}
             <!-- If the values arent set, show as inherited if inherited, and otherwise show the default -->
             <Note
-                >{#if property.inherited}{$locales
-                        .map((locale) => locale.ui.palette.labels.inherited)
-                        .join(
-                            '/'
-                        )}{:else if values.areDefault() && expression !== undefined}<NodeView
+                >{#if property.inherited}{$locales.get(
+                        (l) => l.ui.palette.labels.inherited,
+                    )}{:else if values.areDefault() && expression !== undefined}<NodeView
                         node={expression}
                     />
-                    {$locales
-                        .map((locale) => locale.ui.palette.labels.default)
-                        .join('/')}{:else}&mdash;{/if}</Note
+                    {$locales.get(
+                        (l) => l.ui.palette.labels.default,
+                    )}{:else}&mdash;{/if}</Note
             >
         {:else if !values.areEditable(project)}
-            <Note
-                >{$locales.map(
-                    (locale) => locale.ui.palette.labels.computed
-                )}</Note
-            >
+            <Note>{$locales.get((l) => l.ui.palette.labels.computed)}</Note>
         {:else if property.type instanceof OutputPropertyRange}
             <BindSlider {property} {values} range={property.type} {editable} />
         {:else if property.type instanceof OutputPropertyOptions}
@@ -133,6 +125,8 @@
                     {editable}
                 />
             {/if}
+        {:else if property.type === 'aura'}
+            <AuraEditor {project} {property} {values} {editable} />
         {:else if property.type == 'poses'}
             <SequencePosesEditor {project} map={values.getMap()} {editable} />
         {:else if property.type === 'content'}
@@ -140,15 +134,15 @@
         {:else if property.type === 'place'}
             {@const place = values.getEvaluationOf(
                 project,
-                project.shares.output.Place
+                project.shares.output.Place,
             )}
             {@const motion = values.getEvaluationOf(
                 project,
-                project.shares.input.Motion
+                project.shares.input.Motion,
             )}
             {@const placement = values.getEvaluationOf(
                 project,
-                project.shares.input.Placement
+                project.shares.input.Placement,
             )}
             {#if place}
                 <PlaceEditor {project} {place} {editable} convertable={true} />
@@ -158,32 +152,5 @@
                 <PlacementEditor {project} {placement} {editable} />
             {/if}
         {/if}
-    </div>
-</div>
-
-<style>
-    .property {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: var(--wordplay-spacing);
-        row-gap: var(--wordplay-spacing);
-    }
-
-    .name {
-        flex-basis: 5em;
-        text-align: left;
-        margin: 0;
-        white-space: nowrap;
-    }
-
-    .control {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--wordplay-spacing);
-    }
-</style>
+    </svelte:fragment>
+</NamedControl>

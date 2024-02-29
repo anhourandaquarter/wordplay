@@ -5,8 +5,8 @@ import BasisType from './BasisType';
 import type TypeSet from './TypeSet';
 import type { BasisTypeName } from '../basis/BasisConstants';
 import { node, type Grammar, type Replacement } from './Node';
-import type Locale from '@locale/Locale';
 import Glyphs from '../lore/Glyphs';
+import type Locales from '../locale/Locales';
 
 export default class BooleanType extends BasisType {
     readonly type: Token;
@@ -25,6 +25,10 @@ export default class BooleanType extends BasisType {
 
     static getPossibleNodes() {
         return [BooleanType.make()];
+    }
+
+    getDescriptor() {
+        return 'BooleanType';
     }
 
     getGrammar(): Grammar {
@@ -49,8 +53,8 @@ export default class BooleanType extends BasisType {
         return 'boolean';
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.BooleanType;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.BooleanType);
     }
 
     getGlyphs() {

@@ -2,13 +2,16 @@ import Token from './Token';
 import Language from './Language';
 import Sym from './Sym';
 import { node, type Grammar, type Replacement, optional, list } from './Node';
-import type Locale from '@locale/Locale';
 import Emotion from '../lore/Emotion';
 import { TextCloseByTextOpen, TextDelimiters } from '../parser/Tokenizer';
 import Purpose from '../concepts/Purpose';
 import { LanguageTagged } from './LanguageTagged';
 import Example from './Example';
 import type Program from './Program';
+import type Locales from '../locale/Locales';
+import { PossiblePII } from '@conflicts/PossiblePII';
+import type Conflict from '@conflicts/Conflict';
+import type Context from './Context';
 
 export const ESCAPE_REGEX = /\\(.)/g;
 
@@ -23,7 +26,7 @@ export default class Translation extends LanguageTagged {
         open: Token,
         segments: TranslationSegment[],
         close: Token | undefined,
-        language?: Language
+        language?: Language,
     ) {
         super(language);
 
@@ -41,8 +44,12 @@ export default class Translation extends LanguageTagged {
             new Token("'", Sym.Text),
             [new Token(text ?? '', Sym.Words)],
             new Token("'", Sym.Text),
-            language
+            language,
         );
+    }
+
+    getDescriptor() {
+        return 'Translation';
     }
 
     getGrammar(): Grammar {
@@ -62,7 +69,7 @@ export default class Translation extends LanguageTagged {
             this.replaceChild('open', this.open, replace),
             this.replaceChild('segments', this.segments, replace),
             this.replaceChild('close', this.close, replace),
-            this.replaceChild('language', this.language, replace)
+            this.replaceChild('language', this.language, replace),
         ) as this;
     }
 
@@ -70,8 +77,8 @@ export default class Translation extends LanguageTagged {
         return Purpose.Value;
     }
 
-    computeConflicts() {
-        return;
+    computeConflicts(context: Context): Conflict[] {
+        return PossiblePII.analyze(this, context);
     }
 
     /** Get the text, with any escape characters processed. */
@@ -82,8 +89,8 @@ export default class Translation extends LanguageTagged {
             .join('');
     }
 
-    getNodeLocale(translation: Locale) {
-        return translation.node.Translation;
+    getNodeLocale(locales: Locales) {
+        return locales.get((l) => l.node.Translation);
     }
 
     getExpressions(): Program[] {
@@ -101,8 +108,8 @@ export default class Translation extends LanguageTagged {
 
     getDelimiters(): string {
         return (
-            this.open.getText() + this.close?.getText() ??
-            TextCloseByTextOpen[this.open.getText()]
+            this.open.getText() +
+            (this.close?.getText() ?? TextCloseByTextOpen[this.open.getText()])
         );
     }
 
@@ -117,7 +124,7 @@ export default class Translation extends LanguageTagged {
             return Translation.make(
                 text.substring(0, text.length - 1) +
                     String.fromCodePoint(last + direction),
-                this.language
+                this.language,
             ) as this;
         }
         return undefined;
@@ -131,6 +138,7 @@ export function unescaped(text: string) {
 export function undelimited(text: string) {
     return text.substring(
         1,
-        text.length - (TextDelimiters.has(text.charAt(text.length - 1)) ? 1 : 0)
+        text.length -
+            (TextDelimiters.has(text.charAt(text.length - 1)) ? 1 : 0),
     );
 }
