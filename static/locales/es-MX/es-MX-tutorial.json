@@ -8,7 +8,7 @@
             "performance": ["use", "fit", "DarkVoid"],
             "scenes": [
                 {
-                    "title": "Silencio",
+                    "title": "Silence",
                     "subtitle": null,
                     "performance": ["use", "fit", "DarkVoid"],
                     "lines": [
@@ -855,7 +855,7 @@
                             "Puedes intentar agregar otra traducción. ¡Simplemente no pongas ningún espacio entre ellos o serán dos de mí!"
                         ],
                         null,
-                        ["edit", "'I have 7 apples'"],
+                        ["edit", "'I have 7 manzanas'"],
                         [
                             "Text",
                             "neutral",
@@ -868,7 +868,7 @@
                             "serious",
                             "Por ejemplo, ¿@FunctionDefinition te mostró cómo el texto sabe cómo agregarse a otro texto? ¿Como esto? Esta pequeña expresión convierte \\7\\ en texto, luego lo agrega a \\'Tengo'\\ y luego agrega \\'manzanas'\\. Pero es muy desordenado, dificulta la lectura de lo que sucede y la conversión a texto parece innecesaria."
                         ],
-                        ["edit", "'I have' + (7→'') + 'apples'"],
+                        ["edit", "'I have' + (7→'') + 'manzanas'"],
                         null,
                         [
                             "Text",
@@ -881,14 +881,14 @@
                             "¿No es eso mucho más elegante? Puedes ponerme en cualquier lugar dentro de @Text, convertiré tus valores en texto y trabajaré con @Text para crear un @Text..",
                             "Esto hace que sea mucho más fácil escribir una prosa hermosa que utilice valores."
                         ],
-                        ["edit", "'I have \\7\\ apples'"],
+                        ["edit", "'Tengo \\7\\ manzanas'"],
                         null,
                         [
                             "Text",
                             "neutral",
                             "Y cuando digo cualquier expresión, realmente me refiero a cualquiera. Por ejemplo, imagina que quieres hacer algo de aritmética y creas un texto con el resultado. Podrías hacer esto. Esto suma varios números y luego crea texto con la suma. Realmente maravilloso, ¿no? Y mucho más elegante que \\'Tengo ' + (1 + 2 + 5 + 8) + ' manzanas'\\, con todas esas adiciones adicionales."
                         ],
-                        ["edit", "'I have \\1 + 2 + 5 + 8\\ apples'"],
+                        ["edit", "'Tengo \\1 + 2 + 5 + 8\\ manzanas'"],
                         null,
                         [
                             "Text",
@@ -1298,25 +1298,25 @@
                         ],
                         ["edit", "1"],
                         null,
-                        ["Number", "excited", "Or this."],
+                        ["Number", "excited", "O esto."],
                         ["edit", "1.0"],
                         null,
-                        ["Number", "excited", "Or this."],
+                        ["Number", "excited", "O esto."],
                         ["edit", "1.01"],
                         null,
-                        ["Number", "excited", "Or this."],
+                        ["Number", "excited", "O esto."],
                         ["edit", "∞"],
                         null,
-                        ["Number", "excited", "Or this."],
+                        ["Number", "excited", "O esto."],
                         ["edit", "π"],
                         null,
-                        ["Number", "excited", "Or this."],
+                        ["Number", "excited", "O esto."],
                         ["edit", "Ⅶ"],
                         null,
-                        ["Number", "excited", "Or this."],
+                        ["Number", "excited", "O esto."],
                         ["edit", "万十一"],
                         null,
-                        ["Number", "excited", "Or…"],
+                        ["Number", "excited", "O…"],
                         [
                             "FunctionDefinition",
                             "kind",
@@ -1358,17 +1358,17 @@
                         ],
                         ["edit", "1 + 1"],
                         null,
-                        ["Number", "excited", "Or this."],
+                        ["Number", "excited", "O esto."],
                         ["edit", "1000 + 9999"],
                         null,
-                        ["Number", "excited", "Or this."],
-                        ["edit", "1kitty + 2kitty"],
+                        ["Number", "excited", "O esto."],
+                        ["edit", "1gatita + 2gatita"],
                         null,
-                        ["Number", "excited", "Or this."],
+                        ["Number", "excited", "O esto."],
                         ["edit", "-5s + 5s"],
                         null,
-                        ["Number", "excited", "Or this."],
-                        ["conflict", "2apple + 5orange"],
+                        ["Number", "excited", "O esto."],
+                        ["conflict", "2manzana + 5naranja"],
                         null,
                         [
                             "FunctionDefinition",
@@ -1715,7 +1715,7 @@
                         ],
                         [
                             "edit",
-                            "['cat' 'dog' 'mouse' 'parrot' 'snake'].random()"
+                            "['gata' 'perro' 'ratón' 'cotorra' 'culebra'].random()"
                         ],
                         null,
                         [
@@ -1924,17 +1924,17 @@
                         ],
                         [
                             "edit",
-                            "{ 'ben': 2points 'joe': 5points 'kate': 12points }"
+                            "{ 'ben': 2points 'josé': 5points 'kate': 12points }"
                         ],
                         null,
                         [
                             "Map",
                             "serious",
-                            "Pero como un @Set, A mi no me gustan los duplicaods. Tu no puedes llaves repetidas, pero puedes tener llaves differentes mapeadas a valores equivalentes. Por ejemplo, esto me dos de \\'ben'\\, pero yo solo tengo en cuenta la ultima. Pero esta bien que \\'ben'\\ y \\'joe'\\ tengan la misma cantidad de puntos porque tienen diferentes llaves."
+                            "Pero como un @Set, A mi no me gustan los duplicaods. Tu no puedes llaves repetidas, pero puedes tener llaves differentes mapeadas a valores equivalentes. Por ejemplo, esto me dos de \\'ben'\\, pero yo solo tengo en cuenta la ultima. Pero esta bien que \\'ben'\\ y \\'josé'\\ tengan la misma cantidad de puntos porque tienen diferentes llaves."
                         ],
                         [
                             "edit",
-                            "{'ben': 2points 'ben': 5points 'joe': 5points 'kate': 12points }"
+                            "{'ben': 2points 'ben': 5points 'josé': 5points 'kate': 12points }"
                         ],
                         [
                             "Map",
@@ -1978,7 +1978,7 @@
                         ],
                         [
                             "edit",
-                            "{ 'ben': 2points 'joe': 5points 'kate': 12points }{'ben'}"
+                            "{ 'ben': 2points 'josé': 5points 'kate': 12points }{'ben'}"
                         ],
                         null,
                         ["use", "fit", "DarkVoid"],
@@ -2040,7 +2040,7 @@
                         [
                             "FunctionDefinition",
                             "curious",
-                            "What are they?",
+                            "¿Qué son?",
                             "Conversiones. Ellos son la alquemia de este mundo, esa ayudan a cambien un tipo de valor a otro tipo. Vamos a conocerlos."
                         ]
                     ]
@@ -2074,7 +2074,7 @@
                             "Claro que si, valores son mis mejores amigos. A nosotros nos gusta hacer parkour en los fines de semana - o en los shows, o donde sea."
                         ],
                         null,
-                        ["FunctionDefinition", "curious", "Parkour?"],
+                        ["FunctionDefinition", "curious", "¿Parkour?"],
                         [
                             "Convert",
                             "serious",
@@ -2175,7 +2175,7 @@
                             "¿Como si todo se tratara de convertir entradas en salidas?"
                         ],
                         null,
-                        ["FunctionDefinition", "serious", "I guess so?"],
+                        ["FunctionDefinition", "serious", "¿Supongo que sí?"],
                         ["Convert", "surprised", "🤯"],
                         ["edit", "Phrase('🤯')"],
                         null,
@@ -2261,14 +2261,14 @@
                             "¿Ves que el formato de @Conditional tiene cuatro partes? Primero hay una *condición*, que debe ser @Boolean. Luego está \\?\\. Luego está la expresión *sí*, luego una expresión *no*. Lo que hace @Conditional es evaluar la condición, y si es \\⊤\\, evalúan la expresión *sí*. De lo contrario, evalúan la expresión /no/. ¡Es una forma tan poderosa de decidir!"
                         ],
                         null,
-                        ["edit", "1 > 5 ? 'more' 'less'"],
+                        ["edit", "1 > 5 ? 'mas' 'menos'"],
                         [
                             "FunctionDefinition",
                             "excited",
                             "¿Puedes darnos un ejemplo más específico?"
                         ],
-                        ["Conditional", "curious", "Something like this?"],
-                        ["edit", "1 > 5 ? 'less' 'more'"],
+                        ["Conditional", "curious", "¿Algo como esto?"],
+                        ["edit", "1 > 5 ? 'menos' 'mas'"],
                         null,
                         [
                             "FunctionDefinition",
@@ -2472,7 +2472,7 @@
                             "Las transmisiones @Key son realmente útiles cuando desea que una actuación reaccione a las teclas que presiona la audiencia. Por ejemplo, puede verificar si una tecla tiene la palabra 'Flecha' para decidir si se presionó una tecla de flecha. Presione una tecla de flecha y verá \\'mover'\\, presione otra cosa y verá \\'quedarse'\\"
                         ],
                         ["Key", "neutral", "clickety 'Arrow'…"],
-                        ["edit", "Key().has('Arrow') ? 'move' 'stay'"]
+                        ["edit", "Key().has('Arrow') ? 'mover' 'quedarse'"]
                     ]
                 },
                 {
@@ -2600,10 +2600,10 @@
                         [
                             "FunctionDefinition",
                             "excited",
-                            "¡El azar puede ser muy divertido! Podemos usarlo con transmisiones para crear un caos divertido. Por ejemplo, aquí elegimos una palabra aleatoria de una lista de palabras. Esto es lo mismo que \\['kitty' 'cat' 'meowy'].random()\\. ¡Sigue presionando ↻ para obtener un sinónimo de gato diferente! Intente agregar su propia palabra a la lista y vea si puede hacer que aparezca la palabra."
+                            "¡El azar puede ser muy divertido! Podemos usarlo con transmisiones para crear un caos divertido. Por ejemplo, aquí elegimos una palabra aleatoria de una lista de palabras. Esto es lo mismo que \\['gatita' 'gata' 'meowy'].random()\\. ¡Sigue presionando ↻ para obtener un sinónimo de gato diferente! Intente agregar su propia palabra a la lista y vea si puede hacer que aparezca la palabra."
                         ],
                         ["Random", "neutral", "1… 2… 2… 1… 3…"],
-                        ["edit", "['kitty' 'cat' 'feline'][Random(1 3)]"]
+                        ["edit", "['gatita' 'gata' 'felina'][Random(1 3)]"]
                     ]
                 },
                 {
@@ -2622,7 +2622,7 @@
                         [
                             "FunctionDefinition",
                             "kind",
-                            "A veces es agradable atraer a la audiencia en nuestro lugar en @Stage.",
+                            "A veces es agradable atraer a la audiencia en nuestro lugar en@Stage.",
                             "¡@Placement es una excelente manera de hacerlo! Es una secuencia de @Place, que responde a las teclas de flecha del teclado, clics y toques.",
                             "Intente usarlos para mover el hot dog."
                         ],
