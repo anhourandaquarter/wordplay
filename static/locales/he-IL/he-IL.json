@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/Locale.json",
-    "language": "en",
-    "region": "US",
+    "language": "he",
+    "region": "IL",
     "wordplay": "$?",
     "newProject": "$?",
     "term": {
