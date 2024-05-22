@@ -307,6 +307,9 @@
         } else updateEvaluator(newProject);
     });
 
+    // When the locales change, reset the evaluator to use the new locales.
+    $: if ($locales) resetInputs();
+
     function updateEvaluator(newProject: Project) {
         // Stop the old evaluator.
         $evaluator?.stop();
@@ -570,7 +573,7 @@
     let maxBottom = 0;
 
     /* A global context for a node being dragged */
-    let dragged = writable<Node | undefined>(undefined);
+    export let dragged = writable<Node | undefined>(undefined);
     setContext<DraggedContext>(DraggedSymbol, dragged);
 
     /** True if the output should show a grid */
@@ -734,6 +737,7 @@
     $: {
         $evaluation;
         $locales;
+
         // We don't use the source we compute in the reaction above because we want this to be based only
         // on the current evaluator. This is because we sometimes evaluate some time after updating the project
         // for typing responsiveness.

@@ -3,9 +3,34 @@
 We'll note all notable changes in this file, including bug fixes, enhancements, and all closed issues.
 Dates are in `YYYY-MM-DD` format and versions are in [semantic versioning](http://semver.org/) format.
 
-## 0.9.4 2024-05-04
+## 0.9.395 2024-05-18
 
-### Add
+### Fixed
+
+-   Enabled content security policy to enhance security.
+-   Improved layout of example code output refresh.
+-   Tidier spacing of project preview lists.
+-   [#468](https://github.com/wordplaydev/wordplay/issues/468) Fixed example dragging from tutorial dialog.
+-   [#465](https://github.com/wordplaydev/wordplay/issues/465) Fixed ARIA roles for output.
+
+### Added
+
+-   Added `Circle` and regular `Polygon` forms, which can be added to a stage as a background.
+
+## 0.9.394 2024-05-11
+
+### Fixed
+
+-   Changed toggle button color to always contrast backgrounds
+-   Defined foreground of footer to ensure button text is visible.
+-   Reset stage output when locales change.
+-   Signficantly reduced memory usage of edit history
+-   Improved preferred spacing of compound data structures and blocks.
+-   Faster and more correct and stable preferred spacing algorithm.
+
+## 0.9.393 2024-05-04
+
+### Added
 
 -   [#451](https://github.com/wordplaydev/wordplay/issues/451) New project templates.
 

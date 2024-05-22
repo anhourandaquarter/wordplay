@@ -58,7 +58,7 @@
 </script>
 
 <div
-    role={!group.selectable ? 'presentation' : 'group'}
+    role={!group.selectable ? null : 'group'}
     aria-label={still ? group.getDescription($locales) : null}
     aria-roledescription={group instanceof Group
         ? $locales.get((l) => l.term.group)
@@ -81,7 +81,6 @@
         : null) ?? null}
     style:color={getColorCSS(group.getFirstRestPose(), group.pose)}
     style:opacity={getOpacityCSS(group.getFirstRestPose(), group.pose)}
-    style:clip-path={clip ? clip.toCSSClip() : null}
     style:transform={toOutputTransform(
         group.getFirstRestPose(),
         group.pose,
@@ -94,7 +93,7 @@
             ascent: layout.height * PX_PER_METER,
             descent: 0,
         },
-        viewport
+        viewport,
     )}
 >
     <slot />
@@ -144,7 +143,7 @@
             style="transform: translate({clip.getLeft() *
                 PX_PER_METER}px, {-clip.getTop() * PX_PER_METER}px)"
         >
-            <path class="border" d={clip.toSVGPath()} />
+            <path class="border" d={clip.toSVGPath(0, 0)} />
         </svg>
     {/if}
 </div>
