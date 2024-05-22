@@ -156,8 +156,8 @@ type TokenPattern = {
 const CodePattern = { pattern: CODE_SYMBOL, types: [Sym.Code] };
 const FormattedPattern = { pattern: FORMATTED_SYMBOL, types: [Sym.Formatted] };
 const DocPattern = { pattern: DOCS_SYMBOL, types: [Sym.Doc] };
-const ListOpenPattern = { pattern: LIST_OPEN_SYMBOL, types: [Sym.ListOpen] };
-const ListClosePattern = { pattern: LIST_CLOSE_SYMBOL, types: [Sym.ListClose] };
+const ListOpenPattern = { pattern: LIST_OPEN_SYMBOL, types: [Sym.ListOpen, Sym.NumberIncludeOpen] };
+const ListClosePattern = { pattern: LIST_CLOSE_SYMBOL, types: [Sym.ListClose, Sym.NumberIncludeClose] };
 
 /** Valid tokens inside of code. */
 const CodeTokenPatterns: TokenPattern[] = [
@@ -167,7 +167,7 @@ const CodeTokenPatterns: TokenPattern[] = [
     { pattern: SET_CLOSE_SYMBOL, types: [Sym.SetClose] },
     {
         pattern: COMMA_SYMBOL,
-        types: [Sym.Separator],
+        types: [Sym.Separator, Sym.NumberSeparator],
     },
     { pattern: LANGUAGE_SYMBOL, types: [Sym.Language] },
     { pattern: SELECT_SYMBOL, types: [Sym.Select] },
@@ -257,8 +257,8 @@ const CodeTokenPatterns: TokenPattern[] = [
     // Match code open/close markers
     CodePattern,
     // Finally, catch any leftover single open or close parentheses.
-    { pattern: EVAL_OPEN_SYMBOL, types: [Sym.EvalOpen] },
-    { pattern: EVAL_CLOSE_SYMBOL, types: [Sym.EvalClose] },
+    { pattern: EVAL_OPEN_SYMBOL, types: [Sym.EvalOpen, Sym.NumberExcludeOpen] },
+    { pattern: EVAL_CLOSE_SYMBOL, types: [Sym.EvalClose, Sym.NumberExcludeClose] },
     // Match primtive types after strings since one is a standalone quote symbol.
     { pattern: MEASUREMENT_SYMBOL, types: [Sym.NumberType] },
     {
