@@ -3571,6 +3571,14 @@
                 "Try your own creative dances by playing with other inputs."
             ],
             "names": ["💃", "Sequence"],
+            "option": {
+                "doc": "Whether the selected sequence is custom or one of the built-in default sequences.",
+                "names": "option"
+            },
+            "inputs": {
+                "doc": "A @Map of sequence inputs, each paired with a input value.",
+                "names": "inputs"
+            },
             "poses": {
                 "doc": "A @Map of percentages between 0% and 100%, each paired with a @Pose. You don't have to provide all the percents; I will smoothly move a @Output between the ones you give me.",
                 "names": "poses"

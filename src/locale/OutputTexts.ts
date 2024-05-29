@@ -162,6 +162,10 @@ type OutputTexts = {
     };
     /** A sequence of poses, keyed by percentage complete, for use in overriding an output's defaults for entering, resting, moving, or existing states */
     Sequence: NameAndDoc & {
+        /** Which sequence option is selected (custom or a default sequence) */
+        option: NameAndDoc;
+        /** A map from the sequence input to value */
+        inputs: NameAndDoc;
         /** A map from percents complete to poses */
         poses: NameAndDoc;
         /** How long the sequence is */

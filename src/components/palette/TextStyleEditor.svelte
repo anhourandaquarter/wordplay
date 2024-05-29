@@ -132,6 +132,7 @@
                 ]),
             ),
         );
+        console.log(textValue, markupValue, formatted, formats, weight);
     }
 
     function setFormatted(formatted: boolean) {

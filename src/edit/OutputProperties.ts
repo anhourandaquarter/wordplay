@@ -168,3 +168,23 @@ export function getOutputProperties(
         getStyleProperty(locales),
     ];
 }
+
+// draft work
+// export function getSequenceOptionProperty(locales: Locales): OutputProperty {
+//     // return new OutputProperty(
+//     //     locales.get((l) => l.output.Sequence.option),
+//     //     new OutputPropertyOptions(
+//     //         ["custom", ...Object.keys(locales.get((l) => l.output.sequence))],
+//     //         false,
+//     //         (text: string) => TextLiteral.make(text),
+//     //         (expression: Expression | undefined) =>
+//     //             expression instanceof TextLiteral
+//     //                 ? expression.getValue(locales).text
+//     //                 : undefined
+//     //     ),
+//     //     true,
+//     //     false,
+//     //     (expr) => expr instanceof TextLiteral,
+//     //     () => TextLiteral.make(DefaultStyle)
+//     // );
+// }
