@@ -1,0 +1,78 @@
+import { test, expect } from 'vitest';
+import getTextMetrics from './getTextMetrics';
+import type { WritingLayout } from '@locale/Scripts';
+
+test.beforeEach(() => {
+    // Clean up the canvas if it was created by previous tests
+    const existingCanvas = document.getElementById('measurer');
+    if (existingCanvas) {
+        existingCanvas.remove();
+    }
+});
+test('getTextMetrics should return undefined if the context is not available', () => {
+    const metrics = getTextMetrics('Test', '16px Arial', 'horizontal-tb');
+    expect(metrics).toBeUndefined();
+});
+test('getTextMetrics should create a hidden canvas for measurement', () => {
+    getTextMetrics('Test', '16px Arial', 'horizontal-tb');
+    const canvas = document.getElementById('measurer');
+    expect(canvas).toBeDefined();
+    expect(canvas?.style.display).toBe('none');
+});
+test('getTextMetrics should measure text dimensions correctly for horizontal layout', () => {
+    const metrics = getTextMetrics('Test', '16px Arial', 'horizontal-tb');
+    expect(metrics).toBeDefined();
+    if (metrics) {
+        expect(metrics.width).toBeGreaterThan(0);
+    }
+});
+test('getTextMetrics should measure text dimensions correctly for vertical layout', () => {
+    const metrics = getTextMetrics('Test', '16px Arial', 'vertical-rl');
+    expect(metrics).toBeDefined();
+    if (metrics) {
+        expect(metrics.width).toBeGreaterThan(0);
+    }
+});
+test('getTextMetrics should change writing mode based on layout parameter', () => {
+    getTextMetrics('Test', '16px Arial', 'vertical-rl');
+    const canvas = document.getElementById('measurer') as HTMLCanvasElement;
+    expect(canvas.style.writingMode).toBe('vertical-rl');
+});
+
+
+test('getTextMetrics should return undefined if text is empty', () => {
+    const metrics = getTextMetrics('', '16px Arial', 'horizontal-tb');
+    expect(metrics).toBeUndefined();
+});
+test('getTextMetrics should return undefined if font size is not provided', () => {
+    const metrics = getTextMetrics('Test', '', 'horizontal-tb');
+    expect(metrics).toBeUndefined();
+});
+test('getTextMetrics should measure text dimensions correctly for different fonts', () => {
+    const metricsArial = getTextMetrics('Test', '16px Arial', 'horizontal-tb');
+    const metricsVerdana = getTextMetrics('Test', '16px Verdana', 'horizontal-tb');
+    expect(metricsArial).toBeDefined();
+    expect(metricsVerdana).toBeDefined();
+    if (metricsArial && metricsVerdana) {
+        expect(metricsArial.width).not.toBe(metricsVerdana.width);
+    }
+});
+test('getTextMetrics should measure text dimensions correctly for different text lengths', () => {
+    const metricsShort = getTextMetrics('Test', '16px Arial', 'horizontal-tb');
+    const metricsLong = getTextMetrics('Lorem ipsum dolor sit amet', '16px Arial', 'horizontal-tb');
+    expect(metricsShort).toBeDefined();
+    expect(metricsLong).toBeDefined();
+    if (metricsShort && metricsLong) {
+        expect(metricsShort.width).toBeLessThan(metricsLong.width);
+    }
+});
+test('getTextMetrics should return undefined if canvas context cannot be obtained', () => {
+    // Mocking canvas and context to simulate failure in obtaining canvas context
+    Object.defineProperty(document, 'createElement', {
+        value: () => ({
+            getContext: () => null
+        })
+    });
+    const metrics = getTextMetrics('Test', '16px Arial', 'horizontal-tb');
+    expect(metrics).toBeUndefined();
+});
